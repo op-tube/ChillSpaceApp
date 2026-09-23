@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Facebook Slots — Light Mode Auto Loop</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    display:grid;
+    place-items:center;
+    background:#f0f2f5;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  /* ---------------- MACHINE CARD ---------------- */
+  .machine{
+    position:relative;
+    width:376px;
+    border-radius:20px;
+    background:#ffffff;
+    border:1px solid #dddfe2;
+    box-shadow:
+      0 2px 4px rgba(0,0,0,.06),
+      0 10px 28px rgba(0,0,0,.10);
+    overflow:hidden;
+  }
+
+  /* ---------------- HEADER (facebook blue bar) ---------------- */
+  .header{
+    position:relative;
+    z-index:30;
+    background:#1877F2;
+    padding:14px 20px 15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.10);
+  }
+  .wordmark{
+    color:#ffffff;
+    font-size:27px;
+    font-weight:700;
+    letter-spacing:-0.6px;
+    line-height:1;
+    font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  }
+
+  /* ---------------- BODY ---------------- */
+  .machine-body{
+    padding:16px 18px 18px;
+    background:#ffffff;
+  }
+
+  /* reels */
+  .reels{
+    position:relative;
+    display:flex;
+    gap:10px;
+    padding:10px;
+    border-radius:16px;
+    background:#f0f2f5;
+    box-shadow:
+      inset 0 0 0 1px #e4e6eb,
+      inset 0 4px 10px rgba(0,0,0,.04);
+    pointer-events:none;
+  }
+
+  .reel{
+    position:relative;
+    width:96px;height:288px;
+    overflow:hidden;
+    border-radius:12px;
+    background:#ffffff;
+    box-shadow:
+      inset 0 0 0 1px #e4e6eb,
+      0 1px 2px rgba(0,0,0,.04);
+  }
+  .reel::after{
+    content:"";
+    position:absolute;inset:0;
+    border-radius:12px;
+    pointer-events:none;
+    background:linear-gradient(180deg,
+      #ffffff 0%,
+      rgba(255,255,255,.80) 13%,
+      rgba(255,255,255,0) 32%,
+      rgba(255,255,255,0) 68%,
+      rgba(255,255,255,.80) 87%,
+      #ffffff 100%);
+  }
+
+  .strip{
+    position:absolute;top:0;left:0;right:0;
+    will-change:transform,filter;
+  }
+  .cell{
+    height:96px;
+    display:grid;place-items:center;
+  }
+  .cell img{
+    width:78px;height:78px;
+    border-radius:50%;
+    display:block;
+    box-shadow:
+      0 2px 8px rgba(0,0,0,.15),
+      0 0 0 1px rgba(0,0,0,.04);
+    -webkit-user-drag:none;
+    pointer-events:none;
+  }
+
+  /* win ring */
+  .win-ring{
+    position:absolute;
+    left:50%;top:50%;
+    width:86px;height:86px;
+    margin:-43px 0 0 -43px;
+    border-radius:50%;
+    box-shadow:
+      0 0 0 3px #ffb300,
+      0 0 22px 8px rgba(255,180,0,.55),
+      0 0 52px 16px rgba(255,180,0,.22);
+    opacity:0;
+    transition:opacity .3s;
+    pointer-events:none;
+    z-index:6;
+  }
+  .reel.win .win-ring{opacity:1;animation:ringPulse .9s ease-in-out infinite}
+  @keyframes ringPulse{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(1.08);opacity:.78}
+  }
+
+  /* message bar */
+  .message{
+    margin-top:14px;
+    height:40px;
+    display:grid;place-items:center;
+    border-radius:10px;
+    background:#f0f2f5;
+    box-shadow:inset 0 0 0 1px #e4e6eb;
+    color:#65676b;
+    font-size:13.5px;
+    font-weight:700;
+    letter-spacing:1.3px;
+    text-transform:uppercase;
+    transition:color .25s, background .25s, box-shadow .25s;
+  }
+  .message.win{
+    color:#8a5a00;
+    background:#fff8e1;
+    box-shadow:
+      inset 0 0 0 1px #ffd54a,
+      0 0 20px rgba(255,190,40,.22);
+  }
+  .message.jackpot{
+    color:#7a4d00;
+    background:#fff3c4;
+    box-shadow:
+      inset 0 0 0 1px #ffb300,
+      0 0 30px rgba(255,180,20,.38);
+    animation:msgFlash .55s steps(2,end) infinite;
+  }
+  @keyframes msgFlash{
+    0%{filter:brightness(1)}
+    100%{filter:brightness(1.12)}
+  }
+
+  /* ---------------- FINGER ---------------- */
+  .finger{
+    position:absolute;
+    left:50%;top:0;
+    width:64px;height:96px;
+    margin-left:-32px;
+    transform:translateY(220px);
+    opacity:0;
+    pointer-events:none;
+    z-index:20;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.22));
+    will-change:transform,opacity;
+  }
+  .finger svg{display:block;width:100%;height:100%}
+
+  @media (max-height:780px){
+    .machine{transform:scale(.88);transform-origin:center}
+  }
+  @media (max-height:660px){
+    .machine{transform:scale(.74)}
+  }
+</style>
+</head>
+<body>
+
+<div class="machine" id="machine">
+
+  <div class="header">
+    <span class="wordmark">facebook</span>
+  </div>
+
+  <div class="machine-body">
+    <div class="reels" id="reels">
+      <div class="reel"><div class="strip"></div><div class="win-ring"></div></div>
+      <div class="reel"><div class="strip"></div><div class="win-ring"></div></div>
+      <div class="reel"><div class="strip"></div><div class="win-ring"></div></div>
+    </div>
+
+    <div class="message" id="message">Swipe up to spin</div>
+  </div>
+
+  <!-- the finger -->
+  <div class="finger" id="finger">
+    <svg viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#f6cdaa" stroke="#c98f63" stroke-width="5"
+         stroke-linejoin="round" stroke-linecap="round">
+        <rect x="33" y="8"  width="19" height="62" rx="9.5"/>
+        <rect x="18" y="52" width="46" height="52" rx="22"/>
+        <rect x="6"  y="62" width="18" height="34" rx="9"/>
+      </g>
+      <g fill="#f6cdaa">
+        <rect x="33" y="8"  width="19" height="62" rx="9.5"/>
+        <rect x="18" y="52" width="46" height="52" rx="22"/>
+        <rect x="6"  y="62" width="18" height="34" rx="9"/>
+      </g>
+      <ellipse cx="42.5" cy="16" rx="5.6" ry="6.6" fill="#ffe6d4" opacity=".92"/>
+      <path d="M27 78 h9 M41 78 h9" stroke="#dfa87f" stroke-width="2.4"
+            stroke-linecap="round" fill="none" opacity=".85"/>
+      <path d="M37 14 v50" stroke="#ffffff" stroke-width="2.6"
+            stroke-linecap="round" opacity=".28" fill="none"/>
+    </svg>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const randInt = n => Math.floor(Math.random() * n);
+
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) + amt;
+  let g = ((n >> 8) & 255) + amt;
+  let b = (n & 255) + amt;
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+/* =========================================================
+   AVATAR GENERATION  (inline SVG data-URIs — no network)
+   ========================================================= */
+function makeAvatar(p){
+  const hairBack = p.longHair
+    ? `<rect x="23" y="32" width="54" height="72" rx="26" fill="${p.hair}"/>`
+    : '';
+
+  const glasses = p.glasses
+    ? `<g fill="none" stroke="#26323d" stroke-width="2.6" stroke-linecap="round">
+         <circle cx="42.5" cy="49" r="7.6"/>
+         <circle cx="57.5" cy="49" r="7.6"/>
+         <path d="M50.2 49 h-0.4"/>
+         <path d="M35 47.6 l-6.5 -2"/>
+         <path d="M65 47.6 l6.5 -2"/>
+       </g>`
+    : '';
+
+  const beard = p.beard
+    ? `<path d="M32 52 a18 18 0 0 0 36 0 q-2 22 -18 22 q-16 0 -18 -22 z"
+             fill="${p.hair}" opacity=".95"/>
+       <path d="M44 58 q6 5 12 0" fill="none" stroke="#8a4a2c"
+             stroke-width="2.2" stroke-linecap="round"/>`
+    : `<path d="M44 58 q6 5 12 0" fill="none" stroke="#a5603f"
+             stroke-width="2.2" stroke-linecap="round"/>`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs><clipPath id="c"><circle cx="50" cy="50" r="50"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="100" height="100" fill="${p.bg}"/>
+    ${hairBack}
+    <circle cx="50" cy="110" r="42" fill="${p.shirt}"/>
+    <rect x="44" y="56" width="12" height="18" rx="6" fill="${shade(p.skin,-26)}"/>
+    <circle cx="50" cy="42" r="23" fill="${p.hair}"/>
+    <circle cx="50" cy="50" r="20.5" fill="${p.skin}"/>
+    <circle cx="43" cy="49" r="2.7" fill="#2b2b2b"/>
+    <circle cx="57" cy="49" r="2.7" fill="#2b2b2b"/>
+    ${beard}
+    ${glasses}
+  </g>
+</svg>`;
+
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+const PEOPLE = [
+  {bg:'#1877F2', skin:'#f1c9a5', hair:'#2f1e13', shirt:'#ffffff'},
+  {bg:'#42b72a', skin:'#8d5524', hair:'#160d06', shirt:'#ffffff', longHair:true},
+  {bg:'#f7b928', skin:'#e8b48c', hair:'#c96a1e', shirt:'#2d3b4e', glasses:true},
+  {bg:'#e4405f', skin:'#c68642', hair:'#241408', shirt:'#f2f4f8', beard:true},
+  {bg:'#8b5cf6', skin:'#ffdbac', hair:'#e8c34a', shirt:'#3b2f63', longHair:true},
+  {bg:'#0ea5e9', skin:'#5c3317', hair:'#0f0a06', shirt:'#e9eef5'},
+  {bg:'#f97316', skin:'#f3d0b0', hair:'#8a4b1f', shirt:'#22303f', glasses:true, longHair:true},
+  {bg:'#14b8a6', skin:'#a1662f', hair:'#2b1a0e', shirt:'#ffffff', beard:true},
+  {bg:'#ef4444', skin:'#ffd9b8', hair:'#d94f2b', shirt:'#1f2937'},
+  {bg:'#6366f1', skin:'#7a4a21', hair:'#100a05', shirt:'#f8fafc', glasses:true},
+  {bg:'#22c55e', skin:'#f0c8a0', hair:'#4a3728', shirt:'#334155', longHair:true},
+  {bg:'#eab308', skin:'#b06f3a', hair:'#1c1209', shirt:'#ffffff', beard:true, glasses:true}
+];
+
+const AVATARS = PEOPLE.map(makeAvatar);
+
+/* =========================================================
+   REEL SETUP
+   ========================================================= */
+const ITEM_H  = 96;
+const M       = AVATARS.length;      // 12 symbols per strip
+const STRIP_H = M * ITEM_H;
+
+const reelsEl   = document.getElementById('reels');
+const messageEl = document.getElementById('message');
+const fingerEl  = document.getElementById('finger');
+
+const reelEls = [...reelsEl.querySelectorAll('.reel')];
+
+const reels = reelEls.map(el => {
+  const strip = el.querySelector('.strip');
+
+  // each strip contains every avatar exactly once, shuffled
+  const items = [...Array(M).keys()];
+  for (let i = items.length - 1; i > 0; i--){
+    const j = randInt(i + 1);
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+
+  let html = '';
+  for (let rep = 0; rep < 2; rep++){
+    for (let i = 0; i < M; i++){
+      html += `<div class="cell"><img src="${AVATARS[items[i]]}" alt="" draggable="false"></div>`;
+    }
+  }
+  strip.innerHTML = html;
+
+  return {
+    el, strip, items,
+    pos: 0,
+    pull: 0,
+    resultIdx: 1,
+    tween: null,
+    lastBlur: -1
+  };
+});
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderReel(r){
+  const off = ((r.pos % STRIP_H) + STRIP_H) % STRIP_H;
+  r.strip.style.transform = `translate3d(0, ${-off - r.pull}px, 0)`;
+}
+
+function easeOutBackSoft(t){
+  const c1 = 0.5, c3 = c1 + 1;
+  const p = t - 1;
+  return 1 + c3 * p * p * p + c1 * p * p;
+}
+
+/* =========================================================
+   LOOP TIMELINE  (ms, relative to cycle start)
+   ========================================================= */
+const SPIN_DELAY_STEP = 180;
+const SPIN_BASE_DUR   = 1400;
+const SPIN_DUR_STEP   = 380;
+const SPIN_TOTAL      = SPIN_DELAY_STEP * 2 + SPIN_BASE_DUR + SPIN_DUR_STEP * 2; // 2520
+
+const T_SWIPE_START = 600;
+const T_SWIPE_END   = 1400;
+const T_RESULT      = T_SWIPE_END + SPIN_TOTAL;   // 3920
+const T_CYCLE_END   = T_RESULT + 2100;            // 6020
+const T_FINGER_IN   = T_CYCLE_END - 600;          // 5420
+
+const BASE_Y = 180;                               // resting finger Y (px)
+const LIFT   = 185;                               // swipe travel distance
+
+/* =========================================================
+   SPIN PLANNING
+   ========================================================= */
+function planSpin(){
+  const roll = Math.random();
+  const picks = [0, 0, 0];
+
+  if (roll < 0.12){                       // JACKPOT
+    const a = randInt(M);
+    picks[0] = picks[1] = picks[2] = a;
+    return { picks, kind: 'jackpot' };
+  }
+
+  if (roll < 0.52){                       // PAIR
+    const a = randInt(M);
+    let b = randInt(M - 1);
+    if (b >= a) b++;
+    const odd = randInt(3);
+    for (let i = 0; i < 3; i++) picks[i] = (i === odd) ? b : a;
+    return { picks, kind: 'pair' };
+  }
+
+  // NO WIN
+  for (let i = 0; i < 3; i++) picks[i] = randInt(M);
+  if (picks[0] === picks[1] && picks[1] === picks[2]){
+    picks[2] = (picks[2] + 1) % M;
+  }
+  return { picks, kind: 'none' };
+}
+
+function startReelSpin(r, avatarIdx, duration, delay){
+  const gridPos = Math.round(r.pos / ITEM_H) * ITEM_H;
+  const cur     = ((Math.round(gridPos / ITEM_H)) % M + M) % M;
+  const target  = ((avatarIdx - 1) % M + M) % M;
+  let   n       = ((target - cur) % M + M) % M;
+  n += M * (3 + randInt(3));
+
+  r.resultIdx = avatarIdx;
+  r.tween = {
+    from: r.pos,
+    to:   gridPos + n * ITEM_H,
+    t0:   performance.now() + delay,
+    dur:  duration
+  };
+}
+
+/* =========================================================
+   RESULT
+   ========================================================= */
+function clearWin(){
+  reelEls.forEach(el => el.classList.remove('win'));
+}
+
+function evaluate(plan){
+  const ids = reels.map(r => r.items[r.resultIdx]);
+  clearWin();
+
+  if (plan.kind === 'jackpot'){
+    reelEls.forEach(el => el.classList.add('win'));
+    messageEl.className = 'message jackpot';
+    messageEl.textContent = '★ JACKPOT ★ 3 MATCHES ★';
+  } else if (plan.kind === 'pair'){
+    const counts = {};
+    ids.forEach(id => counts[id] = (counts[id] || 0) + 1);
+    const winner = ids.find(id => counts[id] > 1);
+    ids.forEach((id, i) => { if (id === winner) reelEls[i].classList.add('win'); });
+    messageEl.className = 'message win';
+    messageEl.textContent = 'Nice! Two of a kind';
+  } else {
+    messageEl.className = 'message';
+    messageEl.textContent = 'No match — swipe again';
+  }
+}
+
+/* =========================================================
+   CYCLE STATE
+   ========================================================= */
+let cycleStart = performance.now();
+let plan       = null;
+let spinFired  = false;
+let evalFired  = false;
+
+function newCycle(){
+  plan      = planSpin();
+  spinFired = false;
+  evalFired = false;
+  clearWin();
+  messageEl.className = 'message';
+  messageEl.textContent = 'Swipe up to spin';
+}
+
+function fireSpin(){
+  messageEl.className = 'message';
+  messageEl.textContent = 'Spinning…';
+  reels.forEach((r, i) => {
+    startReelSpin(r, plan.picks[i],
+      SPIN_BASE_DUR + i * SPIN_DUR_STEP,
+      i * SPIN_DELAY_STEP);
+  });
+}
+
+/* =========================================================
+   FINGER
+   ========================================================= */
+function updateFinger(ct){
+  let y, op;
+
+  if (ct < T_SWIPE_START){                       // waiting
+    y  = BASE_Y;
+    op = 1;
+
+  } else if (ct < T_SWIPE_END){                  // swipe up
+    const p = (ct - T_SWIPE_START) / (T_SWIPE_END - T_SWIPE_START);
+    const e = p * p * (3 - 2 * p);
+    y  = BASE_Y - LIFT * e;
+    op = 1;
+
+  } else if (ct < T_SWIPE_END + 260){            // fly off the top
+    const p = (ct - T_SWIPE_END) / 260;
+    y  = (BASE_Y - LIFT) - 70 * p;
+    op = 1 - p;
+
+  } else if (ct > T_FINGER_IN){                  // fade back in for next loop
+    const p = (ct - T_FINGER_IN) / (T_CYCLE_END - T_FINGER_IN);
+    y  = BASE_Y;
+    op = p;
+
+  } else {
+    op = 0;
+    y  = BASE_Y;
+  }
+
+  fingerEl.style.transform = `translateY(${y}px)`;
+  fingerEl.style.opacity   = op.toFixed(3);
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+let last = performance.now();
+
+function tick(now){
+  let dt = (now - last) / 1000;
+  last = now;
+  if (dt > 0.05) dt = 0.05;
+
+  while (now - cycleStart >= T_CYCLE_END){
+    cycleStart += T_CYCLE_END;
+    newCycle();
+  }
+  const ct = now - cycleStart;
+
+  /* timeline triggers */
+  if (!spinFired && ct >= T_SWIPE_END){
+    spinFired = true;
+    fireSpin();
+  }
+  if (!evalFired && ct >= T_RESULT){
+    evalFired = true;
+    evaluate(plan);
+  }
+
+  /* reels */
+  const swipeP = (ct >= T_SWIPE_START && ct < T_SWIPE_END)
+    ? (ct - T_SWIPE_START) / (T_SWIPE_END - T_SWIPE_START)
+    : 0;
+  const pullTarget = 30 * (swipeP * swipeP * (3 - 2 * swipeP));
+
+  for (const r of reels){
+    const prev = r.pos;
+
+    r.pull += (pullTarget - r.pull) * Math.min(1, dt * 22);
+
+    if (r.tween){
+      const el = now - r.tween.t0;
+      if (el >= 0){
+        const t = Math.min(el / r.tween.dur, 1);
+        const e = easeOutBackSoft(t);
+        r.pos = r.tween.from + (r.tween.to - r.tween.from) * e;
+        if (t >= 1){
+          r.pos = r.tween.to;
+          r.tween = null;
+        }
+      }
+    }
+
+    renderReel(r);
+
+    const v = Math.abs(r.pos - prev) / dt;
+    let blur = Math.min(v / 620, 3.2);
+    if (blur < 0.45) blur = 0;
+    blur = Math.round(blur * 2) / 2;
+    if (blur !== r.lastBlur){
+      r.lastBlur = blur;
+      r.strip.style.filter = blur ? `blur(${blur}px)` : '';
+    }
+  }
+
+  /* finger */
+  updateFinger(ct);
+
+  requestAnimationFrame(tick);
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+newCycle();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

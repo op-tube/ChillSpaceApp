@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ChillSpace Jump</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; width:100%; overflow:hidden; background:#87CEEB; font-family:sans-serif; }
+  canvas { display:block; width:100%; height:100%; background:#87CEEB; }
+  #ui {
+    position:absolute; top:10px; left:10px; color:white; font-size:20px; z-index:10;
+    text-shadow: 2px 2px 4px black;
+  }
+  #hint {
+    position:absolute; bottom:10px; width:100%; text-align:center; color:white; z-index:10;
+    text-shadow: 2px 2px 4px black;
+  }
+  #gameover {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.7); color:white; padding:30px; border-radius:20px;
+    text-align:center; font-size:24px; display:none; z-index:20;
+  }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="ui">Height: <span id="score">0</span>m</div>
+<div id="hint">Tilt / ← → to move</div>
+<div id="gameover">
+  Game Over<br>
+  Height: <span id="finalScore">0</span>m<br><br>
+  <button onclick="restart()">Restart</button>
+</div>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const params = new URLSearchParams(window.location.search);
+const autoplay = params.get('autoplay') === '1';
+if (autoplay) {
+  document.getElementById('ui').classList.add('hidden');
+  document.getElementById('hint').classList.add('hidden');
+}
+
+const CENTER_Y = canvas.height/2;
+let player = { x: canvas.width/2 - 20, y: CENTER_Y - 20, vx: 0, vy: 0, w: 40, h: 40 };
+let platforms = [];
+let score = 0;
+let worldScroll = 0;
+let zigzagOffset = 0;
+let direction = 1;
+let gameOver = false;
+
+// gradient cycle
+const gradients = [
+  ['#87CEEB', '#98FB98'],
+  ['#98FB98', '#FFD700'],
+  ['#FFD700', '#FFA500'],
+  ['#FFA500', '#9370DB'],
+  ['#9370DB', '#87CEEB']
+];
+let gradIndex = 0;
+let nextGradIndex = 1;
+let gradTransition = 0;
+
+function lerpColor(a, b, amount) {
+  const ah = parseInt(a.replace('#',''), 16);
+  const bh = parseInt(b.replace('#',''), 16);
+  const ar = ah >> 16, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
+  const br = bh >> 16, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
+  const rr = ar + (br - ar) * amount;
+  const rg = ag + (bg - ag) * amount;
+  const rb = ab + (bb - ab) * amount;
+  return `rgb(${Math.round(rr)},${Math.round(rg)},${Math.round(rb)})`;
+}
+
+function getBackgroundGradient(dt) {
+  gradTransition += dt / 4000;
+  if (gradTransition >= 1) {
+    gradTransition = 0;
+    gradIndex = nextGradIndex;
+    nextGradIndex = (nextGradIndex + 1) % gradients.length;
+  }
+  const top = lerpColor(gradients[gradIndex][0], gradients[nextGradIndex][0], gradTransition);
+  const bottom = lerpColor(gradients[gradIndex][1], gradients[nextGradIndex][1], gradTransition);
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, top);
+  grad.addColorStop(1, bottom);
+  return grad;
+}
+
+function generatePlatforms() {
+  platforms = [];
+  const platformCount = Math.ceil(canvas.height / 120) + 15;
+  for (let i = 0; i < platformCount; i++) {
+    platforms.push({
+      x: Math.random() * (canvas.width - 80),
+      y: CENTER_Y + i * 120,
+      w: 80,
+      h: 20
+    });
+  }
+}
+generatePlatforms();
+
+function restart() {
+  gameOver = false;
+  document.getElementById('gameover').style.display = 'none';
+  worldScroll = 0;
+  score = 0;
+  player = { x: canvas.width/2 - 20, y: CENTER_Y - 20, vx: 0, vy: 0, w: 40, h: 40 };
+  generatePlatforms();
+}
+
+let keys = {};
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+let tilt = 0;
+window.addEventListener('deviceorientation', e => {
+  tilt = e.gamma / 30;
+});
+
+function update(time, dt) {
+  if (gameOver) return;
+  
+  zigzagOffset += 2;
+
+  // controls
+  if (!autoplay) {
+    if (keys['ArrowLeft']) player.vx = -5;
+    else if (keys['ArrowRight']) player.vx = 5;
+    else player.vx = tilt * 5;
+  } else {
+    player.vx = direction * 3;
+    if (player.x < 20 || player.x > canvas.width - 60) direction *= -1;
+  }
+
+  player.x += player.vx;
+  player.vy += 0.4; // gravity
+  player.y += player.vy;
+
+  // wrap sides
+  if (player.x < -player.w) player.x = canvas.width;
+  if (player.x > canvas.width) player.x = -player.w;
+
+  // collision - 2x HIGHER JUMP = -24 instead of -12
+  platforms.forEach(p => {
+    if (player.vy > 0 && 
+        player.x + player.w > p.x && 
+        player.x < p.x + p.w &&
+        player.y + player.h > p.y &&
+        player.y + player.h < p.y + p.h) {
+      player.vy = -24; // 2x jump
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+  });
+
+  // scroll world when above center
+  if (player.y < CENTER_Y) {
+    let scrollAmount = CENTER_Y - player.y;
+    worldScroll += scrollAmount;
+    score = Math.floor(worldScroll / 10);
+    platforms.forEach(p => p.y += scrollAmount);
+    player.y = CENTER_Y;
+  }
+
+  // generate new platforms at top
+  let highestY = Math.min(...platforms.map(p => p.y));
+  if (highestY > -100) {
+    platforms.push({
+      x: Math.random() * (canvas.width - 80),
+      y: highestY - 120,
+      w: 80,
+      h: 20
+    });
+  }
+
+  platforms = platforms.filter(p => p.y < canvas.height + 200);
+
+  // GAME OVER: fall off bottom
+  if (player.y > canvas.height + 100) {
+    gameOver = true;
+    document.getElementById('finalScore').innerText = score;
+    document.getElementById('gameover').style.display = 'block';
+    if (navigator.vibrate) navigator.vibrate([100,50,100]);
+  }
+}
+
+function drawZigZag() {
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 3;
+  const spacing = 60;
+  for (let y = -spacing; y < canvas.height + spacing; y += spacing) {
+    ctx.beginPath();
+    let offset = (y + zigzagOffset) % (spacing * 2);
+    for (let x = 0; x < canvas.width; x += 20) {
+      let zig = (Math.floor(x / 20) % 2 === 0)? 10 : -10;
+      let yy = y + offset + zig;
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+  }
+}
+
+function draw(time, dt) {
+  ctx.fillStyle = getBackgroundGradient(dt);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawZigZag();
+
+  // platforms
+  ctx.fillStyle = '#4CAF50';
+  platforms.forEach(p => {
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+
+  // player
+  ctx.fillStyle = '#FF69B4';
+  ctx.beginPath();
+  ctx.arc(player.x + player.w/2, player.y + player.h/2, 20, 0, Math.PI*2);
+  ctx.fill();
+  // eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(player.x + 12, player.y + 12, 5, 0, Math.PI*2);
+  ctx.arc(player.x + 28, player.y + 12, 5, 0, Math.PI*2);
+  ctx.fill();
+
+  document.getElementById('score').innerText = score;
+}
+
+let lastTime = performance.now();
+function loop(now) {
+  let dt = now - lastTime;
+  lastTime = now;
+  update(now, dt);
+  draw(now, dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

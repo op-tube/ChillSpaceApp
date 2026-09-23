@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChillSpace Gaming</title>
+    <style>
+        /* ── Reset & base ── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0b0e14;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(88, 0, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(255, 0, 200, 0.06) 0%, transparent 60%);
+            padding: 1.5rem;
+        }
+
+        /* ── Glow orbs (decorative) ── */
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 500px;
+            height: 500px;
+            top: -150px;
+            right: -100px;
+            background: rgba(120, 0, 255, 0.15);
+        }
+        body::after {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            background: rgba(255, 0, 200, 0.12);
+        }
+
+        /* ── Card ── */
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 720px;
+            background: rgba(18, 22, 32, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 2.5rem;
+            padding: 3rem 2.5rem 2.5rem;
+            box-shadow:
+                0 30px 80px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        /* ── Header ── */
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 60px rgba(192, 132, 252, 0.15);
+        }
+        .logo span {
+            font-size: 2rem;
+        }
+
+        .subhead {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+        .subhead strong {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+        }
+
+        /* ── Big buttons ── */
+        .big-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .big-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.6rem 1.8rem;
+            border-radius: 1.8rem;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .big-btn .emoji {
+            font-size: 2.2rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .big-btn .label {
+            flex: 1;
+            text-align: center;
+        }
+        .big-btn .arrow {
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        /* Number Game */
+        .btn-number {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.30);
+        }
+        .btn-number:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(124, 58, 237, 0.45);
+        }
+        .btn-number:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* K-pop Game */
+        .btn-kpop {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            box-shadow: 0 8px 32px rgba(236, 72, 153, 0.30);
+        }
+        .btn-kpop:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(236, 72, 153, 0.45);
+        }
+        .btn-kpop:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Jump Game */
+        .btn-jump {
+            background: linear-gradient(135deg, #fee12b, #dbc277);
+            box-shadow: 0 8px 32px rgba(254, 225, 43, 0.30);
+        }
+        .btn-jump:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(254, 225, 43, 0.45);
+        }
+        .btn-jump:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Surfer Game */
+        .btn-surf {
+            background: linear-gradient(135deg, #4999fb, #8765cc);
+            box-shadow: 0 8px 32px rgba(73, 153, 251, 0.30);
+        }
+        .btn-surf:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(73, 153, 251, 0.45);
+        }
+        .btn-surf:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Runner Game */
+        .btn-runner {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.30);
+        }
+        .btn-runner:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(16, 185, 129, 0.45);
+        }
+        .btn-runner:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Stacker Game */
+        .btn-stacker {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 8px 32px rgba(245, 158, 11, 0.30);
+        }
+        .btn-stacker:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(245, 158, 11, 0.45);
+        }
+        .btn-stacker:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Flapper Game */
+        .btn-flapper {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.30);
+        }
+        .btn-flapper:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(239, 68, 68, 0.45);
+        }
+        .btn-flapper:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        /* Slidey Game */
+        .btn-slidey {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.30);
+        }
+        .btn-slidey:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(59, 130, 246, 0.45);
+        }
+        .btn-slidey:hover .arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+        /* shimmer overlay on hover */
+        .big-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.06) 40%,
+                    rgba(255, 255, 255, 0.10) 50%,
+                    rgba(255, 255, 255, 0.06) 60%,
+                    transparent 100%);
+            background-size: 200% 100%;
+            background-position: 0% 0%;
+            transition: background-position 0.6s ease;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        .big-btn:hover::after {
+            background-position: 100% 0%;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0 0 1.8rem 0;
+            color: rgba(255, 255, 255, 0.12);
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ── Small buttons ── */
+        .small-grid {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .small-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.4rem;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+        .small-btn .emoji-sm {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .small-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+        }
+        .small-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            margin-top: 2.2rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.12);
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 500px) {
+            .card {
+                padding: 2rem 1.25rem 1.8rem;
+                border-radius: 1.8rem;
+            }
+            .logo {
+                font-size: 1.4rem;
+            }
+            .subhead {
+                font-size: 0.85rem;
+                margin-bottom: 2rem;
+            }
+            .big-btn {
+                padding: 1.2rem 1.2rem;
+                font-size: 1.3rem;
+                border-radius: 1.4rem;
+            }
+            .big-btn .emoji {
+                font-size: 1.8rem;
+            }
+            .small-btn {
+                font-size: 0.8rem;
+                padding: 0.55rem 1rem;
+            }
+            .small-grid {
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .big-btn {
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                padding: 1rem;
+            }
+            .big-btn .label {
+                flex: 0 0 100%;
+                text-align: center;
+            }
+            .big-btn .arrow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+
+        <!-- Header -->
+        <div class="logo">
+            <span>🎮</span> ChillSpace Gaming
+        </div>
+        <p class="subhead">
+            <strong>eight</strong> ways to play &nbsp;·&nbsp; pick your vibe
+        </p>
+
+        <!-- Big buttons -->
+        <div class="big-grid">
+
+            <a href="file:///android_asset/number.html" class="big-btn btn-number">
+                <span class="emoji">🔢</span>
+                <span class="label">Number Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="https://chillspace.ai/kpop" class="big-btn btn-kpop">
+                <span class="emoji">🎵</span>
+                <span class="label">K‑pop Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+             <a href="file:///android_asset/jump.html" class="big-btn btn-jump">
+                <span class="emoji">⬆️</span>
+                <span class="label">Jump Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+             <a href="file:///android_asset/surfer.html" class="big-btn btn-surf">
+                <span class="emoji">🏄</span>
+                <span class="label">Surfer Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="file:///android_asset/runner.html" class="big-btn btn-runner">
+                <span class="emoji">🏃</span>
+                <span class="label">Runner Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="file:///android_asset/stacker.html" class="big-btn btn-stacker">
+                <span class="emoji">🧱</span>
+                <span class="label">Stacker Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="file:///android_asset/flapper.html" class="big-btn btn-flapper">
+                <span class="emoji">🐦</span>
+                <span class="label">Flapper Game</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="file:///android_asset/slidey.html" class="big-btn btn-slidey">
+                <span class="emoji">🧩</span>
+                <span class="label">Slidey Game</span>
+                <span class="arrow">→</span>
+            </a>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">explore more</div>
+
+        <!-- Small buttons -->
+        <div class="small-grid">
+
+            <a href="file:///android_asset/feed.html" class="small-btn">
+                <span class="emoji-sm">🏠</span> ChillSpace Home
+            </a>
+
+            <a href="file:///android_asset/messages.html" class="small-btn">
+                <span class="emoji-sm">💬</span> ChillSpace Messages
+            </a>
+
+            <a href="file:///android_asset/shop.html" class="small-btn">
+                <span class="emoji-sm">🛍️</span> ChillSpace Shop
+            </a>
+        </div>
+
+        <div class="footer">—</div>
+
+    </div>
+
+</body>
+</html>

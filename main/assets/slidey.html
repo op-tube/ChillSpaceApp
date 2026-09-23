@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Slide Coin Rush - Infinite Slides</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        body {
+            background: #111827;
+            color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #f59e0b;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 500px;
+        }
+        canvas {
+            background: #1f2937;
+            border: 3px solid #374151;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            touch-action: none;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            font-size: 0.95rem;
+            font-weight: bold;
+            background: #1f2937;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .coin-val { color: #f59e0b; }
+        .slide-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: #1f2937;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            gap: 8px;
+        }
+        .slide-selector label { font-size: 0.85rem; }
+        .slide-selector select {
+            background: #374151;
+            color: white;
+            border: 1px solid #4b5563;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            max-width: 62%;
+        }
+        .next-unlock {
+            width: 100%;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #9ca3af;
+            margin-top: -4px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+            max-width: 200px;
+            transition: filter 0.15s ease;
+        }
+        button:active { filter: brightness(1.2); }
+        button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+        #tiltBtn { max-width: 320px; background: #0ea5e9; font-size: 0.9rem; padding: 12px; }
+        #tiltBtn.active { background: #22c55e; }
+        .tilt-status {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            min-height: 1em;
+        }
+        .instructions {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        /* ---------- Unlock popup ---------- */
+        .popup {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.68);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            padding: 20px;
+        }
+        .popup.show { opacity: 1; pointer-events: auto; }
+        .popup-card {
+            background: linear-gradient(160deg, #1f2937, #0f172a);
+            border: 2px solid #f59e0b;
+            border-radius: 16px;
+            padding: 22px 26px;
+            text-align: center;
+            max-width: 330px;
+            width: 100%;
+            box-shadow: 0 0 45px rgba(245,158,11,0.45);
+            transform: scale(0.8) translateY(10px);
+            transition: transform 0.35s cubic-bezier(.2,1.5,.5,1);
+        }
+        .popup.show .popup-card { transform: scale(1) translateY(0); }
+        .popup-title {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #f59e0b;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .popup-slide {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .popup-value {
+            font-size: 0.95rem;
+            color: #22c55e;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .popup-cost {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 14px;
+        }
+        .popup-hint {
+            font-size: 0.7rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Slide Coin Collector</h1>
+
+    <div class="dashboard">
+        <div>Bank: <span id="bank-coins" class="coin-val">10</span> 🪙</div>
+        <div>Entry: <span id="cost-val" class="coin-val">2</span> 🪙</div>
+        <div>Collected: <span id="collected-coins" class="coin-val">0</span> 🪙</div>
+    </div>
+
+    <div class="slide-selector">
+        <label for="slideSelect"><strong>Slide Tier:</strong></label>
+        <select id="slideSelect" onchange="changeSlideTier()"></select>
+    </div>
+    <div class="next-unlock" id="next-unlock">—</div>
+
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+    <div class="controls">
+        <button id="slideBtn" onclick="payAndSlide()">Pay &amp; Slide!</button>
+        <button id="resetBtn" onclick="resetGame()" style="background:#ef4444;">Reset</button>
+    </div>
+
+    <div class="controls">
+        <button id="tiltBtn" onclick="toggleTilt()">📱 Enable Tilt Steering</button>
+    </div>
+    <div class="tilt-status" id="tilt-status">Tilt steering is best on a phone in portrait.</div>
+
+    <div class="instructions">
+        <p><strong>Steer:</strong> tilt your phone, drag, or use ⬅️ ➡️ / A D.</p>
+        <p>Coins are collected on contact — hold <strong>SPACE</strong> (or your finger on the slide) for a bigger magnet.</p>
+    </div>
+</div>
+
+<!-- Unlock popup -->
+<div class="popup" id="unlockPopup">
+    <div class="popup-card">
+        <div class="popup-title">🎉 NEW SLIDE UNLOCKED</div>
+        <div class="popup-slide" id="popupSlideName">Slide 2</div>
+        <div class="popup-value" id="popupValue">2 🪙 per coin</div>
+        <div class="popup-cost" id="popupCost">Entry cost: 4 🪙</div>
+        <div class="popup-hint">tap to continue</div>
+    </div>
+</div>
+
+<script>
+/* =========================================================
+   AUDIO
+   ========================================================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'coin') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'slideStart') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+    } else if (type === 'unlock') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.setValueAtTime(600, now + 0.1);
+        osc.frequency.setValueAtTime(900, now + 0.2);
+        osc.frequency.setValueAtTime(1200, now + 0.3);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.45);
+    }
+}
+
+/* =========================================================
+   INFINITE SLIDE TIERS
+   Each tier: cost & value double, unlock cost doubles,
+   colours are pseudo-randomly generated (but stable per tier).
+   ========================================================= */
+const TIER_CACHE = [];
+
+// Small deterministic PRNG so a tier always looks the same
+function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function getTier(index) {
+    if (TIER_CACHE[index]) return TIER_CACHE[index];
+
+    const rng = mulberry32(index * 2654435761 + 12345);
+
+    const hue = Math.floor(rng() * 360);
+    const coinHue = (hue + 140 + Math.floor(rng() * 80)) % 360;
+
+    const tier = {
+        index: index,
+        tier: index + 1,
+        cost: 2 * Math.pow(2, index),                     // 2, 4, 8, 16, 32 ...
+        value: 1 * Math.pow(2, index),                    // 1, 2, 4, 8, 16 ...
+        unlockCost: index === 0 ? 0 : 100 * Math.pow(2, index - 1), // 0, 100, 200, 400 ...
+        slideTop: `hsl(${hue}, 70%, 56%)`,
+        slideBot: `hsl(${hue}, 72%, 30%)`,
+        border: `hsl(${hue}, 88%, 74%)`,
+        coinFill: `hsl(${coinHue}, 85%, 56%)`,
+        coinStroke: `hsl(${coinHue}, 95%, 84%)`
+    };
+
+    TIER_CACHE[index] = tier;
+    return tier;
+}
+
+/* ---------- Big number formatting ---------- */
+const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc',
+                  'UDc', 'DDc', 'TDc', 'QaDc', 'QiDc', 'SxDc', 'SpDc', 'OcDc', 'NoDc', 'Vg'];
+
+function formatNumber(n) {
+    if (!isFinite(n)) return '∞';
+    if (n < 1000) return Math.floor(n).toString();
+    const tier = Math.floor(Math.log10(n) / 3);
+    if (tier >= SUFFIXES.length) return n.toExponential(2);
+    const scaled = n / Math.pow(1000, tier);
+    const str = scaled < 10 ? scaled.toFixed(2) : scaled < 100 ? scaled.toFixed(1) : Math.floor(scaled).toString();
+    return str + SUFFIXES[tier];
+}
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let bank = 10;
+let collectedValue = 0;
+let isSliding = false;
+let currentTierIndex = 0;
+let highestUnlockedTierIndex = 0;
+
+const slideTop = { x: 200, y: 50, width: 60 };
+const slideBottom = { x: 200, y: 450, width: 220 };
+
+let player = { progress: 0, offset: 0, speed: 0.008, radius: 12 };
+let slideCoins = [];
+
+const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
+let spaceHeld = false;
+let pointerDown = false;
+
+/* =========================================================
+   INPUT - KEYBOARD
+   ========================================================= */
+window.addEventListener('keydown', e => {
+    if (e.key in keys) keys[e.key] = true;
+    if (e.code === 'Space') {
+        e.preventDefault();
+        spaceHeld = true;
+    }
+});
+
+window.addEventListener('keyup', e => {
+    if (e.key in keys) keys[e.key] = false;
+    if (e.code === 'Space') spaceHeld = false;
+});
+
+/* =========================================================
+   INPUT - POINTER / DRAG (fallback when tilt is off)
+   ========================================================= */
+let isDragging = false;
+let lastTouchX = 0;
+
+function handleTouchStart(clientX) {
+    pointerDown = true;
+    if (!isSliding) return;
+    isDragging = true;
+    lastTouchX = clientX;
+}
+
+function handleTouchMove(clientX) {
+    if (!isSliding || !isDragging) return;
+    if (tiltEnabled) return; // tilt takes over steering
+
+    const deltaX = clientX - lastTouchX;
+    lastTouchX = clientX;
+
+    const currentWidth = slideTop.width + player.progress * (slideBottom.width - slideTop.width);
+    const offsetChange = (deltaX / (currentWidth / 2)) * 2.5;
+
+    player.offset = Math.max(-0.9, Math.min(0.9, player.offset + offsetChange));
+}
+
+function handleTouchEnd() {
+    isDragging = false;
+    pointerDown = false;
+}
+
+canvas.addEventListener('touchstart', e => {
+    if (e.touches.length > 0) handleTouchStart(e.touches[0].clientX);
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) handleTouchMove(e.touches[0].clientX);
+}, { passive: true });
+canvas.addEventListener('touchend', handleTouchEnd);
+canvas.addEventListener('touchcancel', handleTouchEnd);
+canvas.addEventListener('mousedown', e => handleTouchStart(e.clientX));
+canvas.addEventListener('mousemove', e => handleTouchMove(e.clientX));
+window.addEventListener('mouseup', handleTouchEnd);
+
+/* =========================================================
+   INPUT - TILT (device orientation)
+   ========================================================= */
+let tiltEnabled = false;
+let tiltBaseline = 0;
+let tiltValue = 0;          // -1 .. 1
+let pendingCalibrate = true;
+
+function readTiltAngle(e) {
+    // Compensate for screen rotation so "tilt right" always means "go right"
+    const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    if (angle === 90) return e.beta;
+    if (angle === -90 || angle === 270) return -e.beta;
+    if (angle === 180) return -e.gamma;
+    return e.gamma;
+}
+
+function onOrientation(e) {
+    if (!tiltEnabled) return;
+    const raw = readTiltAngle(e);
+    if (raw === null || raw === undefined || Number.isNaN(raw)) return;
+
+    if (pendingCalibrate) {
+        tiltBaseline = raw;
+        pendingCalibrate = false;
+        tiltValue = 0;
+        return;
+    }
+
+    // 25 degrees of tilt = full lock
+    tiltValue = Math.max(-1, Math.min(1, (raw - tiltBaseline) / 25));
+}
+
+async function toggleTilt() {
+    const btn = document.getElementById('tiltBtn');
+    const status = document.getElementById('tilt-status');
+
+    if (tiltEnabled) {
+        tiltEnabled = false;
+        window.removeEventListener('deviceorientation', onOrientation);
+        tiltValue = 0;
+        btn.textContent = '📱 Enable Tilt Steering';
+        btn.classList.remove('active');
+        status.textContent = 'Tilt off — drag or use arrow keys instead.';
+        return;
+    }
+
+    if (typeof DeviceOrientationEvent === 'undefined') {
+        status.textContent = 'Tilt is not supported on this device.';
+        return;
+    }
+
+    // iOS 13+ requires an explicit permission request from a user gesture
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+            const res = await DeviceOrientationEvent.requestPermission();
+            if (res !== 'granted') {
+                status.textContent = 'Tilt permission denied.';
+                return;
+            }
+        } catch (err) {
+            status.textContent = 'Could not enable tilt on this device.';
+            return;
+        }
+    }
+
+    tiltEnabled = true;
+    pendingCalibrate = true;
+    window.addEventListener('deviceorientation', onOrientation);
+
+    btn.textContent = '📱 Tilt Steering: ON';
+    btn.classList.add('active');
+    status.textContent = 'Hold your phone level at the start of a slide to calibrate.';
+}
+
+/* =========================================================
+   UNLOCK SYSTEM + POPUP
+   ========================================================= */
+const popupEl = document.getElementById('unlockPopup');
+let popupQueue = [];
+let popupActive = false;
+let popupTimer = null;
+
+function computeHighestUnlocked() {
+    let i = 0;
+    let guard = 0;
+    while (guard++ < 10000) {
+        const next = getTier(i + 1);
+        if (next.unlockCost <= bank) i++;
+        else break;
+    }
+    return i;
+}
+
+function checkUnlocks() {
+    const newHighest = computeHighestUnlocked();
+    if (newHighest > highestUnlockedTierIndex) {
+        for (let i = highestUnlockedTierIndex + 1; i <= newHighest; i++) {
+            popupQueue.push(i);
+        }
+        highestUnlockedTierIndex = newHighest;
+        playSound('unlock');
+        populateSlideSelect();
+        showNextPopup();
+    }
+}
+
+function showNextPopup() {
+    if (popupActive || popupQueue.length === 0) return;
+
+    popupActive = true;
+    const idx = popupQueue.shift();
+    const t = getTier(idx);
+
+    document.getElementById('popupSlideName').textContent = `Slide ${t.tier}`;
+    document.getElementById('popupValue').textContent = `${formatNumber(t.value)} 🪙 per coin`;
+    document.getElementById('popupCost').textContent = `Entry cost: ${formatNumber(t.cost)} 🪙`;
+
+    popupEl.classList.add('show');
+    popupTimer = setTimeout(dismissPopup, 2400);
+}
+
+function dismissPopup() {
+    if (!popupActive) return;
+    clearTimeout(popupTimer);
+    popupEl.classList.remove('show');
+    popupActive = false;
+    setTimeout(showNextPopup, 320);
+}
+
+popupEl.addEventListener('click', dismissPopup);
+
+/* =========================================================
+   SLIDE SELECTOR
+   ========================================================= */
+function populateSlideSelect() {
+    const select = document.getElementById('slideSelect');
+
+    if (currentTierIndex > highestUnlockedTierIndex) {
+        currentTierIndex = highestUnlockedTierIndex;
+    }
+
+    select.innerHTML = '';
+    for (let i = 0; i <= highestUnlockedTierIndex; i++) {
+        const t = getTier(i);
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `Slide ${t.tier} · ${formatNumber(t.value)}x · entry ${formatNumber(t.cost)}`;
+        if (i === currentTierIndex) opt.selected = true;
+        select.appendChild(opt);
+    }
+    select.value = String(currentTierIndex);
+}
+
+function changeSlideTier() {
+    const select = document.getElementById('slideSelect');
+    currentTierIndex = Math.min(parseInt(select.value, 10) || 0, highestUnlockedTierIndex);
+    updateUI();
+    draw();
+}
+
+/* =========================================================
+   GAMEPLAY
+   ========================================================= */
+function spawnSlideCoins() {
+    slideCoins = [];
+    const count = 8 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < count; i++) {
+        slideCoins.push({
+            progress: 0.1 + Math.random() * 0.8,
+            offset: (Math.random() - 0.5) * 1.6,
+            collected: false,
+            inRange: false
+        });
+    }
+}
+
+function isMagnetActive() {
+    return spaceHeld || pointerDown;
+}
+
+function payAndSlide() {
+    const tierData = getTier(currentTierIndex);
+    if (bank < tierData.cost || isSliding) return;
+
+    bank -= tierData.cost;
+    collectedValue = 0;
+    playSound('slideStart');
+
+    spawnSlideCoins();
+
+    player.progress = 0;
+    player.offset = 0;
+    player.speed = 0.008;
+    isSliding = true;
+
+    // Recalibrate tilt at the start of every slide
+    if (tiltEnabled) pendingCalibrate = true;
+
+    updateUI();
+    requestAnimationFrame(gameLoop);
+}
+
+function updateUI() {
+    const tierData = getTier(currentTierIndex);
+    document.getElementById('bank-coins').innerText = formatNumber(bank);
+    document.getElementById('cost-val').innerText = formatNumber(tierData.cost);
+    document.getElementById('collected-coins').innerText = formatNumber(collectedValue);
+    document.getElementById('slideBtn').disabled = isSliding || bank < tierData.cost;
+
+    const nextTier = getTier(highestUnlockedTierIndex + 1);
+    document.getElementById('next-unlock').innerText =
+        `Next unlock: Slide ${nextTier.tier} at ${formatNumber(nextTier.unlockCost)} 🪙`;
+}
+
+function resetGame() {
+    bank = 10;
+    collectedValue = 0;
+    isSliding = false;
+    currentTierIndex = 0;
+    highestUnlockedTierIndex = 0;
+    slideCoins = [];
+    popupQueue = [];
+    popupActive = false;
+    clearTimeout(popupTimer);
+    popupEl.classList.remove('show');
+    populateSlideSelect();
+    updateUI();
+    draw();
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+function gameLoop() {
+    if (!isSliding) return;
+
+    // --- Steering ---
+    const moveSpeed = 0.035;
+    if (keys.ArrowLeft || keys.a) player.offset -= moveSpeed;
+    if (keys.ArrowRight || keys.d) player.offset += moveSpeed;
+
+    if (tiltEnabled) {
+        const target = tiltValue * 0.9;
+        player.offset += (target - player.offset) * 0.15;
+    }
+
+    player.offset = Math.max(-0.9, Math.min(0.9, player.offset));
+
+    // --- Slide progress (slight acceleration) ---
+    player.speed += 0.00005;
+    player.progress += player.speed;
+
+    // --- Player world position ---
+    const pY = slideTop.y + player.progress * (slideBottom.y - slideTop.y);
+    const pWidth = slideTop.width + player.progress * (slideBottom.width - slideTop.width);
+    const pX = slideTop.x + player.offset * (pWidth / 2);
+
+    // --- Coin collision / auto collect ---
+    const grabRadius = isMagnetActive() ? 75 : 34;
+    const tierData = getTier(currentTierIndex);
+    let bankChanged = false;
+
+    slideCoins.forEach(coin => {
+        if (coin.collected) return;
+
+        const cY = slideTop.y + coin.progress * (slideBottom.y - slideTop.y);
+        const cWidth = slideTop.width + coin.progress * (slideBottom.width - slideTop.width);
+        const cX = slideTop.x + coin.offset * (cWidth / 2);
+
+        const dist = Math.hypot(pX - cX, pY - cY);
+        coin.inRange = dist <= grabRadius;
+
+        if (coin.inRange) {
+            coin.collected = true;
+            collectedValue += tierData.value;
+            bank += tierData.value;
+            bankChanged = true;
+            playSound('coin');
+        }
+    });
+
+    if (bankChanged) {
+        checkUnlocks();
+        updateUI();
+    }
+
+    // --- Finish ---
+    if (player.progress >= 1) {
+        isSliding = false;
+        slideCoins = [];
+        updateUI();
+        draw();
+        return;
+    }
+
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const tierData = getTier(currentTierIndex);
+
+    // Slide surface
+    ctx.beginPath();
+    ctx.moveTo(slideTop.x - slideTop.width / 2, slideTop.y);
+    ctx.lineTo(slideTop.x + slideTop.width / 2, slideTop.y);
+    ctx.lineTo(slideBottom.x + slideBottom.width / 2, slideBottom.y);
+    ctx.lineTo(slideBottom.x - slideBottom.width / 2, slideBottom.y);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(0, slideTop.y, 0, slideBottom.y);
+    grad.addColorStop(0, tierData.slideTop);
+    grad.addColorStop(1, tierData.slideBot);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = tierData.border;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Tier label
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 15px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`SLIDE ${tierData.tier}  ·  ${formatNumber(tierData.value)}x`, canvas.width / 2, 26);
+
+    // Coins
+    slideCoins.forEach(coin => {
+        if (coin.collected) return;
+        const cY = slideTop.y + coin.progress * (slideBottom.y - slideTop.y);
+        const cWidth = slideTop.width + coin.progress * (slideBottom.width - slideTop.width);
+        const cX = slideTop.x + coin.offset * (cWidth / 2);
+
+        if (coin.inRange && isSliding) {
+            ctx.beginPath();
+            ctx.arc(cX, cY, 14, 0, Math.PI * 2);
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(cX, cY, 7, 0, Math.PI * 2);
+        ctx.fillStyle = tierData.coinFill;
+        ctx.fill();
+        ctx.strokeStyle = tierData.coinStroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+
+    // Player
+    if (isSliding) {
+        const pY = slideTop.y + player.progress * (slideBottom.y - slideTop.y);
+        const pWidth = slideTop.width + player.progress * (slideBottom.width - slideTop.width);
+        const pX = slideTop.x + player.offset * (pWidth / 2);
+
+        // Magnet aura
+        if (isMagnetActive()) {
+            ctx.beginPath();
+            ctx.arc(pX, pY, 75, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(34,197,94,0.12)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(34,197,94,0.55)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(pX, pY, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+populateSlideSelect();
+updateUI();
+draw();
+</script>
+
+</body>
+</html>

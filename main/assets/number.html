@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Game 2.0 – Group Chat Chaos</title>
+    <meta description="The official clicker game from the placebo social media network! Click away your gaming habit with the ultimate dopamine hit!">
+    <link rel="canonical" href="https://chillspace.ai/numbers/" />
+    <!-- Structured Data for SEO - English -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Game",
+            "name": "Number Game 2.0",
+            "description": "A fun addictive counting game with live rankings, dopamine spikes, and ChillSpace friend integration. Compete against friends and bots to reach the highest score!",
+            "url": "https://chillspace.ai/numbers",
+            "genre": ["Casual", "Clicker", "Multiplayer"],
+            "inLanguage": ["en", "ko", "fr", "es"],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@type": "Organization", "name": "ChillSpace" },
+            "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "1024" }
+        }
+    </script>
+    <!-- Structured Data for SEO - Korean -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Game",
+            "name": "넘버 게임 2.0",
+            "description": "중독성 있는 카운팅 게임! 실시간 순위, 도파민 스파이크, ChillSpace 친구 연동 기능이 있습니다. 친구들과 봇을 상대로 최고 점수에 도전하세요!",
+            "url": "https://chillspace.ai/numbers",
+            "genre": ["캐주얼", "클리커", "멀티플레이어"],
+            "inLanguage": ["ko", "en", "fr", "es"],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@type": "Organization", "name": "ChillSpace" },
+            "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "1024" }
+        }
+    </script>
+
+    <style>
+        /* ----- RESET & BASE ----- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 20px 30px;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        body.mode-original {
+            animation: bgColorFade 25s ease-in-out infinite;
+        }
+        body.mode-chat {
+            background: #f0f2f5 !important;
+            animation: none !important;
+        }
+
+        @keyframes bgColorFade {
+            0% { background-color: #FFD700; }
+            20% { background-color: #00FF00; }
+            40% { background-color: #0088FF; }
+            60% { background-color: #8800FF; }
+            80% { background-color: #FF6600; }
+            100% { background-color: #FFD700; }
+        }
+
+        /* ----- TOP BAR (language, mode switch, music) ----- */
+        .top-bar {
+            position: fixed;
+            top: 10px;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 12px;
+            padding: 0 15px;
+            pointer-events: none;
+        }
+        .top-bar>* {
+            pointer-events: auto;
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .lang-btn {
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        .lang-btn.active {
+            background: #ff00ff;
+            border-color: #ff00ff;
+            box-shadow: 0 0 12px #ff00ff;
+            color: white;
+        }
+        .lang-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-toggle-btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            padding: 5px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            backdrop-filter: blur(5px);
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+            display: none;
+            /* hidden until 1000 */;
+        }
+        .mode-toggle-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .mode-toggle-btn.active-chat {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+
+        .btn-music {
+            background: rgba(17, 17, 17, 0.7);
+            border: 2px solid #00ff00;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+            font-weight: 600;
+        }
+        .btn-music.playing {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 18px #00ff00;
+        }
+
+        /* ----- STATS (shared) ----- */
+        .stats {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 16px;
+            padding: 14px 20px;
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            min-width: 260px;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 20;
+            margin-top: 70px;
+            margin-bottom: 12px;
+        }
+        body.mode-chat .stats {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: #ddd;
+            color: #222;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        body.mode-chat .stats .stat-green,
+        body.mode-chat .stats .stat-magenta,
+        body.mode-chat .stats .stat-gold {
+            text-shadow: none;
+        }
+        body.mode-chat .stats .stat-green {
+            color: #2e7d32;
+        }
+        body.mode-chat .stats .stat-magenta {
+            color: #7b1fa2;
+        }
+        body.mode-chat .stats .stat-gold {
+            color: #b8860b;
+        }
+
+        .stat-green {
+            color: #00ff00;
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-shadow: 0 0 18px #00ff00, 0 0 35px rgba(0, 255, 0, 0.4);
+            letter-spacing: 1px;
+        }
+        .stat-magenta {
+            color: #ff00ff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #ff00ff;
+            margin-top: 2px;
+        }
+        .stat-gold {
+            color: #ffdd00;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #ffdd00;
+            margin-top: 2px;
+        }
+
+        /* ----- LEADERBOARD (always visible, behind chat in chat mode) ----- */
+        .leaderboard {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid #ff00ff;
+            border-radius: 14px;
+            padding: 15px;
+            margin-top: 14px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.25);
+            transition: all 0.3s;
+            position: relative;
+            z-index: 5;
+        }
+        body.mode-chat .leaderboard {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: #7b1fa2;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+            color: #222;
+        }
+        body.mode-chat .leaderboard .bar-label {
+            color: #222;
+        }
+        body.mode-chat .leaderboard .bar.you {
+            background: #2e7d32;
+            box-shadow: 0 0 8px rgba(46, 125, 50, 0.4);
+        }
+        body.mode-chat .leaderboard .bar.bot {
+            background: #7b1fa2;
+            box-shadow: 0 0 8px rgba(123, 31, 162, 0.3);
+        }
+
+        .bar-row {
+            margin: 6px 0;
+        }
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 3px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            color: #eee;
+        }
+        .bar {
+            height: 18px;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            min-width: 4px;
+        }
+        .bar.you {
+            background: #00ff00;
+            box-shadow: 0 0 12px #00ff00;
+        }
+        .bar.bot {
+            background: #a020f0;
+            box-shadow: 0 0 8px rgba(160, 32, 240, 0.5);
+        }
+
+        /* ----- ORIGINAL MODE BUTTONS & SHARE ----- */
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .btn-plus {
+            background: linear-gradient(135deg, #ff00ff, #cc00cc);
+            border: none;
+            padding: 18px 70px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            border-radius: 16px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 0 25px #ff00ff, 0 4px 18px rgba(0, 0, 0, 0.4);
+            transition: all 0.15s ease;
+            letter-spacing: 1px;
+            width: 100%;
+            text-align: center;
+            min-height: 65px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-plus:active {
+            transform: scale(0.92);
+            box-shadow: 0 0 40px #ff00ff, 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        .btn-plus.plus100 {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            box-shadow: 0 0 35px #FFD700, 0 4px 20px rgba(255, 215, 0, 0.6);
+            animation: pulseGold 0.8s ease-in-out infinite;
+        }
+        .btn-plus.plus200 {
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            box-shadow: 0 0 45px #FF4500, 0 4px 25px rgba(255, 69, 0, 0.7);
+            animation: pulseOrange 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseGold {
+            0%,
+            100% { box-shadow: 0 0 35px #FFD700, 0 4px 20px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 0 55px #FFD700, 0 4px 30px rgba(255, 215, 0, 0.9); }
+        }
+        @keyframes pulseOrange {
+            0%,
+            100% { box-shadow: 0 0 45px #FF4500, 0 4px 25px rgba(255, 69, 0, 0.7); }
+            50% { box-shadow: 0 0 70px #FF4500, 0 4px 40px rgba(255, 69, 0, 1); }
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .share-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            background-size: 55%;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: #222;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+        }
+        .share-btn:hover {
+            transform: scale(1.10);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+        }
+        .whatsapp {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg');
+            background-color: #25D366;
+            background-size: 55%;
+        }
+        .x-share {
+            background-color: #000;
+            font-size: 20px;
+            border: 2px solid #555;
+        }
+        .chill-share {
+            background-image: url('https://i.ibb.co/MkvCqpXy/kmc-20260722-172909.png');
+            background-color: #ff00ff;
+            background-size: 65%;
+        }
+
+        /* ----- GROUP CHAT CHAOS MODE OVERLAY (semi-transparent, over leaderboard) ----- */
+        #chatModeContainer {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 92%;
+            max-width: 420px;
+            height: 72vh;
+            max-height: 600px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(6px);
+            border-radius: 24px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 15;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        body.mode-chat #chatModeContainer {
+            display: flex;
+        }
+        /* ensure parent #game has position relative for absolute positioning */
+        #game {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* chat header */
+        .chat-header {
+            background: #7b1fa2;
+            color: #fff;
+            padding: 12px 18px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            border-bottom: 2px solid #6a1b9a;
+        }
+        .chat-header .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-header .chat-title span {
+            font-size: 1.2rem;
+        }
+        .chat-header .chat-online {
+            margin-left: auto;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-weight: 400;
+        }
+
+        /* messages area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+            background: transparent;
+            /* fully transparent to show leaderboard behind */
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            scroll-behavior: smooth;
+            min-height: 200px;
+        }
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        /* message bubbles */
+        .msg {
+            max-width: 82%;
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-break: break-word;
+            animation: msgFadeIn 0.25s ease;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        @keyframes msgFadeIn {
+            0% { opacity: 0; transform: translateY(8px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #c8e6c9;
+            /* greenish bg */;
+            border-bottom-right-radius: 4px;
+        }
+        .msg-user .msg-text {
+            color: #4a148c;
+            font-weight: 700;
+        }
+
+        .msg-bot {
+            align-self: flex-start;
+            background: #7b1fa2;
+            border-bottom-left-radius: 4px;
+        }
+        .msg-bot .msg-name {
+            font-weight: 600;
+            font-size: 0.78rem;
+            opacity: 0.85;
+            display: block;
+            margin-bottom: 1px;
+            color: #e1bee7;
+        }
+        .msg-bot .msg-text {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .msg-system {
+            align-self: center;
+            background: rgba(0, 0, 0, 0.06);
+            color: #888;
+            font-size: 0.7rem;
+            padding: 3px 14px;
+            border-radius: 30px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /* chat footer: +1 button + input */
+        .chat-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px 12px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            flex-shrink: 0;
+        }
+        .chat-footer .btn-plus-chat {
+            background: linear-gradient(135deg, #7b1fa2, #6a1b9a);
+            border: none;
+            padding: 10px 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 30px;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(123, 31, 162, 0.3);
+            transition: all 0.15s ease;
+            min-width: 60px;
+            flex-shrink: 0;
+            min-height: 44px;
+        }
+        .chat-footer .btn-plus-chat:active {
+            transform: scale(0.92);
+        }
+        .chat-footer .btn-plus-chat.plus100-chat {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            box-shadow: 0 2px 14px rgba(255, 215, 0, 0.5);
+        }
+        .chat-footer .btn-plus-chat.plus200-chat {
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            box-shadow: 0 2px 18px rgba(255, 69, 0, 0.5);
+        }
+
+        .chat-footer .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            font-size: 0.95rem;
+            outline: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            transition: border 0.2s;
+            min-width: 0;
+        }
+        .chat-footer .chat-input:focus {
+            border-color: #7b1fa2;
+        }
+        .chat-footer .chat-input::placeholder {
+            color: #aaa;
+        }
+
+        /* ----- HIDE ORIGINAL MODE ELEMENTS IN CHAT MODE ----- */
+        body.mode-chat #originalModeContent .buttons,
+        body.mode-chat #originalModeContent .share-buttons,
+        body.mode-chat #originalModeContent #videoContainer {
+            display: none !important;
+        }
+        body.mode-chat #originalModeContent .stats {
+            margin-top: 70px;
+        }
+        /* stats already visible, we keep them */
+
+        /* video container */
+        #videoContainer {
+            position: relative;
+            width: 200px;
+            max-width: 70vw;
+            margin: 10px auto;
+            pointer-events: none;
+            display: none;
+        }
+        #bgVideo {
+            width: 100%;
+            border-radius: 14px;
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.6), 0 8px 30px rgba(0, 0, 0, 0.7);
+            object-fit: cover;
+            aspect-ratio: 1/1;
+            pointer-events: auto;
+            display: none;
+            background: #000;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* ----- TOASTS ----- */
+        #milestoneToast,
+        #dopamineToast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+        }
+        #milestoneToast {
+            z-index: 300;
+            background: rgba(0, 0, 0, 0.9);
+            color: #FFD700;
+            padding: 25px 35px;
+            border-radius: 20px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            text-align: center;
+            display: none;
+            box-shadow: 0 0 60px #FFD700, 0 0 100px rgba(255, 215, 0, 0.5);
+            border: 3px solid #FFD700;
+            letter-spacing: 2px;
+            animation: milestonePulse 1s ease-in-out infinite;
+        }
+        #dopamineToast {
+            background: rgba(0, 0, 0, 0.9);
+            color: #FF00FF;
+            padding: 16px 28px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            display: none;
+            box-shadow: 0 0 40px #FF00FF, 0 0 80px rgba(255, 0, 255, 0.5);
+            border: 2px solid #FF00FF;
+            animation: dopaminePulse 0.6s ease-in-out infinite;
+            max-width: 90vw;
+            letter-spacing: 0.5px;
+            line-height: 1.5;
+        }
+        @keyframes milestonePulse {
+            0%,
+            100% { box-shadow: 0 0 60px #FFD700, 0 0 100px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 100px #FFD700, 0 0 160px rgba(255, 215, 0, 0.8); }
+        }
+        @keyframes dopaminePulse {
+            0%,
+            100% { box-shadow: 0 0 40px #FF00FF, 0 0 80px rgba(255, 0, 255, 0.5);
+                transform: translate(-50%, -50%) scale(1); }
+            50% { box-shadow: 0 0 60px #FF00FF, 0 0 120px rgba(255, 0, 255, 0.7);
+                transform: translate(-50%, -50%) scale(1.04); }
+        }
+
+        /* ----- SETUP (shared) ----- */
+        #setup {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 0, 255, 0.5);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 35px rgba(255, 0, 255, 0.4);
+            max-width: 320px;
+            margin-top: 15vh;
+        }
+        #setup h2 {
+            margin-bottom: 16px;
+            color: #FFD700;
+            font-size: 1.5rem;
+            text-shadow: 0 0 15px #FFD700;
+        }
+        #nameInput {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid #ff00ff;
+            margin-bottom: 12px;
+            width: 230px;
+            text-align: center;
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+            transition: all 0.2s;
+        }
+        #nameInput:focus {
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+        #nameInput::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        #nameError {
+            color: #FF4444;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: none;
+            text-shadow: 0 0 8px #FF4444;
+        }
+        .setup-btn {
+            background: linear-gradient(135deg, #ff00ff, #cc00cc);
+            border: none;
+            padding: 14px 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff00ff;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        .setup-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 0 35px #ff00ff;
+        }
+
+        #game {
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game.mode-chat {
+            background: transparent;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 480px) {
+            .stat-green {
+                font-size: 1.7rem;
+            }
+            .stat-magenta,
+            .stat-gold {
+                font-size: 1.0rem;
+            }
+            .btn-plus {
+                padding: 14px 40px;
+                font-size: 1.2rem;
+                min-height: 56px;
+            }
+            #chatModeContainer {
+                width: 95%;
+                height: 65vh;
+                max-height: 500px;
+                border-radius: 18px;
+            }
+            .chat-footer .btn-plus-chat {
+                padding: 8px 14px;
+                font-size: 1rem;
+                min-width: 50px;
+                min-height: 38px;
+            }
+            .chat-footer .chat-input {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .msg {
+                font-size: 0.85rem;
+                padding: 6px 12px;
+                max-width: 88%;
+            }
+            .top-bar {
+                gap: 4px 8px;
+                padding: 0 8px;
+            }
+            .lang-btn {
+                font-size: 10px;
+                padding: 4px 8px;
+            }
+            .mode-toggle-btn {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            .btn-music {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            #milestoneToast {
+                font-size: 1.2rem;
+                padding: 18px 25px;
+            }
+            #videoContainer {
+                width: 140px;
+            }
+            .stats {
+                margin-top: 62px;
+                padding: 10px 14px;
+                min-width: 200px;
+            }
+            .leaderboard {
+                padding: 10px;
+            }
+        }
+        @media (max-width: 380px) {
+            .stat-green {
+                font-size: 1.4rem;
+            }
+            .btn-plus {
+                font-size: 1.0rem;
+                padding: 12px 30px;
+                min-height: 48px;
+            }
+            #chatModeContainer {
+                height: 55vh;
+                max-height: 420px;
+            }
+            .chat-footer .btn-plus-chat {
+                font-size: 0.85rem;
+                padding: 6px 10px;
+                min-width: 42px;
+                min-height: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== TOP BAR ===== -->
+    <div class="top-bar" id="topBar">
+        <div class="lang-selector" id="langSelector">
+            <button class="lang-btn active" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="ko" onclick="setLanguage('ko')">한국어</button>
+            <button class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">FR</button>
+            <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+        </div>
+        <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()">🎯 Group Chat Chaos</button>
+        <button class="btn-music" id="musicBtn" onclick="toggleMusic()">♪ Play Music</button>
+    </div>
+
+    <!-- ===== TOASTS ===== -->
+    <div id="milestoneToast"></div>
+    <div id="dopamineToast"></div>
+
+    <!-- ===== VIDEO ===== -->
+    <video id="bgVideo" muted playsinline></video>
+
+    <!-- ===== SETUP ===== -->
+    <div id="setup">
+        <h2 id="setupTitle">Enter your name</h2>
+        <div id="nameError"></div>
+        <input id="nameInput" placeholder="Your name" maxlength="12" autocomplete="off">
+        <br>
+        <button class="setup-btn" onclick="startGame()" id="startBtn">Start</button>
+    </div>
+
+    <!-- ===== GAME ===== -->
+    <div id="game" style="display:none; width:100%; text-align:center;">
+
+        <!-- ORIGINAL MODE CONTENT (stats, leaderboard, buttons, share) -->
+        <div id="originalModeContent" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            <div class="stats" id="statsContainer">
+                <div class="stat-green" id="totalStat">Total: 0</div>
+                <div class="stat-magenta" id="yourTotalStat">Your total: 0</div>
+                <div class="stat-gold" id="thisGameStat">This game: 0</div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn-plus" id="plusBtn" onclick="addOne()">+1</button>
+            </div>
+
+            <div class="leaderboard" id="leaderboard"></div>
+
+            <div id="videoContainer"></div>
+
+            <div class="share-buttons">
+                <button class="share-btn whatsapp" onclick="shareWhatsApp()" title="+20 points"></button>
+                <button class="share-btn x-share" onclick="shareX()" title="+50 points">𝕏</button>
+                <button class="share-btn chill-share" onclick="shareChill()" title="+10 points"></button>
+            </div>
+        </div>
+
+        <!-- ===== GROUP CHAT CHAOS MODE OVERLAY ===== -->
+        <div id="chatModeContainer">
+            <div class="chat-header">
+                <div class="chat-title"><span>💬</span> Group Chat Chaos</div>
+                <div class="chat-online" id="chatOnlineCount">● 5 online</div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="msg msg-system">🎉 Welcome! Numbers fly in real-time.</div>
+            </div>
+            <div class="chat-footer">
+                <button class="btn-plus-chat" id="plusBtnChat" onclick="addOneChat()">+1</button>
+                <input class="chat-input" id="chatInput" type="text" placeholder="Type a message…" readonly
+                onfocus="this.blur()" onmousedown="this.blur()" ontouchstart="this.blur()">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== AUDIO ===== -->
+    <!-- Android asset first, fallback to online URL -->
+    <audio id="bgMusic" loop>
+        <source src="file:///android_asset/song5.mp3" type="audio/mpeg">
+        <source src="https://ia800705.us.archive.org/11/items/CountingUpOn1Tap/AUD-20260124-WA0004.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // ==================== TRANSLATIONS ====================
+        const translations = {
+            en: {
+                setupTitle: 'Enter your name',
+                start: 'Start',
+                namePlaceholder: 'Your name',
+                total: 'Total',
+                yourTotal: 'Your total',
+                thisGame: 'This game',
+                liveRankings: 'Live Rankings',
+                playMusic: '♪ Play Music',
+                pauseMusic: '⏸ Pause Music',
+                nameRequired: 'Please enter a username to start!',
+                dopamineSpike: 'Dopamine spiked by',
+                doubleNumbers: 'You get double the numbers for 15 seconds!',
+                congrats: '🎉 Congratulations! You reached',
+                milestoneSuffix: 'points! 🎉',
+                plus1: '+1',
+                plus100: '+100',
+                plus200: '+200',
+                plus2: '+2',
+                modeOriginal: '🎯 Original Mode',
+                modeChat: '💬 Group Chat Chaos',
+                switchToChat: '💬 Group Chat Chaos',
+                switchToOriginal: '🎯 Original Mode',
+                unlockAt: '🔒 Unlock at 1000',
+            },
+            ko: {
+                setupTitle: '이름을 입력하세요',
+                start: '시작',
+                namePlaceholder: '이름',
+                total: '합계',
+                yourTotal: '내 점수',
+                thisGame: '이번 게임',
+                liveRankings: '실시간 순위',
+                playMusic: '♪ 음악 재생',
+                pauseMusic: '⏸ 음악 일시정지',
+                nameRequired: '시작하려면 사용자 이름을 입력하세요!',
+                dopamineSpike: '도파민 상승',
+                doubleNumbers: '15초 동안 숫자가 두 배로!',
+                congrats: '🎉 축하합니다! 달성했습니다',
+                milestoneSuffix: '점! 🎉',
+                plus1: '+1',
+                plus100: '+100',
+                plus200: '+200',
+                plus2: '+2',
+                modeOriginal: '🎯 오리지널 모드',
+                modeChat: '💬 단체 채팅 혼돈',
+                switchToChat: '💬 단체 채팅 혼돈',
+                switchToOriginal: '🎯 오리지널 모드',
+                unlockAt: '🔒 1000에서 해제',
+            },
+            fr: {
+                setupTitle: 'Entrez votre nom',
+                start: 'Commencer',
+                namePlaceholder: 'Votre nom',
+                total: 'Total',
+                yourTotal: 'Votre total',
+                thisGame: 'Cette partie',
+                liveRankings: 'Classement en direct',
+                playMusic: '♪ Jouer la musique',
+                pauseMusic: '⏸ Pause musique',
+                nameRequired: 'Veuillez entrer un nom pour commencer !',
+                dopamineSpike: 'Dopamine augmentée de',
+                doubleNumbers: 'Vous obtenez le double pendant 15 secondes !',
+                congrats: '🎉 Félicitations ! Vous avez atteint',
+                milestoneSuffix: 'points ! 🎉',
+                plus1: '+1',
+                plus100: '+100',
+                plus200: '+200',
+                plus2: '+2',
+                modeOriginal: '🎯 Mode Original',
+                modeChat: '💬 Chaos en Groupe',
+                switchToChat: '💬 Chaos en Groupe',
+                switchToOriginal: '🎯 Mode Original',
+                unlockAt: '🔒 Débloquer à 1000',
+            },
+            es: {
+                setupTitle: 'Ingresa tu nombre',
+                start: 'Empezar',
+                namePlaceholder: 'Tu nombre',
+                total: 'Total',
+                yourTotal: 'Tu total',
+                thisGame: 'Esta partida',
+                liveRankings: 'Clasificación en vivo',
+                playMusic: '♪ Reproducir música',
+                pauseMusic: '⏸ Pausar música',
+                nameRequired: '¡Por favor ingresa un nombre para comenzar!',
+                dopamineSpike: 'Dopamina aumentada por',
+                doubleNumbers: '¡Obtienes el doble durante 15 segundos!',
+                congrats: '🎉 ¡Felicitaciones! Alcanzaste',
+                milestoneSuffix: 'puntos! 🎉',
+                plus1: '+1',
+                plus100: '+100',
+                plus200: '+200',
+                plus2: '+2',
+                modeOriginal: '🎯 Modo Original',
+                modeChat: '💬 Caos en Grupo',
+                switchToChat: '💬 Caos en Grupo',
+                switchToOriginal: '🎯 Modo Original',
+                unlockAt: '🔒 Desbloquear en 1000',
+            }
+        };
+
+        let currentLang = localStorage.getItem('numberGameLang') || 'en';
+
+        function t(key) {
+            return translations[currentLang][key] || translations.en[key] || key;
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('numberGameLang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            updateUITexts();
+        }
+
+        function updateUITexts() {
+            document.getElementById('setupTitle').textContent = t('setupTitle');
+            document.getElementById('startBtn').textContent = t('start');
+            document.getElementById('nameInput').placeholder = t('namePlaceholder');
+            const totalStat = document.getElementById('totalStat');
+            const yourTotalStat = document.getElementById('yourTotalStat');
+            const thisGameStat = document.getElementById('thisGameStat');
+            if (totalStat.dataset.rawTotal !== undefined) {
+                totalStat.textContent = `${t('total')}: ${totalStat.dataset.rawTotal}`;
+                yourTotalStat.textContent = `${t('yourTotal')}: ${yourTotalStat.dataset.rawYour}`;
+                thisGameStat.textContent = `${t('thisGame')}: ${thisGameStat.dataset.rawThis}`;
+            }
+            const musicBtn = document.getElementById('musicBtn');
+            if (musicOn) {
+                musicBtn.textContent = t('pauseMusic');
+            } else {
+                musicBtn.textContent = t('playMusic');
+            }
+            updatePlusButtonText();
+            updateLeaderboard();
+            updateModeToggleButton();
+        }
+
+        function updateModeToggleButton() {
+            const btn = document.getElementById('modeToggleBtn');
+            if (!btn) return;
+            const total = getTotalCount();
+            if (total < 1000) {
+                btn.textContent = t('unlockAt') + ' (' + total + '/1000)';
+                btn.style.display = 'inline-block';
+                btn.style.opacity = '0.6';
+                btn.style.pointerEvents = 'none';
+                btn.classList.remove('active-chat');
+                return;
+            }
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            if (currentMode === 'chat') {
+                btn.textContent = t('switchToOriginal');
+                btn.classList.add('active-chat');
+            } else {
+                btn.textContent = t('switchToChat');
+                btn.classList.remove('active-chat');
+            }
+        }
+
+        function updatePlusButtonText() {
+            const btn = document.getElementById('plusBtn');
+            if (!btn) return;
+            if (btn.dataset.mode === 'plus100') {
+                btn.textContent = dopamineSpikeActive ? t('plus200') : t('plus100');
+                btn.classList.add('plus100');
+                btn.classList.remove('plus200');
+                if (dopamineSpikeActive) {
+                    btn.classList.add('plus200');
+                    btn.classList.remove('plus100');
+                }
+            } else {
+                btn.textContent = dopamineSpikeActive ? t('plus2') : t('plus1');
+                btn.classList.remove('plus100', 'plus200');
+            }
+            // chat button
+            const chatBtn = document.getElementById('plusBtnChat');
+            if (chatBtn) {
+                if (btn.dataset.mode === 'plus100') {
+                    chatBtn.textContent = dopamineSpikeActive ? '+200' : '+100';
+                    chatBtn.classList.add('plus100-chat');
+                    chatBtn.classList.remove('plus200-chat');
+                    if (dopamineSpikeActive) {
+                        chatBtn.classList.add('plus200-chat');
+                        chatBtn.classList.remove('plus100-chat');
+                    }
+                } else {
+                    chatBtn.textContent = dopamineSpikeActive ? '+2' : '+1';
+                    chatBtn.classList.remove('plus100-chat', 'plus200-chat');
+                }
+            }
+        }
+
+        // ==================== GAME STATE ====================
+        let player = { name: '', score: 0, sessionScore: 0 };
+        let bots = [];
+        let totalCount = 0;
+        let musicOn = false;
+        let lastSaveTime = Date.now();
+        let dopamineSpikeActive = false;
+        let dopamineSpikeEndTime = 0;
+        let dopamineSpikeTimeout = null;
+        let lastMilestoneIndex = 0;
+        let buttonMode = 'plus1';
+        let buttonModeResetTimeout = null;
+        let isGameStarted = false;
+        let currentMode = 'original'; // 'original' | 'chat'
+        let shareText = "check out the Number Game! Try it now at https://chillspace.ai/numbers";
+
+        const VIDEO_FIRST = "https://ia600108.us.archive.org/3/items/video-project-7-1_202607/Video%20Project%207%201.mp4";
+        const VIDEO_OTHER = "https://ia600507.us.archive.org/29/items/numbear-aegyo-hwaiting/Video%20Project%207.mp4";
+
+        const bgMusic = document.getElementById('bgMusic');
+        const bgVideo = document.getElementById('bgVideo');
+        const videoContainer = document.getElementById('videoContainer');
+
+        let milestoneVisible = false;
+        let dopamineToastVisible = false;
+
+        // Chat message history (only for chat mode)
+        let chatMessages = [];
+
+        // ==================== STORAGE ====================
+        function load() {
+            const data = JSON.parse(localStorage.getItem('numberGameV10') || '{}');
+            player.score = data.score || 0;
+            player.name = data.name || '';
+            player.sessionScore = data.sessionScore || 0;
+            bots = data.bots || [];
+            totalCount = data.total || 0;
+            lastSaveTime = data.lastSave || Date.now();
+            lastMilestoneIndex = Math.floor(player.score / 100);
+            refreshBotNames();
+        }
+
+        function save() {
+            localStorage.setItem('numberGameV10', JSON.stringify({
+                score: player.score,
+                name: player.name,
+                sessionScore: player.sessionScore,
+                bots: bots,
+                total: getTotalCount(),
+                lastSave: Date.now()
+            }));
+        }
+
+        // ==================== BOT NAMES (random 5 from ChillSpace) ====================
+        function getBotNames() {
+            const defaultNames = ["Astra", "Nova", "Zed", "Kira", "Bot-5"];
+            try {
+                const friendsRaw = localStorage.getItem('chillspace_friends');
+                if (friendsRaw) {
+                    const friends = JSON.parse(friendsRaw);
+                    if (Array.isArray(friends) && friends.length > 0) {
+                        const friendNames = friends.map(f => {
+                            if (typeof f === 'string') return f;
+                            if (f && typeof f === 'object' && f.name) return f.name;
+                            if (f && typeof f === 'object' && f.username) return f.username;
+                            if (f && typeof f === 'object' && f.displayName) return f.displayName;
+                            return null;
+                        }).filter(n => n && n.trim().length > 0);
+                        if (friendNames.length > 0) {
+                            const shuffled = [...friendNames].sort(() => Math.random() - 0.5);
+                            const picked = shuffled.slice(0, 5);
+                            while (picked.length < 5) {
+                                picked.push(defaultNames[picked.length % defaultNames.length]);
+                            }
+                            return picked;
+                        }
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            return defaultNames;
+        }
+
+        function refreshBotNames() {
+            const newNames = getBotNames();
+            const oldBots = bots;
+            const newBots = newNames.map(name => {
+                const existing = oldBots.find(b => b.name === name);
+                return {
+                    name: name,
+                    score: existing ? existing.score : 0
+                };
+            });
+            bots = newBots;
+        }
+
+        function initBots() {
+            if (bots.length === 0) {
+                refreshBotNames();
+            }
+            while (bots.length < 5) {
+                const names = getBotNames();
+                const used = bots.map(b => b.name);
+                const available = names.filter(n => !used.includes(n));
+                if (available.length > 0) {
+                    bots.push({ name: available[0], score: 0 });
+                } else {
+                    bots.push({ name: 'Bot-' + (bots.length + 1), score: 0 });
+                }
+            }
+        }
+
+        // ==================== TOTAL COUNT ====================
+        function getTotalCount() {
+            let sum = player.score;
+            bots.forEach(b => { sum += b.score; });
+            return sum;
+        }
+
+        // ==================== OFFLINE CATCHUP ====================
+        function offlineCatchup() {
+            const timeOffline = Date.now() - lastSaveTime;
+            if (timeOffline > 5000) {
+                bots.forEach(b => {
+                    const diff = Math.max(0, player.score - b.score);
+                    const minAdd = Math.floor(diff * 0.5);
+                    const maxAdd = Math.floor(diff * 2);
+                    const add = minAdd + Math.floor(Math.random() * (maxAdd - minAdd + 1));
+                    b.score += add;
+                });
+            }
+        }
+
+        // ==================== VIBRATION ====================
+        function safeVibrate(pattern) {
+            if (navigator.vibrate) {
+                navigator.vibrate(pattern);
+            } else if (window.AndroidVibrator) {
+                if (Array.isArray(pattern)) {
+                    let total = pattern.reduce((a, b) => a + b, 0);
+                    window.AndroidVibrator.vibrate(total);
+                } else {
+                    window.AndroidVibrator.vibrate(pattern);
+                }
+            }
+        }
+
+        // ==================== GAME START ====================
+        function startGame() {
+            const input = document.getElementById('nameInput').value.trim();
+            if (!input) {
+                document.getElementById('nameError').textContent = t('nameRequired');
+                document.getElementById('nameError').style.display = 'block';
+                return;
+            }
+            player.name = input;
+            // Sync name back to ChillSpace
+            localStorage.setItem('chillspace_display_name', input);
+
+            document.getElementById('nameError').style.display = 'none';
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'flex';
+            load();
+            if (input) player.name = input;
+            refreshBotNames();
+            initBots();
+            offlineCatchup();
+            isGameStarted = true;
+            lastMilestoneIndex = Math.floor(player.score / 100);
+            totalCount = getTotalCount();
+            updateUI();
+            scheduleDopamineSpike();
+
+            bgVideo.addEventListener('ended', () => {
+                bgVideo.style.display = 'none';
+                videoContainer.style.display = 'none';
+                bgVideo.src = '';
+            });
+
+            setInterval(botTick, 500);
+            setInterval(checkVideoUpdate, 15000);
+            setInterval(updateButtonModeCheck, 300);
+            checkModeUnlock();
+        }
+
+        // ==================== MODE UNLOCK ====================
+        function checkModeUnlock() {
+            const total = getTotalCount();
+            const btn = document.getElementById('modeToggleBtn');
+            if (total >= 1000) {
+                btn.style.display = 'inline-block';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                if (currentMode === 'chat') {
+                    btn.textContent = t('switchToOriginal');
+                    btn.classList.add('active-chat');
+                } else {
+                    btn.textContent = t('switchToChat');
+                    btn.classList.remove('active-chat');
+                }
+            } else {
+                btn.style.display = 'inline-block';
+                btn.style.opacity = '0.6';
+                btn.style.pointerEvents = 'none';
+                btn.textContent = t('unlockAt') + ' (' + total + '/1000)';
+                btn.classList.remove('active-chat');
+            }
+        }
+
+        // ==================== MODE TOGGLE ====================
+        function toggleMode() {
+            const total = getTotalCount();
+            if (total < 1000) return;
+            if (currentMode === 'original') {
+                switchToChatMode();
+            } else {
+                switchToOriginalMode();
+            }
+        }
+
+        function switchToChatMode() {
+            currentMode = 'chat';
+            document.body.classList.add('mode-chat');
+            document.body.classList.remove('mode-original');
+            document.getElementById('game').classList.add('mode-chat');
+            document.getElementById('chatModeContainer').style.display = 'flex';
+            document.getElementById('modeToggleBtn').textContent = t('switchToOriginal');
+            document.getElementById('modeToggleBtn').classList.add('active-chat');
+            renderChatMessages();
+            updateChatOnlineCount();
+            videoContainer.style.display = 'none';
+            bgVideo.style.display = 'none';
+            document.getElementById('statsContainer').style.display = 'block';
+            updatePlusButtonText();
+            updateModeToggleButton();
+        }
+
+        function switchToOriginalMode() {
+            currentMode = 'original';
+            document.body.classList.remove('mode-chat');
+            document.body.classList.add('mode-original');
+            document.getElementById('game').classList.remove('mode-chat');
+            document.getElementById('chatModeContainer').style.display = 'none';
+            document.getElementById('modeToggleBtn').textContent = t('switchToChat');
+            document.getElementById('modeToggleBtn').classList.remove('active-chat');
+            videoContainer.style.display = 'none';
+            bgVideo.style.display = 'none';
+            updateModeToggleButton();
+            updatePlusButtonText();
+        }
+
+        // ==================== CHAT MESSAGES ====================
+        function addChatMessage(type, sender, number, botName) {
+            const entry = {
+                type: type,
+                sender: sender || (type === 'user' ? player.name : 'bot'),
+                number: number,
+                botName: botName || '',
+                timestamp: Date.now()
+            };
+            chatMessages.push(entry);
+            if (chatMessages.length > 200) {
+                chatMessages = chatMessages.slice(-200);
+            }
+            renderChatMessages();
+            scrollChatToBottom();
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            const systemMsg = container.querySelector('.msg-system');
+            container.innerHTML = '';
+            if (systemMsg) {
+                container.appendChild(systemMsg);
+            } else {
+                const sys = document.createElement('div');
+                sys.className = 'msg msg-system';
+                sys.textContent = '🎉 Welcome! Numbers fly in real-time.';
+                container.appendChild(sys);
+            }
+            const msgs = chatMessages.slice(-50);
+            msgs.forEach(entry => {
+                const div = document.createElement('div');
+                if (entry.type === 'user') {
+                    div.className = 'msg msg-user';
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'msg-text';
+                    textSpan.textContent = entry.number;
+                    div.appendChild(textSpan);
+                } else {
+                    div.className = 'msg msg-bot';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'msg-name';
+                    nameSpan.textContent = entry.botName || entry.sender || 'Bot';
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'msg-text';
+                    textSpan.textContent = entry.number;
+                    div.appendChild(nameSpan);
+                    div.appendChild(textSpan);
+                }
+                container.appendChild(div);
+            });
+            updateChatOnlineCount();
+        }
+
+        function scrollChatToBottom() {
+            const container = document.getElementById('chatMessages');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function updateChatOnlineCount() {
+            const el = document.getElementById('chatOnlineCount');
+            if (el) {
+                const count = 1 + bots.length;
+                el.textContent = '● ' + count + ' online';
+            }
+        }
+
+        // ==================== BUTTON MODE CHECK ====================
+        function updateButtonModeCheck() {
+            if (!isGameStarted) return;
+            const total = getTotalCount();
+            if (total < 1000) return;
+
+            const botsAhead = !getLeader();
+            const probability = botsAhead ? 1 / 100 : 1 / 400;
+
+            if (buttonMode === 'plus1' && Math.random() < probability) {
+                buttonMode = 'plus100';
+                const btn = document.getElementById('plusBtn');
+                btn.dataset.mode = 'plus100';
+                updatePlusButtonText();
+                if (buttonModeResetTimeout) clearTimeout(buttonModeResetTimeout);
+                buttonModeResetTimeout = setTimeout(() => {
+                    if (buttonMode === 'plus100') {
+                        buttonMode = 'plus1';
+                        const btn2 = document.getElementById('plusBtn');
+                        btn2.dataset.mode = 'plus1';
+                        updatePlusButtonText();
+                    }
+                }, 3000);
+            }
+        }
+
+        function getLeader() {
+            let all = [player, ...bots].sort((a, b) => b.score - a.score);
+            return all[0] === player;
+        }
+
+        // ==================== DOPAMINE SPIKE ====================
+        function scheduleDopamineSpike() {
+            if (dopamineSpikeTimeout) clearTimeout(dopamineSpikeTimeout);
+            const delay = 180000 + Math.random() * 120000;
+            dopamineSpikeTimeout = setTimeout(() => {
+                triggerDopamineSpike();
+            }, delay);
+        }
+
+        function triggerDopamineSpike() {
+            if (!isGameStarted) return;
+            const pct = 30 + Math.floor(Math.random() * 171);
+            dopamineSpikeActive = true;
+            dopamineSpikeEndTime = Date.now() + 15000;
+
+            const toast = document.getElementById('dopamineToast');
+            toast.textContent = `⚡ ${t('dopamineSpike')} ${pct}%! ${t('doubleNumbers')}`;
+            toast.style.display = 'block';
+            dopamineToastVisible = true;
+            updatePlusButtonText();
+
+            safeVibrate([50, 30, 50, 30, 100]);
+
+            setTimeout(() => {
+                dopamineSpikeActive = false;
+                toast.style.display = 'none';
+                dopamineToastVisible = false;
+                updatePlusButtonText();
+                scheduleDopamineSpike();
+            }, 15000);
+        }
+
+        // ==================== VIDEO ====================
+        function checkVideoUpdate() {
+            if (!isGameStarted || currentMode === 'chat') return;
+            if (bgVideo.style.display === 'block') return;
+            const isFirst = getLeader();
+            const newSrc = isFirst ? VIDEO_FIRST : VIDEO_OTHER;
+            bgVideo.src = newSrc;
+            bgVideo.style.display = 'block';
+            videoContainer.style.display = 'block';
+            bgVideo.play().catch(() => {});
+        }
+
+        // ==================== DAILY CHALLENGE ====================
+        function updateDailyChallenge() {
+            const stored = localStorage.getItem('chillspace_daily_challenge');
+            if (!stored) return;
+            let challenge;
+            try { challenge = JSON.parse(stored); } catch (e) { return; }
+            if (challenge.type !== 'do_numbers') return;
+            const newProgress = Math.min(challenge.progress + 1, challenge.target);
+            if (newProgress === challenge.progress) return;
+            challenge.progress = newProgress;
+            localStorage.setItem('chillspace_daily_challenge', JSON.stringify(challenge));
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'chillspace_daily_challenge',
+                oldValue: stored,
+                newValue: JSON.stringify(challenge),
+                url: window.location.href,
+                storageArea: localStorage
+            }));
+        }
+
+        // ==================== CORE ACTIONS ====================
+        function addOne() {
+            const amount = dopamineSpikeActive ? 2 : 1;
+            const isPlus100 = buttonMode === 'plus100';
+            const actualAmount = isPlus100 ? (dopamineSpikeActive ? 200 : 100) : amount;
+
+            // Increase player score
+            player.score += actualAmount;
+            player.sessionScore += actualAmount;
+
+            // Send user's chat message (if in chat mode) – show total after player's addition
+            if (currentMode === 'chat') {
+                const totalAfterPlayer = getTotalCount(); // includes player's new score
+                addChatMessage('user', player.name, totalAfterPlayer, '');
+            }
+
+            // Bots react to player's click (same as original)
+            const reactingBots = [];
+            bots.forEach(b => {
+                if (Math.random() < 0.33) {
+                    const botAdd = Math.floor(Math.random() * 2) + 1;
+                    b.score += botAdd;
+                    reactingBots.push(b);
+                }
+            });
+
+            // If in chat mode, send bot messages for each reacting bot (shuffled, with final total)
+            if (currentMode === 'chat' && reactingBots.length > 0) {
+                // Shuffle for random order
+                const shuffled = reactingBots.sort(() => Math.random() - 0.5);
+                const finalTotal = getTotalCount(); // total after all additions
+                shuffled.forEach(bot => {
+                    addChatMessage('bot', bot.name, finalTotal, bot.name);
+                });
+            }
+
+            safeVibrate(isPlus100 ? 80 : 40);
+            checkMilestone();
+
+            if (buttonMode === 'plus100') {
+                buttonMode = 'plus1';
+                const btn = document.getElementById('plusBtn');
+                btn.dataset.mode = 'plus1';
+                if (buttonModeResetTimeout) clearTimeout(buttonModeResetTimeout);
+                updatePlusButtonText();
+            }
+
+            totalCount = getTotalCount();
+            save();
+            updateUI();
+            updateDailyChallenge();
+            checkModeUnlock();
+        }
+
+        function addOneChat() {
+            addOne();
+            updatePlusButtonText();
+        }
+
+        function checkMilestone() {
+            const currentIndex = Math.floor(player.score / 100);
+            if (currentIndex > lastMilestoneIndex && currentIndex >= 1) {
+                const milestone = currentIndex * 100;
+                lastMilestoneIndex = currentIndex;
+
+                const dopToast = document.getElementById('dopamineToast');
+                if (dopamineToastVisible) {
+                    dopToast.style.display = 'none';
+                }
+
+                const toast = document.getElementById('milestoneToast');
+                toast.textContent = `${t('congrats')} ${milestone} ${t('milestoneSuffix')}`;
+                toast.style.display = 'block';
+                milestoneVisible = true;
+
+                safeVibrate([200, 100, 200, 100, 400]);
+
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                    milestoneVisible = false;
+                    if (dopamineSpikeActive && dopamineToastVisible) {
+                        document.getElementById('dopamineToast').style.display = 'block';
+                    }
+                }, 2500);
+            }
+        }
+
+        function botTick() {
+            if (!isGameStarted) return;
+            const sendingBots = [];
+            bots.forEach(b => {
+                if (Math.random() < 0.25) {
+                    const add = Math.floor(Math.random() * 3) + 1;
+                    b.score += add;
+                    sendingBots.push({ bot: b, add: add });
+                }
+            });
+            if (sendingBots.length > 0 && currentMode === 'chat') {
+                const shuffled = sendingBots.sort(() => Math.random() - 0.5);
+                shuffled.forEach(({ bot, add }) => {
+                    const total = getTotalCount();
+                    addChatMessage('bot', bot.name, total, bot.name);
+                });
+            }
+            totalCount = getTotalCount();
+            save();
+            updateUI();
+            checkModeUnlock();
+        }
+
+        function updateUI() {
+            const total = getTotalCount();
+            document.getElementById('totalStat').textContent = `${t('total')}: ${total}`;
+            document.getElementById('totalStat').dataset.rawTotal = total;
+            document.getElementById('yourTotalStat').textContent = `${t('yourTotal')}: ${player.score}`;
+            document.getElementById('yourTotalStat').dataset.rawYour = player.score;
+            document.getElementById('thisGameStat').textContent = `${t('thisGame')}: ${player.sessionScore}`;
+            document.getElementById('thisGameStat').dataset.rawThis = player.sessionScore;
+            updateLeaderboard();
+            updateModeToggleButton();
+        }
+
+        function updateLeaderboard() {
+            let all = [player, ...bots].sort((a, b) => b.score - a.score);
+            const maxScore = all[0].score || 1;
+            const lb = document.getElementById('leaderboard');
+            lb.innerHTML = `<h3 style="text-align:center; margin-bottom:8px; font-size:1.05rem; letter-spacing:0.5px;">${t('liveRankings')}</h3>`;
+
+            all.slice(0, 6).forEach(p => {
+                const width = Math.max((p.score / maxScore) * 100, 2);
+                const barRow = document.createElement('div');
+                barRow.className = 'bar-row';
+                const isPlayer = p === player;
+                barRow.innerHTML = `
+                    <div class="bar-label">
+                        <span style="${isPlayer ? 'color:#00ff00; text-shadow:0 0 8px #00ff00;' : ''}">${isPlayer ? '⭐ ' : ''}${p.name}</span>
+                        <span>${p.score}</span>
+                    </div>
+                    <div class="bar ${isPlayer ? 'you' : 'bot'}" style="width: ${width}%"></div>
+                `;
+                lb.appendChild(barRow);
+            });
+        }
+
+        // ==================== SHARING ====================
+        function shareWhatsApp() {
+            const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+            window.open(url, '_blank');
+            addBonus(20);
+        }
+
+        function shareX() {
+            const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+            window.open(url, '_blank');
+            addBonus(50);
+        }
+
+        function shareChill() {
+            const url = `https://chillspace.ai/?post_intent=${encodeURIComponent(shareText)}`;
+            window.open(url, '_blank');
+            addBonus(10);
+        }
+
+        function addBonus(amount) {
+            const actualAmount = dopamineSpikeActive ? amount * 2 : amount;
+            player.score += actualAmount;
+            player.sessionScore += actualAmount;
+            safeVibrate(30);
+            checkMilestone();
+            totalCount = getTotalCount();
+            save();
+            updateUI();
+            checkModeUnlock();
+            if (currentMode === 'chat') {
+                const total = getTotalCount();
+                addChatMessage('user', player.name, total, '');
+            }
+        }
+
+        // ==================== MUSIC ====================
+        function toggleMusic() {
+            musicOn = !musicOn;
+            const btn = document.getElementById('musicBtn');
+            if (musicOn) {
+                bgMusic.play().catch(() => {
+                    // If the asset fails (e.g., web), the fallback will be used automatically
+                    // but we can try to load again with the fallback if needed.
+                    // The browser will handle it via <source> order.
+                });
+                btn.classList.add('playing');
+                btn.textContent = t('pauseMusic');
+            } else {
+                bgMusic.pause();
+                btn.classList.remove('playing');
+                btn.textContent = t('playMusic');
+            }
+        }
+
+        // ==================== INIT ====================
+        function init() {
+            const savedData = JSON.parse(localStorage.getItem('numberGameV10') || '{}');
+            const chillName = localStorage.getItem('chillspace_display_name');
+
+            if (chillName) {
+                document.getElementById('nameInput').value = chillName;
+                // Auto-start if name is already known
+                startGame();
+            } else if (savedData.name) {
+                document.getElementById('nameInput').value = savedData.name;
+            }
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+
+            const savedMode = localStorage.getItem('numberGameMode') || 'original';
+            currentMode = savedMode;
+
+            updateUITexts();
+            ensureVideoContainer();
+            document.getElementById('chatModeContainer').style.display = 'none';
+            document.body.classList.add('mode-original');
+            const btn = document.getElementById('modeToggleBtn');
+            btn.style.display = 'none';
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('focus', function() { this.blur(); });
+                chatInput.addEventListener('click', function() { this.blur(); });
+                chatInput.addEventListener('touchstart', function() { this.blur(); });
+            }
+            setInterval(() => {
+                if (isGameStarted) {
+                    checkModeUnlock();
+                }
+            }, 2000);
+        }
+
+        function ensureVideoContainer() {
+            const gameDiv = document.getElementById('game');
+            let container = document.getElementById('videoContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'videoContainer';
+                container.style.cssText =
+                    'position: relative; width: 200px; max-width: 70vw; margin: 10px auto; pointer-events: none; display: none;';
+                gameDiv.appendChild(container);
+            } else {
+                if (container.parentElement !== gameDiv) {
+                    gameDiv.appendChild(container);
+                }
+            }
+            const video = document.getElementById('bgVideo');
+            if (video && container && !container.contains(video)) {
+                container.appendChild(video);
+            }
+            if (video) {
+                video.style.width = '100%';
+                video.style.borderRadius = '14px';
+                video.style.boxShadow = '0 0 25px rgba(255,0,255,0.6), 0 8px 30px rgba(0,0,0,0.7)';
+                video.style.objectFit = 'cover';
+                video.style.aspectRatio = '1/1';
+                video.style.pointerEvents = 'auto';
+                video.style.display = 'none';
+                video.style.background = '#000';
+                video.style.border = '2px solid rgba(255,255,255,0.4)';
+            }
+            if (container) container.style.pointerEvents = 'none';
+        }
+
+        // Override startGame to apply saved mode
+        const originalStartGame = startGame;
+        startGame = function() {
+            originalStartGame.call(this);
+            if (currentMode === 'chat' && getTotalCount() >= 1000) {
+                switchToChatMode();
+            } else if (currentMode === 'chat' && getTotalCount() < 1000) {
+                currentMode = 'original';
+                localStorage.setItem('numberGameMode', 'original');
+            }
+        };
+
+        const origSwitchToChat = switchToChatMode;
+        switchToChatMode = function() {
+            origSwitchToChat.call(this);
+            localStorage.setItem('numberGameMode', 'chat');
+        };
+
+        const origSwitchToOriginal = switchToOriginalMode;
+        switchToOriginalMode = function() {
+            origSwitchToOriginal.call(this);
+            localStorage.setItem('numberGameMode', 'original');
+        };
+
+        document.addEventListener('DOMContentLoaded', init);
+        if (document.readyState !== 'loading') init();
+    </script>
+</body>
+</html>

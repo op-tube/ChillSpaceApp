@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Stack — Arcade</title>
+<style>
+  :root { --safe-top: env(safe-area-inset-top, 14px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; overflow:hidden; background:#08080c;
+    font-family:'Segoe UI','Helvetica Neue','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+    user-select:none; -webkit-user-select:none;
+  }
+  #game { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  #score {
+    position:fixed; top:calc(max(14px, var(--safe-top)) + 4px); left:0; right:0;
+    text-align:center; pointer-events:none; z-index:5;
+    color:#fff; font-size:2.6rem; font-weight:800; letter-spacing:.03em;
+    text-shadow:0 2px 14px rgba(0,0,0,.8);
+  }
+  #hint {
+    position:fixed; left:50%; bottom:calc(26px + var(--safe-bottom));
+    transform:translateX(-50%); z-index:6; pointer-events:none;
+    padding:10px 20px; border-radius:22px;
+    background:rgba(255,255,255,.12); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.2);
+    color:#fff; font-size:.82rem; font-weight:600; white-space:nowrap;
+    transition:opacity .6s ease;
+  }
+  #hint.gone { opacity:0; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">0</div>
+<div id="hint">tap screen &nbsp;·&nbsp; or press space to drop</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ============================ HELPERS ============================ */
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const rand  = (a, b) => a + Math.random() * (b - a);
+
+function rr(ctx, x, y, w, h, r) {
+  r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+function fillRR(ctx, x, y, w, h, r, fill) {
+  if (w <= 0 || h <= 0) return;
+  rr(ctx, x, y, w, h, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+function fillCircle(ctx, x, y, r, fill) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28318);
+  ctx.fillStyle = fill; ctx.fill();
+}
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp(Math.round(((n >> 16) & 255) + amt * 2.55), 0, 255);
+  const g = clamp(Math.round(((n >> 8)  & 255) + amt * 2.55), 0, 255);
+  const b = clamp(Math.round((n & 255)         + amt * 2.55), 0, 255);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+/* ============================ INPUT ============================ */
+const Input = {
+  left: false, right: false, taps: 0,
+  consumeTap() { if (this.taps > 0) { this.taps = 0; return true; } return false; }
+};
+
+(function setupInput() {
+  const pointers = new Map();
+  const keys = { left: false, right: false };
+  let hintHidden = false;
+
+  function hideHint() {
+    if (hintHidden) return;
+    hintHidden = true;
+    const el = document.getElementById('hint');
+    if (el) el.classList.add('gone');
+  }
+  function refresh() {
+    let l = keys.left, r = keys.right;
+    const half = window.innerWidth * 0.5;
+    pointers.forEach(function (p) { if (p.x < half) l = true; else r = true; });
+    Input.left = l; Input.right = r;
+  }
+
+  const TAP_KEYS = { ' ': 1, 'ArrowUp': 1, 'w': 1, 'W': 1, 'Enter': 1 };
+
+  window.addEventListener('keydown', function (e) {
+    hideHint();
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keys.left = true; refresh(); e.preventDefault(); return; }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.right = true; refresh(); e.preventDefault(); return; }
+    if (TAP_KEYS[e.key]) { if (!e.repeat) Input.taps++; e.preventDefault(); }
+  }, { passive: false });
+
+  window.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keys.left = false; refresh(); }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.right = false; refresh(); }
+  });
+
+  const surface = document.getElementById('game');
+  surface.addEventListener('pointerdown', function (e) {
+    hideHint();
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    Input.taps++;
+    refresh();
+    try { surface.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  }, { passive: false });
+  surface.addEventListener('pointermove', function (e) {
+    const p = pointers.get(e.pointerId);
+    if (p) { p.x = e.clientX; p.y = e.clientY; refresh(); }
+  });
+  function release(e) { pointers.delete(e.pointerId); refresh(); }
+  surface.addEventListener('pointerup', release);
+  surface.addEventListener('pointercancel', release);
+  window.addEventListener('blur', function () {
+    pointers.clear(); keys.left = keys.right = false; refresh();
+  });
+})();
+
+/* ============================ ENGINE ============================ */
+function createEngine(canvas, factory, opts) {
+  opts = opts || {};
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const fps = clamp(opts.fps || 60, 20, 60);
+  const STEP = 1 / fps;
+  const RESTART_DELAY = opts.restartDelay != null ? opts.restartDelay : 1.0;
+  const hudEl = opts.hud || null;
+
+  let VW = 1000, VH = 1000, scale = 1, aspect = 1;
+  let scene = null, raf = 0, last = 0, acc = 0, running = false, deadTimer = 0;
+  let lastHud = null;
+
+  function measure() {
+    const r = canvas.getBoundingClientRect();
+    return {
+      w: Math.max(1, r.width  || canvas.clientWidth  || window.innerWidth  || 1),
+      h: Math.max(1, r.height || canvas.clientHeight || window.innerHeight || 1)
+    };
+  }
+  function applySize() {
+    const m = measure();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = Math.round(m.w * dpr);
+    canvas.height = Math.round(m.h * dpr);
+    if (m.w >= m.h) { VH = 1000; VW = 1000 * (m.w / m.h); }
+    else            { VW = 1000; VH = 1000 * (m.h / m.w); }
+    scale = canvas.width / VW;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    return m.w / m.h;
+  }
+  function buildScene() { scene = factory(VW, VH); deadTimer = 0; Input.taps = 0; }
+
+  let resizeTimer = 0;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      const a = applySize();
+      if (Math.abs(a - aspect) > 0.02) { aspect = a; buildScene(); }
+      render();
+    }, 120);
+  }
+  function update(dt) {
+    if (!scene) return;
+    scene.update(dt);
+    if (scene.dead) {
+      Input.taps = 0;
+      deadTimer += dt;
+      if (deadTimer >= RESTART_DELAY) {
+        deadTimer = 0;
+        if (typeof scene.restart === 'function') scene.restart();
+        else buildScene();
+      }
+    } else deadTimer = 0;
+  }
+  function render() {
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    if (scene) scene.draw(ctx);
+    else { ctx.fillStyle = '#08080c'; ctx.fillRect(0, 0, VW, VH); }
+    if (hudEl) {
+      const v = (scene && scene.score != null) ? String(scene.score) : '';
+      if (v !== lastHud) { hudEl.textContent = v; lastHud = v; }
+    }
+  }
+  function tick(now) {
+    raf = requestAnimationFrame(tick);
+    if (!last) last = now;
+    let dt = (now - last) / 1000; last = now;
+    if (dt > 0.2) dt = 0.2;
+    acc += dt;
+    let guard = 0;
+    while (acc >= STEP && guard++ < 5) { update(STEP); acc -= STEP; }
+    render();
+  }
+  function onVisibility() {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+    else if (running && !raf) { last = 0; acc = 0; raf = requestAnimationFrame(tick); }
+  }
+  function start() {
+    if (running) return;
+    running = true;
+    aspect = applySize();
+    buildScene();
+    last = 0; acc = 0;
+    raf = requestAnimationFrame(tick);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    document.addEventListener('visibilitychange', onVisibility);
+  }
+  return { start: start };
+}
+
+/* ============================ GAME: STACK ============================ */
+function makeStack(VW, VH) {
+  const BH  = clamp(VH * 0.055, 46, 72);
+  const PAL = ['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#c8a2ff','#ff9ff3','#54a0ff'];
+
+  let tower, cur, camY, d, debris, flash, perfect, amp, stars, score;
+
+  function makeStars() {
+    stars = [];
+    for (let i = 0; i < 60; i++)
+      stars.push({ x: rand(0, VW), y: rand(0, VH), r: rand(0.6, 1.8), a: rand(.1, .5) });
+  }
+
+  function spawnBlock() {
+    const top  = tower[tower.length - 1];
+    const dir  = Math.random() < 0.5 ? 1 : -1;
+    const spd  = Math.min(760, 300 + tower.length * 11);
+    cur = {
+      x: -amp * dir,
+      w: top.w,
+      dir: dir,
+      speed: spd,
+      y: -tower.length * BH - BH * 1.9
+    };
+  }
+
+  function reset() {
+    tower = [];
+    const bw = Math.min(VW * 0.5, 300);
+    tower.push({ x: -bw / 2, w: bw });
+    camY = VH * 0.25;
+    amp  = Math.min(VW * 0.38, 270);
+    d = false; debris = []; flash = 0; perfect = 0;
+    score = 0;
+    spawnBlock();
+    makeStars();
+    Input.taps = 0;
+  }
+
+  function drop() {
+    const top = tower[tower.length - 1];
+    const l   = Math.max(cur.x - cur.w * 0.5, top.x);
+    const r   = Math.min(cur.x + cur.w * 0.5, top.x + top.w);
+    const overlap = r - l;
+    const y = cur.y;
+    const col = PAL[tower.length % PAL.length];
+
+    if (overlap < 8) {
+      d = true;
+      debris.push({ x: cur.x - cur.w * 0.5, y: y, w: cur.w, h: BH,
+                    vx: cur.dir * 90, vy: -180, rot: 0, vr: 2.4, c: col });
+      return;
+    }
+
+    tower.push({ x: l, w: overlap });
+    score = tower.length - 1;
+
+    if (cur.x - cur.w * 0.5 < l) {
+      debris.push({ x: cur.x - cur.w * 0.5, y: y, w: l - (cur.x - cur.w * 0.5), h: BH,
+                    vx: -80, vy: -140, rot: 0, vr: -2.2, c: col });
+    }
+    if (cur.x + cur.w * 0.5 > r) {
+      debris.push({ x: r, y: y, w: (cur.x + cur.w * 0.5) - r, h: BH,
+                    vx: 80, vy: -140, rot: 0, vr: 2.2, c: col });
+    }
+
+    if (overlap > cur.w - 4) perfect = 1;
+    flash = 0.4;
+    spawnBlock();
+  }
+
+  reset();
+
+  function update(dt) {
+    flash   = Math.max(0, flash - dt * 2.5);
+    perfect = Math.max(0, perfect - dt * 2);
+
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const db = debris[i];
+      db.vy  += 2600 * dt;
+      db.y   += db.vy * dt;
+      db.x   += db.vx * dt;
+      db.rot += db.vr * dt;
+      if (db.y - camY > VH + 400) debris.splice(i, 1);
+    }
+
+    const camTarget = VH * 0.25 - (tower.length - 1) * BH;
+    camY += (camTarget - camY) * Math.min(1, dt * 4.5);
+
+    if (d) { Input.consumeTap(); return; }
+
+    /* ---- player drop ---- */
+    if (Input.consumeTap()) { drop(); return; }
+
+    /* ---- block slides back and forth ---- */
+    const nx = cur.x + cur.dir * cur.speed * dt;
+    cur.x = nx;
+    if (cur.x >  amp) { cur.x =  amp; cur.dir = -1; }
+    if (cur.x < -amp) { cur.x = -amp; cur.dir =  1; }
+  }
+
+  function drawBlock(ctx, x, y, w, h, c, alpha) {
+    if (w <= 0.5) return;
+    ctx.globalAlpha = alpha;
+    const g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, shade(c,  20));
+    g.addColorStop(1, shade(c, -16));
+    fillRR(ctx, x, y, w, h, 6, g);
+    ctx.globalAlpha = alpha * 0.28;
+    fillRR(ctx, x + 3, y + 3, Math.max(0, w - 6), h * 0.20, 4, '#ffffff');
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(ctx) {
+    const H0 = VH * 0.75;
+    const sy = wy => H0 + (wy - camY);
+
+    const hue = 212 + tower.length * 1.15;
+    const sky = ctx.createLinearGradient(0, 0, 0, VH);
+    sky.addColorStop(0,    'hsl(' + ((hue)      % 360) + ',48%,11%)');
+    sky.addColorStop(0.55, 'hsl(' + ((hue + 28) % 360) + ',44%,19%)');
+    sky.addColorStop(1,    'hsl(' + ((hue + 62) % 360) + ',38%,26%)');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, VW, VH);
+
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const y = ((s.y - camY * 0.25) % VH + VH) % VH;
+      ctx.globalAlpha = s.a;
+      fillCircle(ctx, s.x, y, s.r, '#dbe9ff');
+    }
+    ctx.globalAlpha = 1;
+
+    const cx = VW * 0.5;
+
+    for (let i = 0; i < tower.length; i++) {
+      const b = tower[i];
+      const y = sy(-i * BH);
+      if (y > VH + BH * 2) continue;
+      if (y < -BH * 4) break;
+      drawBlock(ctx, cx + b.x, y, b.w, BH, PAL[i % PAL.length], 1);
+    }
+
+    if (!d) {
+      const y = sy(cur.y);
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,255,255,.35)';
+      ctx.shadowBlur  = 24;
+      drawBlock(ctx, cx + cur.x - cur.w * 0.5, y, cur.w, BH, PAL[tower.length % PAL.length], 1);
+      ctx.restore();
+    }
+
+    for (let i = 0; i < debris.length; i++) {
+      const db = debris[i];
+      ctx.save();
+      ctx.translate(cx + db.x + db.w * 0.5, sy(db.y) + BH * 0.5);
+      ctx.rotate(db.rot);
+      ctx.globalAlpha = 0.9;
+      drawBlock(ctx, -db.w * 0.5, -BH * 0.5, db.w, BH, db.c, 1);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+
+    if (perfect > 0) {
+      ctx.globalAlpha = perfect * 0.18;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, VW, VH);
+      ctx.globalAlpha = 1;
+    }
+    if (flash > 0) {
+      ctx.globalAlpha = flash * 0.10;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, VW, VH);
+      ctx.globalAlpha = 1;
+    }
+
+    const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.22, VW * 0.5, VH * 0.5, VH * 0.95);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.55)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, VW, VH);
+  }
+
+  return {
+    update: update,
+    draw: draw,
+    restart: reset,
+    get dead() { return d; },
+    get score() { return score; }
+  };
+}
+
+/* ============================ BOOT ============================ */
+createEngine(document.getElementById('game'), makeStack, {
+  fps: 60,
+  restartDelay: 1.0,
+  hud: document.getElementById('score')
+}).start();
+
+})();
+</script>
+</body>
+</html>

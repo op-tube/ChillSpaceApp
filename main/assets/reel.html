@@ -1,0 +1,3514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ReelSpace 릴스페이스</title>
+    <meta name="description" content="ReelSpace — infinite story scroll. Discover heartwarming, funny, and unexpected tales about the people and things that connect us. Chillspace.ai/reelspace">
+    <link rel="canonical" href="https://chillspace.ai/rs">
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "ReelSpace",
+            "alternateName": "릴스페이스",
+            "description": "ReelSpace — infinite story scroll. Discover heartwarming, funny, and unexpected tales about the people and things that connect us.",
+            "applicationCategory": "Entertainment",
+            "operatingSystem": "All",
+            "browserRequirements": "Requires JavaScript and modern browser",
+            "url": "https://chillspace.ai/reelspace",
+            "creator": { "@type": "Organization", "name": "Chillspace" },
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "featureList": "Infinite story scroll, procedural gameplay background, procedural music, text-to-speech, like & bookmark stories, comment simulation"
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --accent: #ff2d55;
+            --accent-tts: #00d4aa;
+            --overlay: rgba(0, 0, 0, 0.55);
+            --font-main: 'Segoe UI', 'Helvetica Neue', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; overflow: hidden; background: #000;
+            font-family: var(--font-main);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none; touch-action: pan-y;
+        }
+        #bgCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; display: block; background: #08080c;
+        }
+        #globalOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+            background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.25) 75%, rgba(0,0,0,0.55) 100%);
+        }
+        #header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+            padding: 14px 20px;
+            padding-top: max(14px, env(safe-area-inset-top, 14px));
+            display: flex; align-items: center; justify-content: space-between;
+            pointer-events: none;
+        }
+        #header .logo {
+            font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+            display: flex; align-items: baseline; gap: 8px; pointer-events: auto;
+        }
+        #header .logo .ko { font-size: 1rem; font-weight: 600; opacity: 0.85; }
+        #header .badge {
+            pointer-events: auto;
+            background: rgba(255,255,255,0.18);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff; padding: 7px 14px; border-radius: 24px;
+            font-size: 0.8rem; font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+        }
+        #header .badge .lang-toggle, #header .badge .autoscroll-toggle {
+            background: rgba(255,255,255,0.15); border: none; color: #fff;
+            font-weight: 600; padding: 2px 10px; border-radius: 16px;
+            font-size: 0.7rem; cursor: pointer; pointer-events: auto;
+            font-family: var(--font-main);
+        }
+        #header .badge .autoscroll-toggle.active { background: var(--accent-tts); color: #000; }
+        #scrollContainer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            overflow-y: scroll; scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch; z-index: 2; scroll-behavior: smooth;
+        }
+        #scrollContainer::-webkit-scrollbar { display: none; }
+        .slide {
+            width: 100%; height: 100vh; height: 100dvh;
+            scroll-snap-align: start; scroll-snap-stop: always;
+            position: relative; display: flex; flex-direction: column;
+            justify-content: flex-end; padding: 20px;
+            padding-bottom: calc(5px + var(--safe-bottom) + 70px); z-index: 2;
+        }
+        .story-card {
+            position: relative; z-index: 3; max-width: 520px; width: 100%;
+            margin: 0 auto 0 0; padding: 20px 22px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-radius: 18px; border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+        }
+        .story-card.hidden { display: none !important; }
+        .story-text {
+            font-size: 1.05rem; line-height: 1.55; color: #fff; font-weight: 400;
+            letter-spacing: 0.005em; text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            word-break: break-word; max-height: 3.1em; overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .story-text.expanded { max-height: 1000px; }
+        .story-text .highlight { color: #ffda6b; font-weight: 700; text-shadow: 0 0 12px rgba(255,218,107,0.4); }
+        .story-buttons { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+        .show-more-btn, .hide-btn {
+            background: none; border: none; color: rgba(255,255,255,0.7);
+            font-size: 0.8rem; cursor: pointer;
+            text-decoration: underline; padding: 0; font-family: var(--font-main);
+        }
+        .show-more-btn:hover, .hide-btn:hover { color: #fff; }
+        .restore-story-btn {
+            display: none; position: relative; z-index: 3;
+            align-self: flex-start; padding: 9px 16px; border-radius: 20px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #fff; font-size: 0.8rem; font-weight: 600;
+            font-family: var(--font-main); cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.2s ease;
+        }
+        .restore-story-btn:active { transform: scale(0.94); }
+        .slide.story-hidden .restore-story-btn { display: inline-flex; align-items: center; gap: 6px; }
+        .side-actions {
+            position: absolute; right: 14px; bottom: 110px;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 18px; z-index: 5; pointer-events: auto;
+        }
+        .side-action {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            cursor: pointer; background: none; border: none; color: #fff;
+            font-family: var(--font-main); transition: transform 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .side-action:active { transform: scale(0.85); }
+        .side-action .icon-circle {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; transition: all 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .side-action.liked .icon-circle {
+            background: var(--accent); border-color: var(--accent);
+            animation: heartPop 0.5s ease;
+        }
+        @keyframes heartPop {
+            0% { transform: scale(1) } 30% { transform: scale(1.35) }
+            60% { transform: scale(0.9) } 100% { transform: scale(1) }
+        }
+        .side-action .action-label {
+            font-size: 0.7rem; font-weight: 500; letter-spacing: 0.03em;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+        .heart-burst {
+            position: fixed; pointer-events: none; z-index: 20;
+            font-size: 2.5rem; animation: floatUp 1.1s ease-out forwards; opacity: 0;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.5) rotate(0deg); }
+            50% { opacity: 0.9; transform: translateY(-50px) scale(1.2) rotate(10deg); }
+            100% { opacity: 0; transform: translateY(-140px) scale(0.7) rotate(-15deg); }
+        }
+        #musicIndicator {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 15; pointer-events: none;
+            background: rgba(0,0,0,0.75); color: #fff;
+            padding: 10px 20px; border-radius: 24px;
+            font-size: 0.85rem; font-weight: 600;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #musicIndicator.show { transform: translate(-50%, -50%) scale(1); }
+        #startOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 30; background: #000;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 24px;
+            transition: opacity 0.25s ease; pointer-events: all;
+        }
+        #startOverlay.hidden { opacity: 0; pointer-events: none; }
+        #startOverlay.hidden-display { display: none !important; }
+        .start-btn {
+            padding: 16px 48px; font-size: 1.3rem; font-weight: 700;
+            background: linear-gradient(135deg, #ff2d55, #ff6b6b);
+            color: #fff; border: none; border-radius: 50px; cursor: pointer;
+            letter-spacing: 0.02em; box-shadow: 0 8px 30px rgba(255,45,85,0.6);
+            transition: transform 0.2s; font-family: var(--font-main);
+        }
+        .start-btn:active { transform: scale(0.95); }
+        #commentOverlay {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(20,20,20,0.95);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            color: #fff; padding: 20px 20px calc(20px + var(--safe-bottom));
+            z-index: 40; transform: translateY(100%);
+            transition: transform 0.35s ease;
+            max-height: 60vh; overflow-y: auto;
+            border-radius: 20px 20px 0 0;
+        }
+        #commentOverlay.show { transform: translateY(0); }
+        .comment {
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem; line-height: 1.4;
+        }
+        .comment .user { font-weight: 700; color: #ffda6b; margin-right: 8px; }
+        .close-comments {
+            position: absolute; top: 10px; right: 16px;
+            background: none; border: none; color: #fff;
+            font-size: 1.5rem; cursor: pointer;
+        }
+        @media (max-width:480px) {
+            .story-card { padding: 16px 18px; border-radius: 14px; max-width: 100%; }
+            .story-text { font-size: 0.95rem; line-height: 1.5; max-height: 3.0em; }
+            .side-actions { right: 8px; bottom: 120px; gap: 14px; }
+            .side-action .icon-circle { width: 38px; height: 38px; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="globalOverlay"></div>
+<div id="header">
+    <div class="logo">ReelSpace<span class="ko">릴스페이스</span></div>
+    <div class="badge">
+        <span id="badgeText">📖 Infinite Stories</span>
+        <button class="lang-toggle" id="langToggle">한국어</button>
+        <button class="autoscroll-toggle" id="autoscrollToggle">Autoscroll: Off</button>
+    </div>
+</div>
+<div id="scrollContainer"></div>
+<div id="musicIndicator">🎵 Music On</div>
+
+<div id="startOverlay">
+    <button class="start-btn" id="loadReelSpaceBtn">Load ReelSpace</button>
+    <p id="startSub" style="color:rgba(255,255,255,0.6); font-size:0.9rem;">tap to start the experience</p>
+</div>
+
+<div id="commentOverlay">
+    <button class="close-comments" id="closeCommentsBtn">&times;</button>
+    <div id="commentList"></div>
+</div>
+
+<script>
+    /* =====================================================================
+       ChillSpace Procedural Gameplay Engine
+       ===================================================================== */
+    (function (global) {
+    'use strict';
+
+    let RND = Math.random;
+
+    function mulberry32(a){
+      return function(){
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    const rand    = (a, b) => a + RND() * (b - a);
+    const pick    = arr => arr[Math.floor(RND() * arr.length)];
+    const clamp   = (v, a, b) => v < a ? a : (v > b ? b : v);
+    const lerp    = (a, b, t) => a + (b - a) * t;
+
+    function rr(ctx, x, y, w, h, r){
+      r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x,     y + h, r);
+      ctx.arcTo(x,     y + h, x,     y,     r);
+      ctx.arcTo(x,     y,     x + w, y,     r);
+      ctx.closePath();
+    }
+    function fillRR(ctx, x, y, w, h, r, fill){
+      if (w <= 0 || h <= 0) return;
+      rr(ctx, x, y, w, h, r);
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    function fillCircle(ctx, x, y, r, fill){
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28318);
+      ctx.fillStyle = fill; ctx.fill();
+    }
+    function shade(hex, amt){
+      const n = parseInt(hex.slice(1), 16);
+      const r = clamp(Math.round(((n >> 16) & 255) + amt * 2.55), 0, 255);
+      const g = clamp(Math.round(((n >> 8)  & 255) + amt * 2.55), 0, 255);
+      const b = clamp(Math.round((n & 255)         + amt * 2.55), 0, 255);
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    const SPR_OVERSAMPLE = 2;
+    function makeSprite(logicalSize, painter){
+      const px = Math.max(1, Math.round(logicalSize * SPR_OVERSAMPLE));
+      const c  = document.createElement('canvas');
+      c.width  = px;
+      c.height = px;
+      const cx = c.getContext('2d');
+      cx.scale(px / logicalSize, px / logicalSize);
+      painter(cx, logicalSize);
+      return c;
+    }
+
+    /* ================================================================ JUMP === */
+    function makeJump(VW, VH){
+      const G = 2800, JUMP_V = 1300, MAX_VX = 620, PW = 64, PH = 64;
+
+      const SPR_LOGICAL = 160;
+      const SPR_BODY_W  = 60;
+      const SPR_BODY_H  = 60;
+
+      function paintJump(c){
+        const C = SPR_LOGICAL / 2;
+        const w = SPR_BODY_W;
+        const h = SPR_BODY_H;
+
+        const bg = c.createLinearGradient(C, C - h / 2, C, C + h / 2);
+        bg.addColorStop(0, '#fff3b0');
+        bg.addColorStop(1, '#ffb347');
+        c.fillStyle = bg;
+        rr(c, C - w / 2, C - h / 2, w, h, h * 0.42);
+        c.fill();
+
+        const eyeOffX = w * 0.17;
+        const eyeOffY = -h * 0.10;
+        const eyeR    = w * 0.115;
+        const shineR  = w * 0.065;
+        const shineDY = -h * 0.025;
+
+        c.fillStyle = '#2b1a2e';
+        c.beginPath(); c.arc(C - eyeOffX, C + eyeOffY, eyeR, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.arc(C + eyeOffX, C + eyeOffY, eyeR, 0, Math.PI * 2); c.fill();
+
+        c.fillStyle = '#ffffff';
+        c.beginPath(); c.arc(C - eyeOffX, C + eyeOffY + shineDY, shineR, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.arc(C + eyeOffX, C + eyeOffY + shineDY, shineR, 0, Math.PI * 2); c.fill();
+
+        c.beginPath();
+        c.arc(C, C + h * 0.10, w * 0.13, 0.15 * Math.PI, 0.85 * Math.PI);
+        c.lineWidth   = Math.max(2.5, w * 0.055);
+        c.strokeStyle = '#2b1a2e';
+        c.stroke();
+      }
+
+      const jumpSprite = makeSprite(SPR_LOGICAL, paintJump);
+
+      let player, plats, genY, camY, t, d, wob, stars;
+      let lastLandedPlat = null;
+      let sameLandingCount = 0;
+
+      function makeStars(){
+        stars = [];
+        const n = Math.round(70 * (VW * VH) / 700000);
+        for (let i = 0; i < n; i++)
+          stars.push({ x: rand(0, VW), y: rand(0, 2400), r: rand(0.7, 2.1), a: rand(.15, .7) });
+      }
+
+      function spawnUpTo(top){
+        while (genY < top){
+          const diff = clamp(genY / 14000, 0, 1);
+          const prev = plats[plats.length - 1];
+          const prevCenter = prev ? prev.x + prev.w * 0.5 : VW * 0.5;
+          genY += lerp(100, 150, diff);
+          const w = lerp(240, 150, diff) * rand(0.9, 1.1);
+          const maxOffset = lerp(180, 120, diff);
+          let cx = prevCenter + rand(-maxOffset, maxOffset);
+          cx = clamp(cx, 20 + w / 2, VW - 20 - w / 2);
+          plats.push({ x: cx - w / 2, w: w, y: genY });
+        }
+      }
+
+      function reset(){
+        player = { x: VW * 0.5, y: 0, vy: JUMP_V, vx: 0, sq: 0, tilt: 0 };
+        plats  = [];
+        const bw = Math.min(VW * 0.72, 340);
+        plats.push({ x: VW * 0.5 - bw / 2, w: bw, y: 0 });
+        genY = 0;
+        camY = -VH * 0.42;
+        t = 0; d = false; wob = rand(0, 10);
+        lastLandedPlat = null;
+        sameLandingCount = 0;
+        spawnUpTo(camY + VH + 500);
+        makeStars();
+      }
+      reset();
+
+      function teleportUp(fromPlat){
+        let nextP = null;
+        for (let i = 0; i < plats.length; i++){
+          const q = plats[i];
+          if (q.y > fromPlat.y + 1 && (!nextP || q.y < nextP.y)) nextP = q;
+        }
+        if (!nextP){
+          genY = fromPlat.y;
+          spawnUpTo(fromPlat.y + lerp(100, 150, clamp(fromPlat.y / 14000, 0, 1)) + 40);
+          for (let i = 0; i < plats.length; i++){
+            const q = plats[i];
+            if (q.y > fromPlat.y + 1 && (!nextP || q.y < nextP.y)) nextP = q;
+          }
+        }
+        if (!nextP) return;
+        player.x  = nextP.x + nextP.w * 0.5;
+        player.y  = nextP.y;
+        player.vy = JUMP_V;
+        player.vx = 0;
+        player.sq = 1;
+        lastLandedPlat = nextP;
+        sameLandingCount = 0;
+      }
+
+      function update(dt){
+        t += dt;
+        if (d){
+          player.vy -= G * dt * 0.6;
+          player.y  += player.vy * dt;
+          player.tilt += dt * 4;
+          return;
+        }
+
+        const MAX_REACH = 200;
+        let target = null, best = Infinity;
+        for (let i = 0; i < plats.length; i++){
+          const p = plats[i];
+          const dy = p.y - player.y;
+          if (dy < 10 || dy > MAX_REACH) continue;
+          let dx = (p.x + p.w * 0.5) - player.x;
+          if (dx >  VW * 0.5) dx -= VW;
+          if (dx < -VW * 0.5) dx += VW;
+          const cost = Math.abs(dx) + dy * 1.5;
+          if (cost < best){ best = cost; target = p; }
+        }
+
+        let tx = target ? target.x + target.w * 0.5 : VW * 0.5;
+        tx += Math.sin(t * 2.1 + wob) * 10;
+
+        let dx = tx - player.x;
+        if (dx >  VW * 0.5) dx -= VW;
+        if (dx < -VW * 0.5) dx += VW;
+
+        const want = clamp(dx * 6 - player.vx * 0.5, -MAX_VX, MAX_VX);
+        player.vx += (want - player.vx) * Math.min(1, dt * 13);
+        player.x  += player.vx * dt;
+
+        if (player.x < -PW)      player.x += VW + PW * 2;
+        if (player.x > VW + PW)  player.x -= VW + PW * 2;
+
+        const prevY = player.y;
+        player.vy -= G * dt;
+        player.y  += player.vy * dt;
+        player.tilt = clamp(player.vx / MAX_VX, -1, 1) * 0.26;
+
+        if (player.vy <= 0){
+          for (let i = 0; i < plats.length; i++){
+            const p = plats[i];
+            if (player.x + PW * 0.28 > p.x && player.x - PW * 0.28 < p.x + p.w){
+              if (prevY >= p.y && player.y <= p.y){
+                player.y = p.y;
+                player.vy = JUMP_V;
+                player.sq = 1;
+
+                if (p === lastLandedPlat){
+                  sameLandingCount++;
+                } else {
+                  sameLandingCount = 1;
+                  lastLandedPlat = p;
+                }
+                if (sameLandingCount > 3){
+                  teleportUp(p);
+                }
+                break;
+              }
+            }
+          }
+        }
+        player.sq = Math.max(0, player.sq - dt * 5.5);
+
+        const camTarget = player.y - VH * 0.42;
+        if (camTarget > camY) camY += (camTarget - camY) * Math.min(1, dt * 7);
+
+        spawnUpTo(camY + VH + 500);
+        if (plats.length > 120) plats = plats.filter(p => p.y > camY - 320);
+
+        if (player.y < camY - 70) d = true;
+      }
+
+      function draw(ctx){
+        const sky = ctx.createLinearGradient(0, 0, 0, VH);
+        sky.addColorStop(0,    '#170f2e');
+        sky.addColorStop(0.45, '#241a4a');
+        sky.addColorStop(1,    '#0c0a1c');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, VW, VH);
+
+        const off = (camY * 0.13) % 2400;
+        for (let i = 0; i < stars.length; i++){
+          const s = stars[i];
+          const y = ((s.y + off) % 2400 + 2400) % 2400 - 700;
+          if (y < -30 || y > VH + 30) continue;
+          ctx.globalAlpha = s.a;
+          fillCircle(ctx, s.x, y, s.r, '#cfe4ff');
+        }
+        ctx.globalAlpha = 1;
+
+        for (let i = 0; i < plats.length; i++){
+          const p  = plats[i];
+          const sy = VH - (p.y - camY);
+          if (sy < -60 || sy > VH + 60) continue;
+          const g = ctx.createLinearGradient(0, sy, 0, sy + 26);
+          g.addColorStop(0, '#7ae9ff');
+          g.addColorStop(1, '#2c74d0');
+          fillRR(ctx, p.x, sy, p.w, 26, 12, g);
+          ctx.globalAlpha = 0.5;
+          fillRR(ctx, p.x + 7, sy + 3.5, p.w - 14, 6, 3, '#ffffff');
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+
+        const py = VH - (player.y - camY);
+        const sq = player.sq;
+        const w  = PW * (1 - sq * 0.18);
+        const h  = PH * (1 + sq * 0.22);
+
+        const cx = Math.round(player.x);
+        const cy = Math.round(py - h / 2);
+        const angle = isFinite(player.tilt) ? player.tilt : 0;
+
+        const spriteW = SPR_LOGICAL * w / SPR_BODY_W;
+        const spriteH = SPR_LOGICAL * h / SPR_BODY_H;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.drawImage(jumpSprite, -spriteW / 2, -spriteH / 2, spriteW, spriteH);
+        ctx.restore();
+
+        const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.25, VW * 0.5, VH * 0.5, VH * 0.9);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, 'rgba(0,0,0,.55)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, VW, VH);
+      }
+
+      return { update: update, draw: draw, restart: reset, get dead(){ return d; } };
+    }
+
+    /* ============================================================== FLAPPY === */
+    function makeFlappy(VW, VH){
+      const G = 2300, FLAP = -720, PIPE_W = 96, R = 26;
+
+      const SPR_LOGICAL = 160;
+      const SPR_R       = 50;
+      const spriteDraw  = SPR_LOGICAL * (R / SPR_R);
+
+      function paintBird(wingAmount){
+        return function(c){
+          const C = SPR_LOGICAL / 2;
+          const r = SPR_R;
+
+          c.save();
+          c.translate(C - r * 0.55, C + r * 0.05);
+          c.rotate(-0.45 + (1 - wingAmount) * 0.85);
+          const wg = c.createLinearGradient(-r * 0.6, -r * 0.22, -r * 0.6, r * 0.22);
+          wg.addColorStop(0, '#ffe08a');
+          wg.addColorStop(1, '#c9a230');
+          c.fillStyle = wg;
+          rr(c, -r * 1.00, -r * 0.22, r * 1.15, r * 0.44, r * 0.22);
+          c.fill();
+          c.restore();
+
+          const bgr = c.createRadialGradient(C - r * 0.3, C - r * 0.35, r * 0.15, C, C, r * 1.15);
+          bgr.addColorStop(0, '#fff3a8');
+          bgr.addColorStop(1, '#f0a92c');
+          c.fillStyle = bgr;
+          c.beginPath(); c.arc(C, C, r, 0, Math.PI * 2); c.fill();
+
+          c.fillStyle = 'rgba(255, 245, 200, 0.60)';
+          c.beginPath(); c.arc(C - r * 0.08, C + r * 0.30, r * 0.45, 0, Math.PI * 2); c.fill();
+
+          c.fillStyle = '#ffffff';
+          c.beginPath(); c.arc(C + r * 0.35, C - r * 0.28, r * 0.35, 0, Math.PI * 2); c.fill();
+          c.fillStyle = '#1a1a1a';
+          c.beginPath(); c.arc(C + r * 0.44, C - r * 0.28, r * 0.20, 0, Math.PI * 2); c.fill();
+          c.fillStyle = '#ffffff';
+          c.beginPath(); c.arc(C + r * 0.50, C - r * 0.36, r * 0.10, 0, Math.PI * 2); c.fill();
+
+          c.beginPath();
+          c.moveTo(C + r * 0.75, C - r * 0.02);
+          c.lineTo(C + r * 1.35, C + r * 0.14);
+          c.lineTo(C + r * 0.75, C + r * 0.30);
+          c.closePath();
+          c.fillStyle = '#ff8b3d';
+          c.fill();
+        };
+      }
+
+      const spriteWingUp   = makeSprite(SPR_LOGICAL, paintBird(1));
+      const spriteWingMid  = makeSprite(SPR_LOGICAL, paintBird(0.5));
+      const spriteWingDown = makeSprite(SPR_LOGICAL, paintBird(0));
+
+      let bird, pipes, t, d, groundY, score, nextX, flapped;
+      let scrollFar, scrollMid, scrollGnd, clouds;
+
+      function gapH(){ return Math.max(212, 330 - score * 4); }
+
+      function addPipeAt(x){
+        const gh  = gapH();
+        const top = Math.max(VH * 0.10, 40);
+        const lo  = top + gh / 2;
+        const hi  = Math.max(lo, groundY - VH * 0.08 - gh / 2);
+        pipes.push({ x: x, gapY: rand(lo, hi), gapH: gh, passed: false });
+      }
+
+      function reset(){
+        groundY = VH - Math.max(90, VH * 0.12);
+        bird = { x: VW * 0.30, y: VH * 0.42, vy: 0, rot: 0, wing: 0 };
+        pipes = [];
+        t = 0; d = false; score = 0; flapped = 0;
+        nextX = VW + 400;
+        scrollFar = 0; scrollMid = 0; scrollGnd = 0;
+        clouds = [];
+        for (let i = 0; i < 7; i++)
+          clouds.push({ x: rand(0, VW + 400), y: rand(VH * 0.05, VH * 0.42), s: rand(0.6, 1.4) });
+      }
+      reset();
+
+      function update(dt){
+        t += dt;
+        const speed = 300 + Math.min(170, score * 6);
+
+        if (d){
+          bird.vy += G * dt;
+          bird.y  += bird.vy * dt;
+          bird.rot = Math.min(1.45, bird.rot + dt * 4);
+          return;
+        }
+
+        let target = null;
+        for (let i = 0; i < pipes.length; i++){
+          const p = pipes[i];
+          if (p.x + PIPE_W > bird.x - 30 && (!target || p.x < target.x)) target = p;
+        }
+        let aimY = target ? target.gapY : VH * 0.45;
+        aimY += Math.sin(t * 1.6) * 7;
+
+        flapped -= dt;
+        const predicted = bird.y + bird.vy * 0.02;
+        if (predicted > aimY && flapped <= 0 && bird.vy > -420){
+          bird.vy = FLAP;
+          flapped = 0.085;
+          bird.wing = 1;
+        }
+        bird.wing = Math.max(0, bird.wing - dt * 4);
+
+        bird.vy += G * dt;
+        if (bird.vy > 1300) bird.vy = 1300;
+        bird.y += bird.vy * dt;
+
+        const targetRot = clamp(bird.vy / 2400, -0.30, 0.45);
+        bird.rot += (targetRot - bird.rot) * Math.min(1, dt * 12);
+
+        if (bird.y - R < 0){ bird.y = R; if (bird.vy < 0) bird.vy = 0; }
+
+        scrollFar -= speed * 0.12 * dt;
+        scrollMid -= speed * 0.30 * dt;
+        scrollGnd -= speed * dt;
+
+        for (let i = 0; i < clouds.length; i++){
+          const c = clouds[i];
+          c.x -= speed * 0.16 * c.s * dt;
+          if (c.x < -180){ c.x = VW + rand(40, 300); c.y = rand(VH * 0.05, VH * 0.42); }
+        }
+
+        for (let i = pipes.length - 1; i >= 0; i--){
+          const p = pipes[i];
+          p.x -= speed * dt;
+          if (!p.passed && p.x + PIPE_W < bird.x - R){ p.passed = true; score++; }
+          if (p.x + PIPE_W < -60) pipes.splice(i, 1);
+        }
+        nextX -= speed * dt;
+        while (nextX < VW + 400){
+          addPipeAt(nextX);
+          nextX += Math.max(330, VW * 0.42);
+        }
+
+        if (bird.y + R > groundY){ bird.y = groundY - R; d = true; }
+        for (let i = 0; i < pipes.length; i++){
+          const p = pipes[i];
+          if (bird.x + R * 0.8 > p.x && bird.x - R * 0.8 < p.x + PIPE_W){
+            if (bird.y - R * 0.8 < p.gapY - p.gapH / 2 ||
+                bird.y + R * 0.8 > p.gapY + p.gapH / 2){ d = true; break; }
+          }
+        }
+      }
+
+      function ridge(ctx, off, baseY, amp, freq, phase, color){
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, VH);
+        for (let x = 0; x <= VW + 10; x += 10){
+          const u = (x + off) * freq + phase;
+          const y = baseY - (Math.sin(u) * 0.6 + Math.sin(u * 0.53 + 2.1) * 0.4) * amp;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(VW, VH);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function draw(ctx){
+        const sky = ctx.createLinearGradient(0, 0, 0, VH);
+        sky.addColorStop(0,    '#1b2a5e');
+        sky.addColorStop(0.45, '#3a5aa8');
+        sky.addColorStop(0.78, '#e8845f');
+        sky.addColorStop(1,    '#f2b57e');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, VW, VH);
+
+        const sunY = groundY - VH * 0.30;
+        const sg = ctx.createRadialGradient(VW * 0.70, sunY, 4, VW * 0.70, sunY, VH * 0.30);
+        sg.addColorStop(0,   'rgba(255,225,170,.95)');
+        sg.addColorStop(0.25,'rgba(255,180,120,.42)');
+        sg.addColorStop(1,   'rgba(255,140,90,0)');
+        ctx.fillStyle = sg;
+        ctx.fillRect(0, 0, VW, VH);
+
+        ctx.globalAlpha = 0.55;
+        for (let i = 0; i < clouds.length; i++){
+          const c = clouds[i];
+          const s = c.s * 26;
+          fillCircle(ctx, c.x,           c.y,           s,        '#dce9ff');
+          fillCircle(ctx, c.x + s * 1.1, c.y + s * 0.2, s * 0.78, '#dce9ff');
+          fillCircle(ctx, c.x - s * 1.1, c.y + s * 0.25,s * 0.68, '#dce9ff');
+        }
+        ctx.globalAlpha = 1;
+
+        ridge(ctx, scrollFar, groundY - VH * 0.11, VH * 0.045, 0.0042, 0.0, '#2b3560');
+        ridge(ctx, scrollMid, groundY - VH * 0.04, VH * 0.030, 0.0090, 1.7, '#1f2848');
+
+        for (let i = 0; i < pipes.length; i++){
+          const p  = pipes[i];
+          const topH = p.gapY - p.gapH / 2;
+          const botY = p.gapY + p.gapH / 2;
+          const botH = groundY - botY;
+
+          const pg = ctx.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
+          pg.addColorStop(0,   '#1f7a45');
+          pg.addColorStop(0.35,'#4fd07f');
+          pg.addColorStop(0.62,'#2ea862');
+          pg.addColorStop(1,   '#14522f');
+
+          fillRR(ctx, p.x, -10, PIPE_W, topH + 10, 6, pg);
+          fillRR(ctx, p.x, botY, PIPE_W, botH + 10, 6, pg);
+          fillRR(ctx, p.x - 8, topH - 30, PIPE_W + 16, 30, 6, pg);
+          fillRR(ctx, p.x - 8, botY,      PIPE_W + 16, 30, 6, pg);
+        }
+
+        const gg = ctx.createLinearGradient(0, groundY, 0, VH);
+        gg.addColorStop(0,   '#3b2c1c');
+        gg.addColorStop(1,   '#1b140c');
+        ctx.fillStyle = gg;
+        ctx.fillRect(0, groundY, VW, VH - groundY);
+
+        ctx.fillStyle = '#6fd18a';
+        ctx.fillRect(0, groundY - 8, VW, 10);
+
+        ctx.save();
+        ctx.globalAlpha = 0.16;
+        ctx.fillStyle = '#ffffff';
+        const sw = 42;
+        const so = ((scrollGnd % (sw * 2)) + sw * 2) % (sw * 2);
+        for (let x = -so; x < VW; x += sw * 2) ctx.fillRect(x, groundY - 6, sw, 6);
+        ctx.restore();
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+
+        const bx = Math.round(bird.x);
+        const by = Math.round(bird.y);
+        const angle = isFinite(bird.rot) ? bird.rot : 0;
+
+        const sprite = bird.wing > 0.66 ? spriteWingUp
+                     : bird.wing > 0.33 ? spriteWingMid
+                     :                    spriteWingDown;
+
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate(angle);
+        ctx.drawImage(sprite, -spriteDraw / 2, -spriteDraw / 2, spriteDraw, spriteDraw);
+        ctx.restore();
+      }
+
+      return { update: update, draw: draw, restart: reset, get dead(){ return d; } };
+    }
+
+    /* =============================================================== STACK === */
+    function makeStack(VW, VH){
+      const BH  = clamp(VH * 0.055, 46, 72);
+      const PAL = ['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#c8a2ff','#ff9ff3','#54a0ff'];
+
+      let tower, cur, camY, t, d, debris, flash, perfect, amp, stars;
+
+      function makeStars(){
+        stars = [];
+        for (let i = 0; i < 60; i++)
+          stars.push({ x: rand(0, VW), y: rand(0, VH), r: rand(0.6, 1.8), a: rand(.1, .5) });
+      }
+
+      function reset(){
+        tower = [];
+        const bw = Math.min(VW * 0.5, 300);
+        tower.push({ x: -bw / 2, w: bw });
+        camY = VH * 0.25;
+        amp  = Math.min(VW * 0.38, 270);
+        t = 0; d = false; debris = []; flash = 0; perfect = 0;
+        spawnBlock();
+        makeStars();
+      }
+
+      function spawnBlock(){
+        const top  = tower[tower.length - 1];
+        const dir  = RND() < 0.5 ? 1 : -1;
+        const spd  = Math.min(760, 300 + tower.length * 11);
+        cur = {
+          x: -amp * dir,
+          w: top.w,
+          dir: dir,
+          speed: spd,
+          err: (RND() * 2 - 1) * 3.4,
+          y: -tower.length * BH - BH * 1.9
+        };
+      }
+
+      function drop(){
+        const top = tower[tower.length - 1];
+        const l   = Math.max(cur.x - cur.w * 0.5, top.x);
+        const r   = Math.min(cur.x + cur.w * 0.5, top.x + top.w);
+        const overlap = r - l;
+        const y = cur.y;
+        const col = PAL[tower.length % PAL.length];
+
+        if (overlap < 8){
+          d = true;
+          debris.push({ x: cur.x - cur.w * 0.5, y: y, w: cur.w, h: BH,
+                        vx: cur.dir * 90, vy: -180, rot: 0, vr: 2.4, c: col });
+          return;
+        }
+
+        tower.push({ x: l, w: overlap });
+
+        if (cur.x - cur.w * 0.5 < l){
+          debris.push({ x: cur.x - cur.w * 0.5, y: y, w: l - (cur.x - cur.w * 0.5), h: BH,
+                        vx: -80, vy: -140, rot: 0, vr: -2.2, c: col });
+        }
+        if (cur.x + cur.w * 0.5 > r){
+          debris.push({ x: r, y: y, w: (cur.x + cur.w * 0.5) - r, h: BH,
+                        vx: 80, vy: -140, rot: 0, vr: 2.2, c: col });
+        }
+
+        if (overlap > cur.w - 4) perfect = 1;
+        flash = 0.4;
+        spawnBlock();
+      }
+
+      reset();
+
+      function update(dt){
+        t += dt;
+        flash   = Math.max(0, flash - dt * 2.5);
+        perfect = Math.max(0, perfect - dt * 2);
+
+        for (let i = debris.length - 1; i >= 0; i--){
+          const db = debris[i];
+          db.vy  += 2600 * dt;
+          db.y   += db.vy * dt;
+          db.x   += db.vx * dt;
+          db.rot += db.vr * dt;
+          if (db.y - camY > VH + 400) debris.splice(i, 1);
+        }
+
+        const camTarget = VH * 0.25 - (tower.length - 1) * BH;
+        camY += (camTarget - camY) * Math.min(1, dt * 4.5);
+
+        if (d) return;
+
+        const top  = tower[tower.length - 1];
+        const topC = top.x + top.w * 0.5;
+        const aim  = clamp(topC + cur.err, -amp, amp);
+
+        const nx = cur.x + cur.dir * cur.speed * dt;
+        const crossed = cur.dir > 0
+          ? (cur.x <= aim && nx >= aim)
+          : (cur.x >= aim && nx <= aim);
+
+        if (crossed){
+          cur.x = aim;
+          drop();
+        } else {
+          cur.x = nx;
+          if (cur.x >  amp){ cur.x =  amp; cur.dir = -1; }
+          if (cur.x < -amp){ cur.x = -amp; cur.dir =  1; }
+        }
+      }
+
+      function drawBlock(ctx, x, y, w, h, c, alpha){
+        if (w <= 0.5) return;
+        ctx.globalAlpha = alpha;
+        const g = ctx.createLinearGradient(x, y, x, y + h);
+        g.addColorStop(0, shade(c,  20));
+        g.addColorStop(1, shade(c, -16));
+        fillRR(ctx, x, y, w, h, 6, g);
+        ctx.globalAlpha = alpha * 0.28;
+        fillRR(ctx, x + 3, y + 3, Math.max(0, w - 6), h * 0.20, 4, '#ffffff');
+        ctx.globalAlpha = 1;
+      }
+
+      function draw(ctx){
+        const H0 = VH * 0.75;
+        const sy = wy => H0 + (wy - camY);
+
+        const hue = 212 + tower.length * 1.15;
+        const sky = ctx.createLinearGradient(0, 0, 0, VH);
+        sky.addColorStop(0,   'hsl(' + ((hue)      % 360) + ',48%,11%)');
+        sky.addColorStop(0.55,'hsl(' + ((hue + 28) % 360) + ',44%,19%)');
+        sky.addColorStop(1,   'hsl(' + ((hue + 62) % 360) + ',38%,26%)');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, VW, VH);
+
+        for (let i = 0; i < stars.length; i++){
+          const s = stars[i];
+          const y = ((s.y - camY * 0.25) % VH + VH) % VH;
+          ctx.globalAlpha = s.a;
+          fillCircle(ctx, s.x, y, s.r, '#dbe9ff');
+        }
+        ctx.globalAlpha = 1;
+
+        const cx = VW * 0.5;
+
+        for (let i = 0; i < tower.length; i++){
+          const b = tower[i];
+          const y = sy(-i * BH);
+          if (y > VH + BH * 2) continue;
+          if (y < -BH * 4) break;
+          drawBlock(ctx, cx + b.x, y, b.w, BH, PAL[i % PAL.length], 1);
+        }
+
+        if (!d){
+          const y = sy(cur.y);
+          ctx.save();
+          ctx.shadowColor = 'rgba(255,255,255,.35)';
+          ctx.shadowBlur  = 24;
+          drawBlock(ctx, cx + cur.x - cur.w * 0.5, y, cur.w, BH, PAL[tower.length % PAL.length], 1);
+          ctx.restore();
+        }
+
+        for (let i = 0; i < debris.length; i++){
+          const db = debris[i];
+          ctx.save();
+          ctx.translate(cx + db.x + db.w * 0.5, sy(db.y) + BH * 0.5);
+          ctx.rotate(db.rot);
+          ctx.globalAlpha = 0.9;
+          drawBlock(ctx, -db.w * 0.5, -BH * 0.5, db.w, BH, db.c, 1);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+
+        if (perfect > 0){
+          ctx.globalAlpha = perfect * 0.18;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, VW, VH);
+          ctx.globalAlpha = 1;
+        }
+        if (flash > 0){
+          ctx.globalAlpha = flash * 0.10;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, VW, VH);
+          ctx.globalAlpha = 1;
+        }
+
+        const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.22, VW * 0.5, VH * 0.5, VH * 0.95);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, 'rgba(0,0,0,.55)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, VW, VH);
+      }
+
+      return { update: update, draw: draw, restart: reset, get dead(){ return d; } };
+    }
+
+    /* ============================================================== RUNNER === */
+    function makeRunner(VW, VH){
+      const G = 3400, JUMP = -1180;
+
+      let player, obs, speed, dist, t, d, spawnIn, clouds, groundY;
+
+      function reset(){
+        groundY = VH - Math.max(110, VH * 0.16);
+        player  = { x: VW * 0.26, y: groundY, vy: 0, onGround: true, phase: 0, squash: 0 };
+        obs = [];
+        speed = 380;
+        dist  = 0;
+        t = 0; d = false;
+        spawnIn = VW * 0.9;
+        clouds = [];
+        for (let i = 0; i < 9; i++)
+          clouds.push({ x: rand(0, VW), y: rand(VH * 0.06, VH * 0.36), s: rand(0.5, 1.2), sp: rand(0.05, 0.14) });
+      }
+      reset();
+
+      function update(dt){
+        t += dt;
+
+        if (d){
+          player.vy += G * dt;
+          player.y  += player.vy * dt;
+          for (let i = 0; i < obs.length; i++) obs[i].x -= speed * dt;
+          return;
+        }
+
+        speed = 380 + Math.min(340, dist * 0.012);
+        dist += speed * dt;
+
+        let next = null;
+        for (let i = 0; i < obs.length; i++){
+          const o = obs[i];
+          if (o.x + o.w > player.x + 24 && (!next || o.x < next.x)) next = o;
+        }
+        if (next && player.onGround){
+          const airT     = 2 * Math.abs(JUMP) / G;
+          const peakDist = speed * airT * 0.5;
+          const target   = next.x + next.w * 0.5 - player.x;
+          if (target < peakDist + 14 && target > -next.w){
+            player.vy = JUMP;
+            player.onGround = false;
+            player.squash = 1;
+          }
+        }
+
+        player.vy += G * dt;
+        player.y  += player.vy * dt;
+        if (player.y >= groundY){
+          player.y = groundY;
+          player.vy = 0;
+          player.onGround = true;
+        }
+        player.squash = Math.max(0, player.squash - dt * 4);
+        if (player.onGround) player.phase += speed * dt * 0.035;
+
+        spawnIn -= speed * dt;
+        if (spawnIn <= 0){
+          const w = rand(48, 86);
+          const h = rand(58, 118);
+          obs.push({ x: VW + w + 20, w: w, h: h,
+                     c: pick(['#ff6b6b','#feca57','#48dbfb','#c8a2ff']) });
+          spawnIn = speed * rand(1.05, 1.75);
+        }
+
+        const PH = 74, PW = 34;
+        for (let i = obs.length - 1; i >= 0; i--){
+          const o = obs[i];
+          o.x -= speed * dt;
+          if (o.x + o.w < -60){ obs.splice(i, 1); continue; }
+          if (player.x + PW * 0.5 > o.x && player.x - PW * 0.5 < o.x + o.w){
+            if (player.y > groundY - o.h + 6) d = true;
+          }
+        }
+
+        for (let i = 0; i < clouds.length; i++){
+          const c = clouds[i];
+          c.x -= speed * c.sp * dt;
+          if (c.x < -220){ c.x = VW + rand(40, 320); c.y = rand(VH * 0.06, VH * 0.36); }
+        }
+      }
+
+      function ridge(ctx, off, baseY, amp, freq, phase, color){
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, VH);
+        for (let x = 0; x <= VW + 10; x += 10){
+          const u = (x + off) * freq + phase;
+          const y = baseY - (Math.sin(u) * 0.6 + Math.sin(u * 0.53 + 2.1) * 0.4) * amp;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(VW, VH);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function draw(ctx){
+        const sky = ctx.createLinearGradient(0, 0, 0, VH);
+        sky.addColorStop(0,    '#101833');
+        sky.addColorStop(0.42, '#2a3d78');
+        sky.addColorStop(0.72, '#a45f8a');
+        sky.addColorStop(1,    '#f0a06a');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, VW, VH);
+
+        const sunY = groundY - VH * 0.34;
+        const sg = ctx.createRadialGradient(VW * 0.74, sunY, 4, VW * 0.74, sunY, VH * 0.34);
+        sg.addColorStop(0,   'rgba(255,235,190,.95)');
+        sg.addColorStop(0.2, 'rgba(255,190,130,.40)');
+        sg.addColorStop(1,   'rgba(255,150,100,0)');
+        ctx.fillStyle = sg;
+        ctx.fillRect(0, 0, VW, VH);
+
+        ctx.globalAlpha = 0.4;
+        for (let i = 0; i < clouds.length; i++){
+          const c = clouds[i];
+          const s = c.s * 30;
+          fillCircle(ctx, c.x,            c.y,            s,        '#e8d6ff');
+          fillCircle(ctx, c.x + s * 1.15, c.y + s * 0.18, s * 0.75, '#e8d6ff');
+          fillCircle(ctx, c.x - s * 1.10, c.y + s * 0.22, s * 0.65, '#e8d6ff');
+        }
+        ctx.globalAlpha = 1;
+
+        ridge(ctx, -dist * 0.05, groundY - VH * 0.20, VH * 0.070, 0.0035, 0.4, '#2a2f55');
+        ridge(ctx, -dist * 0.13, groundY - VH * 0.10, VH * 0.045, 0.0075, 2.2, '#1e2340');
+        ridge(ctx, -dist * 0.28, groundY - VH * 0.03, VH * 0.022, 0.0160, 4.7, '#151930');
+
+        const gg = ctx.createLinearGradient(0, groundY, 0, VH);
+        gg.addColorStop(0, '#262b45');
+        gg.addColorStop(1, '#0d0f1a');
+        ctx.fillStyle = gg;
+        ctx.fillRect(0, groundY, VW, VH - groundY);
+
+        ctx.fillStyle = 'rgba(130,225,255,.60)';
+        ctx.fillRect(0, groundY - 3, VW, 3);
+
+        ctx.save();
+        ctx.globalAlpha = 0.10;
+        ctx.fillStyle = '#9fe8ff';
+        const sw = 60;
+        const so = ((dist % (sw * 2)) + sw * 2) % (sw * 2);
+        for (let x = -so; x < VW; x += sw * 2) ctx.fillRect(x, groundY + 18, sw, 6);
+        ctx.restore();
+
+        for (let i = 0; i < obs.length; i++){
+          const o = obs[i];
+          const y = groundY - o.h;
+          const g = ctx.createLinearGradient(o.x, y, o.x, groundY);
+          g.addColorStop(0, shade(o.c,  22));
+          g.addColorStop(1, shade(o.c, -22));
+          fillRR(ctx, o.x, y, o.w, o.h, 7, g);
+
+          ctx.save();
+          ctx.globalAlpha = 0.22;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(o.x + 8, y + 8);
+          ctx.lineTo(o.x + o.w - 8, groundY - 8);
+          ctx.moveTo(o.x + o.w - 8, y + 8);
+          ctx.lineTo(o.x + 8, groundY - 8);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+
+        const sq = player.squash;
+        const PH = 74, PW = 34;
+        const h  = PH * (1 - sq * 0.16);
+        const w  = PW * (1 + sq * 0.20);
+
+        const px = Math.round(player.x);
+        const py = Math.round(player.y);
+
+        ctx.save();
+        ctx.translate(px, py - h * 0.5);
+
+        if (player.onGround){
+          const lp = Math.sin(player.phase) * 0.9;
+          const rp = Math.sin(player.phase + Math.PI) * 0.9;
+          ctx.save();
+          ctx.rotate(lp * 0.5);
+          fillRR(ctx, -w * 0.34, h * 0.34, w * 0.22, h * 0.34, 5, '#2f3550');
+          ctx.restore();
+          ctx.save();
+          ctx.rotate(rp * 0.5);
+          fillRR(ctx,  w * 0.12, h * 0.34, w * 0.22, h * 0.34, 5, '#2f3550');
+          ctx.restore();
+        } else {
+          fillRR(ctx, -w * 0.36, h * 0.34, w * 0.24, h * 0.28, 5, '#2f3550');
+          fillRR(ctx,  w * 0.12, h * 0.30, w * 0.24, h * 0.28, 5, '#2f3550');
+        }
+
+        const bg = ctx.createLinearGradient(0, -h * 0.5, 0, h * 0.5);
+        bg.addColorStop(0, '#8ef2ff');
+        bg.addColorStop(1, '#2f8fe0');
+        rr(ctx, -w * 0.5, -h * 0.5, w, h, w * 0.42);
+        ctx.fillStyle = bg;
+        ctx.fill();
+
+        fillRR(ctx, -w * 0.34, -h * 0.30, w * 0.68, h * 0.22, w * 0.16, '#0d1a2a');
+        fillCircle(ctx, w * 0.10, -h * 0.19, w * 0.07, '#8ef2ff');
+
+        ctx.beginPath();
+        ctx.moveTo(0, -h * 0.5);
+        ctx.lineTo(0, -h * 0.72);
+        ctx.lineWidth = Math.max(2, w * 0.07);
+        ctx.strokeStyle = '#8ef2ff';
+        ctx.stroke();
+        fillCircle(ctx, 0, -h * 0.76, w * 0.10, '#ffd166');
+
+        ctx.restore();
+
+        const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.24, VW * 0.5, VH * 0.5, VH * 0.95);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, 'rgba(0,0,0,.55)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, VW, VH);
+      }
+
+      return { update: update, draw: draw, restart: reset, get dead(){ return d; } };
+    }
+
+    /* ======================================================= SLIDE COIN === */
+    const SLIDE_TIER_CACHE = [];
+    function slideTier(index){
+      if (SLIDE_TIER_CACHE[index]) return SLIDE_TIER_CACHE[index];
+      const rng     = mulberry32(index * 2654435761 + 12345);
+      const hue     = Math.floor(rng() * 360);
+      const coinHue = (hue + 140 + Math.floor(rng() * 80)) % 360;
+      const t = {
+        tier:       index + 1,
+        value:      Math.pow(2, index),
+        slideTop:   'hsl(' + hue + ', 70%, 56%)',
+        slideBot:   'hsl(' + hue + ', 72%, 30%)',
+        border:     'hsl(' + hue + ', 88%, 74%)',
+        coinFill:   'hsl(' + coinHue + ', 85%, 56%)',
+        coinStroke: 'hsl(' + coinHue + ', 95%, 84%)'
+      };
+      SLIDE_TIER_CACHE[index] = t;
+      return t;
+    }
+
+    function makeSlideCoin(VW, VH){
+      const CX     = VW * 0.5;
+      const TOP_Y  = VH * 0.14;
+      const BOT_Y  = VH * 0.96;
+      const SPAN   = BOT_Y - TOP_Y;
+      const BOT_W  = Math.min(VW * 0.66, SPAN * 0.58);
+      const TOP_W  = BOT_W * 0.28;
+      const P_R    = Math.max(11, BOT_W * 0.052);
+      const C_R    = P_R * 0.62;
+      const MAG_R  = BOT_W * 0.34;
+      const GRAB_R = BOT_W * 0.155;
+
+      let tier, coins, player, bank, state, idleT, T;
+
+      const xAt = (p, o) => CX + o * (TOP_W + p * (BOT_W - TOP_W)) * 0.5;
+      const yAt = p => TOP_Y + p * SPAN;
+
+      function newRun(){
+        tier = slideTier(Math.floor(RND() * 12));
+
+        coins = [];
+        const n = 9 + Math.floor(RND() * 6);
+        for (let i = 0; i < n; i++){
+          coins.push({
+            progress: 0.06 + RND() * 0.86,
+            offset: (RND() - 0.5) * 1.55,
+            collected: false
+          });
+        }
+
+        player = {
+          progress: 0,
+          offset: 0,
+          target: 0,
+          decideIn: 0,
+          speed: 0.34,
+          magnet: false,
+          magnetIn: 0.8 + RND() * 1.6
+        };
+
+        bank = 0;
+        state = 'run';
+        idleT = 0;
+      }
+
+      T = 0;
+      newRun();
+
+      function update(dt){
+        T += dt;
+
+        if (state === 'idle'){
+          idleT -= dt;
+          if (idleT <= 0) newRun();
+          return;
+        }
+
+        player.decideIn -= dt;
+        if (player.decideIn <= 0){
+          player.target   = (RND() * 2 - 1) * 0.88;
+          player.decideIn = 0.30 + RND() * 0.75;
+        }
+        player.offset += (player.target - player.offset) * Math.min(1, dt * 5);
+        player.offset = clamp(player.offset, -0.92, 0.92);
+
+        player.magnetIn -= dt;
+        if (player.magnetIn <= 0){
+          player.magnet = !player.magnet;
+          player.magnetIn = player.magnet ? (0.45 + RND() * 0.8) : (0.9 + RND() * 1.8);
+        }
+
+        player.speed += dt * 0.035;
+        player.progress += player.speed * dt;
+
+        const pX   = xAt(player.progress, player.offset);
+        const pY   = yAt(player.progress);
+        const grab = player.magnet ? MAG_R : GRAB_R;
+
+        for (let i = 0; i < coins.length; i++){
+          const c = coins[i];
+          if (c.collected) continue;
+          const cX = xAt(c.progress, c.offset);
+          const cY = yAt(c.progress);
+          if (Math.hypot(pX - cX, pY - cY) <= grab){
+            c.collected = true;
+            bank += tier.value;
+          }
+        }
+
+        if (player.progress >= 1){
+          state = 'idle';
+          idleT = 0.55;
+        }
+      }
+
+      function draw(ctx){
+        const sky = ctx.createLinearGradient(0, 0, 0, VH);
+        sky.addColorStop(0,   '#090d18');
+        sky.addColorStop(0.5, '#111a2c');
+        sky.addColorStop(1,   '#070910');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, VW, VH);
+
+        ctx.beginPath();
+        ctx.moveTo(CX - TOP_W / 2, TOP_Y);
+        ctx.lineTo(CX + TOP_W / 2, TOP_Y);
+        ctx.lineTo(CX + BOT_W / 2, BOT_Y);
+        ctx.lineTo(CX - BOT_W / 2, BOT_Y);
+        ctx.closePath();
+
+        const sg = ctx.createLinearGradient(0, TOP_Y, 0, BOT_Y);
+        sg.addColorStop(0, tier.slideTop);
+        sg.addColorStop(1, tier.slideBot);
+        ctx.fillStyle = sg;
+        ctx.fill();
+
+        ctx.lineWidth   = Math.max(2, BOT_W * 0.016);
+        ctx.strokeStyle = tier.border;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.globalAlpha = 0.10;
+        ctx.beginPath();
+        ctx.moveTo(CX - TOP_W / 2, TOP_Y);
+        ctx.lineTo(CX + TOP_W / 2, TOP_Y);
+        ctx.lineTo(CX + BOT_W * 0.18, BOT_Y);
+        ctx.lineTo(CX - BOT_W * 0.18, BOT_Y);
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.restore();
+
+        for (let i = 0; i < coins.length; i++){
+          const c = coins[i];
+          if (c.collected) continue;
+          const cX = xAt(c.progress, c.offset);
+          const cY = yAt(c.progress);
+
+          fillCircle(ctx, cX, cY, C_R, tier.coinFill);
+          ctx.beginPath();
+          ctx.arc(cX, cY, C_R, 0, Math.PI * 2);
+          ctx.lineWidth   = Math.max(1.5, C_R * 0.28);
+          ctx.strokeStyle = tier.coinStroke;
+          ctx.stroke();
+        }
+
+        if (state === 'run'){
+          const pX = xAt(player.progress, player.offset);
+          const pY = yAt(player.progress);
+
+          if (player.magnet){
+            ctx.beginPath();
+            ctx.arc(pX, pY, MAG_R, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(34,197,94,0.10)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(34,197,94,0.55)';
+            ctx.lineWidth = Math.max(2, VW * 0.0025);
+            ctx.stroke();
+          }
+
+          fillCircle(ctx, pX, pY, P_R, '#ef4444');
+          ctx.beginPath();
+          ctx.arc(pX, pY, P_R, 0, Math.PI * 2);
+          ctx.lineWidth   = Math.max(2, P_R * 0.24);
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+        }
+
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '700 ' + (VW * 0.024) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        ctx.fillText('SLIDE ' + tier.tier + '  ·  x' + tier.value + '  ·  ' + bank,
+                     CX, TOP_Y - VH * 0.022);
+
+        const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.22,
+                                            VW * 0.5, VH * 0.5, VH * 0.95);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, 'rgba(0,0,0,.55)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, VW, VH);
+      }
+
+      return { update: update, draw: draw, restart: resetNone, get dead(){ return false; } };
+
+      function resetNone(){ }
+    }
+
+    /* ======================================================== NUMBER GAME === */
+    function makeNumberGame(VW, VH){
+      const BOT_POOL  = ['Astra','Nova','Zed','Kira','Milo','Juno','Pixel','Rune','Echo','Vex','Orbit','Lumi'];
+      const USER_POOL = ['Alex','Sam','Jamie','Riley','Jordan','Casey','Taylor','Morgan','Ari','Noor'];
+
+      const N_BOTS = 6;
+      const USER_I = 5;
+
+      const DW = 100, DH = 128;
+      const S  = Math.min((VW * 0.86) / DW, (VH * 0.58) / DH);
+      const X0 = VW * 0.5 - DW * 0.5 * S;
+      const Y0 = VH * 0.43 - DH * 0.5 * S;
+      const DX = d => X0 + d * S;
+      const DY = d => Y0 + d * S;
+      const F  = d => d * S;
+
+      const SUF = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+
+      function fmt(n){
+        n = Math.floor(n);
+        if (n < 1000) return '' + n;
+        const ti = Math.floor(Math.log10(n) / 3);
+        if (ti >= SUF.length) return n.toExponential(1);
+        const sc = n / Math.pow(1000, ti);
+        return (sc < 10 ? sc.toFixed(2) : sc < 100 ? sc.toFixed(1) : Math.floor(sc)) + SUF[ti];
+      }
+
+      let bots, msgs, mode, userSession, tickAcc, t;
+
+      function totalAll(){
+        let s = 0;
+        for (let i = 0; i < bots.length; i++) s += bots[i].score;
+        return s;
+      }
+
+      function reset(){
+        const pool = BOT_POOL.slice();
+        for (let i = pool.length - 1; i > 0; i--){
+          const j = Math.floor(RND() * (i + 1));
+          const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+        }
+
+        bots = [];
+        for (let i = 0; i < N_BOTS; i++){
+          const isUser = (i === USER_I);
+          bots.push({
+            name: isUser ? USER_POOL[Math.floor(RND() * USER_POOL.length)]
+                         : pool[i % pool.length],
+            score: 0,
+            isUser: isUser,
+            flash: 0
+          });
+        }
+        for (let i = 0; i < N_BOTS; i++){
+          bots[i].score = Math.floor(RND() * 850) + 180;
+        }
+
+        userSession = 0;
+        mode = RND() < 0.5 ? 'chat' : 'original';
+        msgs = [];
+        tickAcc = 0;
+        t = 0;
+      }
+
+      function pushMsg(type, botName, value){
+        msgs.push({ type: type, botName: botName, value: value, life: 0 });
+        if (msgs.length > 8) msgs.shift();
+      }
+
+      function step(){
+        const gain = 1 + Math.floor(RND() * 2);
+        bots[USER_I].score += gain;
+        userSession += gain;
+        bots[USER_I].flash = 1;
+
+        if (mode === 'chat'){
+          pushMsg('user', bots[USER_I].name, totalAll());
+        }
+
+        const reactors = [];
+        for (let i = 0; i < USER_I; i++){
+          if (RND() < 0.32){
+            bots[i].score += 1 + Math.floor(RND() * 3);
+            bots[i].flash = 1;
+            reactors.push(bots[i]);
+          }
+        }
+        if (mode === 'chat' && reactors.length){
+          for (let i = reactors.length - 1; i > 0; i--){
+            const j = Math.floor(RND() * (i + 1));
+            const tmp = reactors[i]; reactors[i] = reactors[j]; reactors[j] = tmp;
+          }
+          const tot = totalAll();
+          for (let i = 0; i < reactors.length; i++){
+            pushMsg('bot', reactors[i].name, tot);
+          }
+        }
+      }
+
+      function update(dt){
+        t += dt;
+        tickAcc += dt;
+        const TICK = 0.42;
+        let guard = 0;
+        while (tickAcc >= TICK && guard++ < 4){
+          tickAcc -= TICK;
+          step();
+        }
+        for (let i = 0; i < bots.length; i++){
+          bots[i].flash = Math.max(0, bots[i].flash - dt * 3.2);
+        }
+        for (let i = 0; i < msgs.length; i++) msgs[i].life += dt;
+      }
+
+      function drawBubble(ctx, m, left, right, top, h){
+        const isUser = m.type === 'user';
+
+        const valStr = fmt(m.value);
+        const nameStr = isUser ? '' : m.botName;
+
+        ctx.font = '800 ' + F(4.4) + 'px "Segoe UI", system-ui, sans-serif';
+        const valW = ctx.measureText(valStr).width;
+        let nameW = 0;
+        if (nameStr){
+          ctx.font = '600 ' + F(3.1) + 'px "Segoe UI", system-ui, sans-serif';
+          nameW = ctx.measureText(nameStr).width;
+        }
+
+        const innerW = Math.max(valW, nameW);
+        const maxW   = (right - left) * 0.78;
+        const w      = Math.min(maxW, innerW + F(6));
+        const x      = isUser ? (right - w) : left;
+
+        fillRR(ctx, x, top, w, h, F(3.2), isUser ? '#c8e6c9' : '#7b1fa2');
+
+        if (isUser){
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#4a148c';
+          ctx.font = '800 ' + F(4.4) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText(valStr, x + w / 2, top + h * 0.68);
+        } else {
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#e1bee7';
+          ctx.font = '600 ' + F(3.0) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText(nameStr, x + F(2.6), top + h * 0.40);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 ' + F(4.4) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText(valStr, x + F(2.6), top + h * 0.86);
+        }
+      }
+
+      function draw(ctx){
+        const chat = (mode === 'chat');
+
+        const bg = ctx.createLinearGradient(0, 0, 0, VH);
+        if (chat){
+          bg.addColorStop(0, '#f3f4f8');
+          bg.addColorStop(1, '#d5d9e2');
+        } else {
+          bg.addColorStop(0,   '#0e1220');
+          bg.addColorStop(0.55,'#1a2338');
+          bg.addColorStop(1,   '#080a12');
+        }
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, VW, VH);
+
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'alphabetic';
+
+        const cx    = DX(50);
+        const total = totalAll();
+
+        ctx.font      = '800 ' + F(13) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.fillStyle = chat ? '#2e7d32' : '#3dff8a';
+        ctx.fillText('Total: ' + fmt(total), cx, DY(9));
+
+        ctx.font      = '700 ' + F(6.6) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.fillStyle = chat ? '#7b1fa2' : '#ea86ff';
+        ctx.fillText('Your total: ' + fmt(bots[USER_I].score), cx, DY(20));
+
+        ctx.fillStyle = chat ? '#a8790a' : '#ffd93d';
+        ctx.fillText('This game: ' + fmt(userSession), cx, DY(29.5));
+
+        const bw = 46, bh = 13;
+        const pop = bots[USER_I].flash;
+        ctx.save();
+        ctx.translate(cx, DY(38) + (bh * S) / 2);
+        ctx.scale(1 + pop * 0.06, 1 + pop * 0.06);
+        ctx.translate(-cx, -(DY(38) + (bh * S) / 2));
+
+        const bx = cx - (bw * S) / 2, by = DY(38);
+        const bgr = ctx.createLinearGradient(bx, by, bx, by + bh * S);
+        if (chat){ bgr.addColorStop(0, '#9c27b0'); bgr.addColorStop(1, '#6a1b9a'); }
+        else     { bgr.addColorStop(0, '#ff5cff'); bgr.addColorStop(1, '#ab00ab'); }
+
+        ctx.save();
+        ctx.shadowColor = chat ? 'rgba(123,31,162,0.35)' : 'rgba(255,0,255,0.55)';
+        ctx.shadowBlur  = F(4);
+        fillRR(ctx, bx, by, bw * S, bh * S, F(3.2), bgr);
+        ctx.restore();
+
+        ctx.fillStyle    = '#ffffff';
+        ctx.font         = '800 ' + F(7.5) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+1', cx, by + bh * S * 0.52);
+        ctx.textBaseline = 'alphabetic';
+        ctx.restore();
+
+        if (!chat){
+          ctx.textAlign = 'center';
+          ctx.font      = '700 ' + F(5.6) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.78)';
+          ctx.fillText('Live Rankings', cx, DY(rankTitleY()));
+
+          const sorted   = bots.slice().sort((a, b) => b.score - a.score);
+          const maxScore = Math.max(1, sorted[0].score);
+          const rowH     = 9.5;
+          const barX     = DX(11);
+          const barW     = 78 * S;
+
+          for (let i = 0; i < sorted.length; i++){
+            const b  = sorted[i];
+            const ry = 68 + i * rowH;
+
+            ctx.textAlign = 'left';
+            ctx.font      = '700 ' + F(4.9) + 'px "Segoe UI", system-ui, sans-serif';
+            ctx.fillStyle = b.isUser ? '#3dff8a' : '#dfe6f2';
+            ctx.fillText((b.isUser ? '★ ' : '') + b.name, barX, DY(ry));
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = b.isUser ? '#3dff8a' : 'rgba(223,230,242,0.75)';
+            ctx.fillText(fmt(b.score), barX + barW, DY(ry));
+
+            const w = Math.max(2 * S, (b.score / maxScore) * barW);
+            fillRR(ctx, barX, DY(ry + 2.2), barW, F(3), F(1.5), 'rgba(255,255,255,0.08)');
+            fillRR(ctx, barX, DY(ry + 2.2), w,    F(3), F(1.5), b.isUser ? '#3dff8a' : '#a855f7');
+          }
+        } else {
+          const px = DX(10), py = DY(56);
+          const pw = 80 * S, ph = 66 * S;
+
+          ctx.save();
+          ctx.shadowColor = 'rgba(0,0,0,0.18)';
+          ctx.shadowBlur  = F(5);
+          fillRR(ctx, px, py, pw, ph, F(4), '#ffffff');
+          ctx.restore();
+
+          ctx.save();
+          rr(ctx, px, py, pw, ph, F(4));
+          ctx.clip();
+          ctx.fillStyle = '#7b1fa2';
+          ctx.fillRect(px, py, pw, 8.5 * S);
+          ctx.restore();
+
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#ffffff';
+          ctx.font      = '700 ' + F(3.9) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText('Group Chat Chaos', px + F(3.4), py + 5.6 * S);
+
+          ctx.textAlign = 'right';
+          ctx.font      = '600 ' + F(3.0) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillText('● ' + N_BOTS + ' online', px + pw - F(3.4), py + 5.6 * S);
+
+          const msgTop = py + 10.5 * S;
+          const msgBot = py + ph - 10.5 * S;
+          const pitch  = 9;
+          const vis    = msgs.slice(-5);
+          const baseY  = msgBot - vis.length * pitch * S;
+
+          const leftX  = px + F(3);
+          const rightX = px + pw - F(3);
+
+          for (let i = 0; i < vis.length; i++){
+            const m = vis[i];
+            ctx.globalAlpha = Math.min(1, m.life * 5);
+            drawBubble(ctx, m, leftX, rightX, baseY + i * pitch * S, 8 * S);
+          }
+          ctx.globalAlpha = 1;
+
+          ctx.save();
+          rr(ctx, px, py, pw, ph, F(4));
+          ctx.clip();
+          ctx.fillStyle = 'rgba(245,245,248,0.95)';
+          ctx.fillRect(px, py + ph - 9 * S, pw, 9 * S);
+          ctx.restore();
+
+          fillRR(ctx, px + F(3), py + ph - 7 * S, F(15), F(5.4), F(2.7), '#7b1fa2');
+          ctx.textAlign    = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle    = '#ffffff';
+          ctx.font         = '700 ' + F(3.6) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText('+1', px + F(3) + F(7.5), py + ph - 4.3 * S);
+
+          fillRR(ctx, px + F(21), py + ph - 7 * S, pw - F(24), F(5.4), F(2.7), '#eceef3');
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#b0b4bd';
+          ctx.font      = '500 ' + F(3.2) + 'px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText('Type a message…', px + F(24), py + ph - 4.3 * S);
+          ctx.textBaseline = 'alphabetic';
+        }
+
+        const vg = ctx.createRadialGradient(VW * 0.5, VH * 0.5, VH * 0.25,
+                                            VW * 0.5, VH * 0.5, VH * 0.95);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, chat ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.55)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, VW, VH);
+    }
+
+      function rankTitleY(){ return 58; }
+
+      reset();
+
+      return { update: update, draw: draw, restart: reset, get dead(){ return false; } };
+    }
+
+    /* ============================================================== ENGINE === */
+    const SCENES = {
+      jump:       makeJump,
+      flappy:     makeFlappy,
+      stack:      makeStack,
+      runner:     makeRunner,
+      slidecoin:  makeSlideCoin,
+      numbergame: makeNumberGame
+    };
+
+    function create(canvas, opts){
+      opts = opts || {};
+      const ctx  = canvas.getContext('2d', { alpha: false });
+      const fps  = clamp(opts.fps || 60, 20, 60);
+      const STEP = 1 / fps;
+
+      const RESTART_DELAY = 0.9;
+
+      let VW = 1000, VH = 1000, scale = 1, aspect = 1;
+      let scene = null, sceneName = '';
+      let raf = 0, last = 0, acc = 0, running = false;
+      let deadTimer = 0;
+
+      if (opts.seed != null) RND = mulberry32(opts.seed);
+
+      function setSceneNow(name){
+        if (!SCENES[name]) return;
+        sceneName = name;
+        scene = SCENES[name](VW, VH);
+        deadTimer = 0;
+      }
+
+      function measure(){
+        const r = canvas.getBoundingClientRect();
+        let w = r.width  || canvas.clientWidth  || global.innerWidth  || 1;
+        let h = r.height || canvas.clientHeight || global.innerHeight || 1;
+        return { w: Math.max(1, w), h: Math.max(1, h) };
+      }
+
+      function applySize(){
+        const m  = measure();
+        const dpr = Math.min(global.devicePixelRatio || 1, 2);
+        canvas.width  = Math.round(m.w * dpr);
+        canvas.height = Math.round(m.h * dpr);
+
+        if (m.w >= m.h){ VH = 1000; VW = 1000 * (m.w / m.h); }
+        else           { VW = 1000; VH = 1000 * (m.h / m.w); }
+
+        scale = canvas.width / VW;
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+
+        return m.w / m.h;
+      }
+
+      let resizeTimer = 0;
+      function onResize(){
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function(){
+          const a = applySize();
+          if (Math.abs(a - aspect) > 0.02){
+            aspect = a;
+            if (sceneName) setSceneNow(sceneName);
+          }
+          render();
+        }, 120);
+      }
+
+      function update(dt){
+        if (!scene) return;
+
+        scene.update(dt);
+
+        if (scene.dead){
+          deadTimer += dt;
+          if (deadTimer >= RESTART_DELAY){
+            deadTimer = 0;
+            if (typeof scene.restart === 'function') scene.restart();
+            else setSceneNow(sceneName);
+          }
+        } else {
+          deadTimer = 0;
+        }
+      }
+
+      function render(){
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        if (scene) scene.draw(ctx);
+        else { ctx.fillStyle = '#08080c'; ctx.fillRect(0, 0, VW, VH); }
+      }
+
+      function tick(now){
+        raf = requestAnimationFrame(tick);
+        if (!last) last = now;
+        let dt = (now - last) / 1000;
+        last = now;
+        if (dt > 0.2) dt = 0.2;
+
+        acc += dt;
+        let guard = 0;
+        while (acc >= STEP && guard++ < 5){
+          update(STEP);
+          acc -= STEP;
+        }
+        render();
+      }
+
+      function start(){
+        if (running) return;
+        running = true;
+
+        aspect = applySize();
+        if (!sceneName) setSceneNow('jump');
+
+        last = 0; acc = 0; deadTimer = 0;
+        raf = requestAnimationFrame(tick);
+
+        global.addEventListener('resize', onResize);
+        global.addEventListener('orientationchange', onResize);
+        document.addEventListener('visibilitychange', onVisibility);
+      }
+
+      function stop(){
+        running = false;
+        cancelAnimationFrame(raf); raf = 0;
+        global.removeEventListener('resize', onResize);
+        global.removeEventListener('orientationchange', onResize);
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
+
+      function onVisibility(){
+        if (document.hidden){
+          cancelAnimationFrame(raf); raf = 0;
+        } else if (running && !raf){
+          last = 0; acc = 0;
+          raf = requestAnimationFrame(tick);
+        }
+      }
+
+      return {
+        start: start,
+        stop: stop,
+        setScene: setSceneNow,
+        get scene(){ return sceneName; }
+      };
+    }
+
+    global.ChillSpaceGameplay = { create: create };
+
+    })(window);
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════════════════
+       ChillSpace Procedural Music Engine — "Varied Band Edition"
+
+       Every parameter is now per-song randomized:
+         tempo, song length, chord rhythm, octave shifts, filter brightness,
+         arp density, drum pattern, bass rhythm, which instruments play.
+       ═══════════════════════════════════════════════════════════════════════ */
+    const ChillSpaceMusic = (function () {
+        'use strict';
+
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        const KEY_PCS = [0, 2, 4, 5, 7, 9, 10, 11];
+
+        const MODES = [
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 6, 7, 9, 11],
+            [0, 2, 4, 6, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 10],
+            [0, 2, 4, 5, 7, 9, 10],
+            [0, 2, 4, 7, 9],
+            [0, 2, 3, 5, 7, 8, 10],
+            [0, 2, 3, 5, 7, 8, 10],
+            [0, 2, 3, 5, 7, 9, 10],   // Dorian
+            [0, 2, 3, 5, 7, 9, 10]
+        ];
+
+        const PROGS = [
+            [0, 4, 5, 3], [0, 4, 5, 3], [0, 5, 3, 4], [0, 3, 4, 5],
+            [5, 3, 0, 4], [0, 4, 3, 5], [0, 3, 0, 4], [5, 4, 0, 3],
+            [0, 5, 2, 6], [0, 6, 5, 4], [0, 2, 5, 4], [3, 4, 0, 5],
+            [0, 4, 5, 3], [0, 3, 5, 4]
+        ];
+
+        function degToMidi(rootPc, scale, deg, octShift) {
+            const n = scale.length;
+            const o = Math.floor(deg / n) + (octShift || 0);
+            const i = ((deg % n) + n) % n;
+            return (o + 1) * 12 + rootPc + scale[i];
+        }
+
+        /* ────────────────────────────────────────────────────────────────
+           Song generator — every parameter below is randomized per seed.
+           ──────────────────────────────────────────────────────────────── */
+        function generateSong(seed) {
+            const rnd = mulberry32(seed >>> 0);
+            const pick = arr => arr[Math.floor(rnd() * arr.length)];
+
+            const keyPc = pick(KEY_PCS);
+            const scale = pick(MODES);
+            const prog  = pick(PROGS);
+
+            // Tempo: wide band, from laid-back to energetic.
+            const tempo = 76 + Math.floor(rnd() * 76);   // 76..151 BPM
+
+            // Song length: 6, 8, or 10 bars.
+            const bars = pick([6, 8, 8, 8, 8, 10]);
+            const totalBeats = bars * 4;
+
+            // Chord rhythm: every 1, 2, or 4 beats.
+            const beatsPerChord = pick([1, 2, 2, 2, 2, 4]);
+            const chordCount = Math.floor(totalBeats / beatsPerChord);
+
+            // ── Per-song profile ──
+            const profile = {
+                bassOct:    pick([1, 2, 2, 3]),
+                padOct:     pick([1, 2, 2, 3]),
+                guitarOct:  pick([2, 3, 3, 4]),
+                arpOct:     pick([2, 3, 3, 4, 5]),
+                synthOct:   pick([3, 4, 4, 5, 5]),
+
+                guitarBright: 3500 + rnd() * 9500,     // 3500..13000 Hz
+                guitarDark:   350 + rnd() * 1000,      // 350..1350 Hz
+                synthBright:  2200 + rnd() * 5800,     // 2200..8000 Hz
+                synthDark:    700 + rnd() * 1700,      // 700..2400 Hz
+                padBright:    1500 + rnd() * 4000,     // 1500..5500 Hz
+                bassBright:   280 + rnd() * 500,       // 280..780 Hz
+
+                arpSkip:    0.12 + rnd() * 0.45,       // 0.12..0.57
+                hatSkip:    rnd() < 0.5 ? 0 : 0.35,
+                kickStyle:  pick(['1-3', '1-3', '1-3', 'four', 'sparse', 'break']),
+                bassRhythm: pick(['8ths', '8ths', '8ths', 'quarters', '16ths']),
+                arpStyle:   pick(['up', 'updown', 'up', 'down', 'random', 'downup']),
+
+                padVol:    0.30 + rnd() * 0.25,
+                guitarVol: 0.35 + rnd() * 0.28,
+                bassVol:   0.40 + rnd() * 0.25,
+                arpVol:    0.16 + rnd() * 0.20,
+                synthVol:  0.26 + rnd() * 0.20,
+                kickVol:   0.75 + rnd() * 0.20,
+                snareVol:  0.60 + rnd() * 0.20,
+                hatVol:    0.28 + rnd() * 0.18,
+
+                hasArp:     rnd() < 0.78,
+                hasLead:    rnd() < 0.82,
+                hasPad:     rnd() < 0.92,
+                hasGuitar:  rnd() < 0.88,
+                hasDrums:   rnd() < 0.94,
+                hasGhostKick:    rnd() < 0.4,
+                hasGuitarSkank:  rnd() < 0.55,
+                hasSnare:        rnd() < 0.85,
+
+                // Lead motif density
+                leadCount:  4 + Math.floor(rnd() * 6),
+            };
+
+            const events = [];
+
+            /* ── DRUMS ── */
+            if (profile.hasDrums) {
+                for (let b = 0; b < totalBeats; b++) {
+                    const beatInBar = b % 4;
+
+                    // Kick patterns
+                    let doKick = false;
+                    switch (profile.kickStyle) {
+                        case '1-3':    doKick = (beatInBar === 0 || beatInBar === 2); break;
+                        case 'four':   doKick = true; break;
+                        case 'sparse': doKick = (beatInBar === 0); break;
+                        case 'break':  doKick = (beatInBar === 0 || beatInBar === 2 || (beatInBar === 3 && rnd() < 0.5)); break;
+                    }
+                    if (doKick) {
+                        events.push({ time: b, kind: 'kick', velocity: profile.kickVol });
+                    }
+                    if (profile.hasGhostKick && beatInBar === 3 && rnd() < 0.35) {
+                        events.push({ time: b + 0.75, kind: 'kick', velocity: profile.kickVol * 0.55 });
+                    }
+
+                    // Snare on 2 & 4
+                    if (profile.hasSnare && (beatInBar === 1 || beatInBar === 3)) {
+                        events.push({ time: b, kind: 'snare', velocity: profile.snareVol });
+                    }
+
+                    // Hats on 8ths, occasionally skipped
+                    if (!profile.hatSkip || rnd() > profile.hatSkip) {
+                        events.push({ time: b, kind: 'hat', velocity: profile.hatVol });
+                    }
+                    if (!profile.hatSkip || rnd() > profile.hatSkip) {
+                        events.push({ time: b + 0.5, kind: 'hat', velocity: profile.hatVol * 0.7 });
+                    }
+                }
+            }
+
+            /* ── CHORDS: pad + guitar + bass ── */
+            const bassStep = profile.bassRhythm === '16ths' ? 0.25
+                           : profile.bassRhythm === '8ths'  ? 0.5
+                           : 1.0;
+
+            for (let c = 0; c < chordCount; c++) {
+                const deg = prog[c % prog.length];
+                const t = c * beatsPerChord;
+
+                // Pad
+                if (profile.hasPad) {
+                    const padNotes = [
+                        degToMidi(keyPc, scale, deg,     profile.padOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.padOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.padOct)
+                    ];
+                    events.push({
+                        time: t, duration: beatsPerChord,
+                        kind: 'pad', notes: padNotes,
+                        velocity: profile.padVol
+                    });
+                }
+
+                // Guitar chord stab + optional skank
+                if (profile.hasGuitar) {
+                    const guitarNotes = [
+                        degToMidi(keyPc, scale, deg,     profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 7, profile.guitarOct + 1)
+                    ];
+                    events.push({
+                        time: t, duration: 0.9,
+                        kind: 'guitar', notes: guitarNotes,
+                        velocity: profile.guitarVol
+                    });
+                    if (profile.hasGuitarSkank && beatsPerChord > 1) {
+                        events.push({
+                            time: t + 1, duration: 0.4,
+                            kind: 'guitar',
+                            notes: [guitarNotes[0], guitarNotes[2]],
+                            velocity: profile.guitarVol * 0.65
+                        });
+                    }
+                }
+
+                // Bass pulse
+                const bassNote = degToMidi(keyPc, scale, deg, profile.bassOct);
+                for (let b = 0; b < beatsPerChord; b += bassStep) {
+                    events.push({
+                        time: t + b,
+                        duration: bassStep * 0.85,
+                        kind: 'bass',
+                        notes: [bassNote],
+                        velocity: profile.bassVol * (b === 0 ? 1 : 0.72)
+                    });
+                }
+            }
+
+            /* ── ARP ── */
+            if (profile.hasArp) {
+                const step = 0.25;
+                const stepsPerChord = Math.round(beatsPerChord / step);
+
+                for (let c = 0; c < chordCount; c++) {
+                    const deg = prog[c % prog.length];
+                    const pool = [
+                        degToMidi(keyPc, scale, deg,     profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 7, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 9, profile.arpOct)
+                    ];
+                    for (let s = 0; s < stepsPerChord; s++) {
+                        if (s !== 0 && rnd() < profile.arpSkip) continue;
+                        let idx;
+                        if (profile.arpStyle === 'up') idx = s % pool.length;
+                        else if (profile.arpStyle === 'down') idx = (pool.length - 1) - (s % pool.length);
+                        else if (profile.arpStyle === 'updown') {
+                            const cyc = s % (pool.length * 2 - 2);
+                            idx = cyc < pool.length ? cyc : (pool.length * 2 - 2 - cyc);
+                        } else if (profile.arpStyle === 'downup') {
+                            const cyc = s % (pool.length * 2 - 2);
+                            const dcyc = cyc < pool.length ? cyc : (pool.length * 2 - 2 - cyc);
+                            idx = (pool.length - 1) - dcyc;
+                        } else idx = Math.floor(rnd() * pool.length);
+                        events.push({
+                            time: c * beatsPerChord + s * step,
+                            duration: step * 0.85,
+                            kind: 'arp',
+                            notes: [pool[idx]],
+                            velocity: profile.arpVol
+                        });
+                    }
+                }
+            }
+
+            /* ── SYNTH LEAD ── */
+            if (profile.hasLead && profile.leadCount > 0) {
+                for (let i = 0; i < profile.leadCount; i++) {
+                    const t = i * (totalBeats / profile.leadCount) + rnd() * 0.4;
+                    const d = Math.floor(rnd() * scale.length) + 7;
+                    events.push({
+                        time: t,
+                        duration: 0.6 + rnd() * 0.9,
+                        kind: 'synth',
+                        notes: [degToMidi(keyPc, scale, d, profile.synthOct)],
+                        velocity: profile.synthVol
+                    });
+                }
+            }
+
+            events.sort((a, b) => a.time - b.time);
+            return { tempo, bars, beatsPerBar: 4, totalBeats, events, seed, profile };
+        }
+
+        const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+
+        /* ────────────────────────────────────────────────────────────────
+           LoopPlayer
+           ──────────────────────────────────────────────────────────────── */
+        class LoopPlayer {
+            constructor(ctx, dest, song) {
+                this.ctx = ctx;
+                this.dest = dest;
+                this.song = song;
+                this.profile = song.profile || {};
+                this.secPerBeat = 60 / song.tempo;
+                this.loopSeconds = song.totalBeats * this.secPerBeat;
+                this.out = ctx.createGain();
+                this.out.gain.value = 0;
+                this.out.connect(dest);
+                this.running = false;
+                this.timer = null;
+                this.loopStartTime = 0;
+                this.loopIteration = 0;
+                this.eventIndex = 0;
+                this.sources = new Set();
+
+                const nSamples = Math.floor(ctx.sampleRate * 0.5);
+                this.noiseBuffer = ctx.createBuffer(1, nSamples, ctx.sampleRate);
+                const nd = this.noiseBuffer.getChannelData(0);
+                for (let i = 0; i < nSamples; i++) nd[i] = Math.random() * 2 - 1;
+            }
+
+            start(when, fadeIn) {
+                this.running = true;
+                this.loopStartTime = when;
+                this.loopIteration = 0;
+                this.eventIndex = 0;
+                const g = this.out.gain;
+                g.cancelScheduledValues(when);
+                g.setValueAtTime(0.0001, when);
+                g.exponentialRampToValueAtTime(1, when + (fadeIn || 0.5));
+                this.timer = setInterval(() => this.tick(), 25);
+                this.tick();
+            }
+
+            tick() {
+                if (!this.running) return;
+                const ctx = this.ctx;
+                const horizon = ctx.currentTime + 0.35;
+                let guard = 0;
+                while (guard++ < 1000) {
+                    if (this.eventIndex >= this.song.events.length) {
+                        this.eventIndex = 0;
+                        this.loopIteration++;
+                        continue;
+                    }
+                    const ev = this.song.events[this.eventIndex];
+                    const absTime = this.loopStartTime
+                                  + this.loopIteration * this.loopSeconds
+                                  + ev.time * this.secPerBeat;
+                    if (absTime > horizon) break;
+                    if (absTime >= ctx.currentTime - 0.02) {
+                        this.schedule(ev, absTime);
+                    }
+                    this.eventIndex++;
+                }
+            }
+
+            schedule(ev, when) {
+                switch (ev.kind) {
+                    case 'kick':   this.kick(ev, when);   break;
+                    case 'snare':  this.snare(ev, when);  break;
+                    case 'hat':    this.hat(ev, when);    break;
+                    case 'bass':   this.bass(ev, when);   break;
+                    case 'pad':    this.pad(ev, when);    break;
+                    case 'guitar': this.guitar(ev, when); break;
+                    case 'arp':    this.arp(ev, when);    break;
+                    case 'synth':  this.synth(ev, when);  break;
+                }
+            }
+
+            _track(node, stopAt) {
+                this.sources.add(node);
+                const ms = Math.max(0, (stopAt - this.ctx.currentTime + 0.5) * 1000);
+                setTimeout(() => this.sources.delete(node), ms);
+            }
+
+            kick(ev, t) {
+                const ctx = this.ctx;
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(160, t);
+                osc.frequency.exponentialRampToValueAtTime(42, t + 0.09);
+
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(ev.velocity, t + 0.003);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+
+                osc.connect(g).connect(this.out);
+                osc.start(t);
+                osc.stop(t + 0.4);
+                this._track(osc, t + 0.4);
+            }
+
+            snare(ev, t) {
+                const ctx = this.ctx;
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = this.noiseBuffer;
+
+                const nf = ctx.createBiquadFilter();
+                nf.type = 'highpass';
+                nf.frequency.value = 1800;
+
+                const ng = ctx.createGain();
+                ng.gain.setValueAtTime(ev.velocity * 0.75, t);
+                ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+
+                noise.connect(nf).connect(ng).connect(this.out);
+                noise.start(t);
+                noise.stop(t + 0.25);
+
+                const body = ctx.createOscillator();
+                body.type = 'triangle';
+                body.frequency.setValueAtTime(220, t);
+                body.frequency.exponentialRampToValueAtTime(140, t + 0.1);
+
+                const bg = ctx.createGain();
+                bg.gain.setValueAtTime(ev.velocity * 0.45, t);
+                bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+
+                body.connect(bg).connect(this.out);
+                body.start(t);
+                body.stop(t + 0.16);
+
+                this._track(noise, t + 0.3);
+                this._track(body, t + 0.2);
+            }
+
+            hat(ev, t) {
+                const ctx = this.ctx;
+                const noise = ctx.createBufferSource();
+                noise.buffer = this.noiseBuffer;
+
+                const f = ctx.createBiquadFilter();
+                f.type = 'highpass';
+                f.frequency.value = 8000;
+
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(ev.velocity * 0.18, t);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+
+                noise.connect(f).connect(g).connect(this.out);
+                noise.start(t);
+                noise.stop(t + 0.1);
+                this._track(noise, t + 0.15);
+            }
+
+            bass(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const endTime = t + dur + 0.2;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.55;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.008);
+                g.gain.setTargetAtTime(0.0001, t + dur * 0.4, 0.16);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 4.5;
+                const bright = p.bassBright || 500;
+                lp.frequency.setValueAtTime(bright * 0.4, t);
+                lp.frequency.exponentialRampToValueAtTime(bright * 2.2, t + 0.05);
+                lp.frequency.exponentialRampToValueAtTime(bright, t + dur);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    const saw = ctx.createOscillator();
+                    saw.type = 'sawtooth';
+                    saw.frequency.value = f;
+                    saw.connect(lp);
+                    saw.start(t);
+                    saw.stop(endTime);
+                    this._track(saw, endTime);
+
+                    const sub = ctx.createOscillator();
+                    sub.type = 'sine';
+                    sub.frequency.value = f / 2;
+                    const sg = ctx.createGain();
+                    sg.gain.value = 0.6;
+                    sub.connect(sg).connect(lp);
+                    sub.start(t);
+                    sub.stop(endTime);
+                    this._track(sub, endTime);
+                });
+            }
+
+            pad(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const attack = 0.18, release = 0.7;
+                const endTime = t + dur + release + 0.2;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.16;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + attack);
+                g.gain.setValueAtTime(peak * 0.75, t + dur * 0.5);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.value = p.padBright || 3500;
+                lp.Q.value = 0.7;
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach((midi, i) => {
+                    const f = midiToFreq(midi);
+                    [-9, 0, 9].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune + i * 2;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            guitar(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const decay = 0.7 + dur * 1.1;
+                const endTime = t + decay + 0.15;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.32;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+
+                const body = ctx.createBiquadFilter();
+                body.type = 'peaking';
+                body.frequency.value = 380;
+                body.Q.value = 2;
+                body.gain.value = 6;
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 1.8;
+                lp.frequency.setValueAtTime(p.guitarBright || 8000, t);
+                lp.frequency.exponentialRampToValueAtTime(p.guitarDark || 600, t + decay);
+                lp.connect(body).connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    [0, 5].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            arp(ev, t) {
+                const ctx = this.ctx;
+                const dur = ev.duration * this.secPerBeat;
+                const decay = 0.22 + dur * 0.7;
+                const endTime = t + decay + 0.06;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.28;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.004);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 1.4;
+                lp.frequency.setValueAtTime(7000, t);
+                lp.frequency.exponentialRampToValueAtTime(1800, t + decay);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'triangle';
+                    osc.frequency.value = midiToFreq(midi);
+                    osc.connect(lp);
+                    osc.start(t);
+                    osc.stop(endTime);
+                    this._track(osc, endTime);
+                });
+            }
+
+            synth(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const attack = 0.025, release = 0.35;
+                const endTime = t + dur + release + 0.1;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.3;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + attack);
+                g.gain.setValueAtTime(peak * 0.82, t + dur * 0.55);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 3;
+                lp.frequency.setValueAtTime(500, t);
+                lp.frequency.exponentialRampToValueAtTime(p.synthBright || 4000, t + 0.09);
+                lp.frequency.exponentialRampToValueAtTime(p.synthDark || 1400, t + dur + release);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    [-7, 7].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            fadeOutAndStop(dur) {
+                if (!this.running) return;
+                const now = this.ctx.currentTime;
+                const g = this.out.gain;
+                g.cancelScheduledValues(now);
+                g.setValueAtTime(Math.max(0.0001, g.value), now);
+                g.exponentialRampToValueAtTime(0.0001, now + dur);
+                this.running = false;
+                const myTimer = this.timer;
+                this.timer = null;
+                setTimeout(() => {
+                    if (myTimer) clearInterval(myTimer);
+                    for (const src of this.sources) {
+                        try { src.stop(); } catch (e) {}
+                    }
+                    this.sources.clear();
+                    try { this.out.disconnect(); } catch (e) {}
+                }, dur * 1000 + 150);
+            }
+        }
+
+        /* ────────────────────────────────────────────────────────────────
+           MusicManager
+           ──────────────────────────────────────────────────────────────── */
+        class MusicManager {
+            constructor() {
+                this.ctx = null;
+                this.master = null;
+                this.voiceGain = null;
+                this.current = null;
+                this.currentSeed = null;
+                this.volume = 0.45;   // quieter than before
+                this.ducked = false;
+            }
+
+            ensureContext() {
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') {
+                        try { this.ctx.resume(); } catch (e) {}
+                    }
+                    return this.ctx;
+                }
+                const Ctor = window.AudioContext || window.webkitAudioContext;
+                if (!Ctor) return null;
+                this.ctx = new Ctor();
+
+                this.voiceGain = this.ctx.createGain();
+                this.voiceGain.gain.value = 1;
+
+                this.master = this.ctx.createGain();
+                this.master.gain.value = this.volume;
+
+                const comp = this.ctx.createDynamicsCompressor();
+                comp.threshold.value = -12;
+                comp.knee.value = 22;
+                comp.ratio.value = 6;
+                comp.attack.value = 0.004;
+                comp.release.value = 0.18;
+
+                this.voiceGain.connect(this.master);
+                this.master.connect(comp);
+                comp.connect(this.ctx.destination);
+                return this.ctx;
+            }
+
+            play(seed) {
+                if (seed === this.currentSeed && this.current) return;
+                const ctx = this.ensureContext();
+                if (!ctx) return;
+
+                const old = this.current;
+                const song = generateSong(seed);
+                const player = new LoopPlayer(ctx, this.voiceGain, song);
+                this.current = player;
+                this.currentSeed = seed;
+
+                if (old) old.fadeOutAndStop(0.5);
+                player.start(ctx.currentTime + 0.02, 0.9);
+            }
+
+            duck(on) {
+                if (!this.voiceGain || !this.ctx) return;
+                if (this.ducked === !!on) return;
+                this.ducked = !!on;
+                const now = this.ctx.currentTime;
+                const target = on ? 0.32 : 1;
+                const tc = on ? 0.06 : 0.22;
+                const g = this.voiceGain.gain;
+                g.cancelScheduledValues(now);
+                g.setValueAtTime(g.value, now);
+                g.setTargetAtTime(target, now, tc);
+            }
+
+            pause() {
+                if (this.ctx && this.ctx.state === 'running') {
+                    try { this.ctx.suspend(); } catch (e) {}
+                }
+            }
+
+            resume() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    try { this.ctx.resume(); } catch (e) {}
+                }
+            }
+
+            setVolume(v) {
+                this.volume = Math.max(0, Math.min(1, v));
+                if (this.master && this.ctx) {
+                    const now = this.ctx.currentTime;
+                    this.master.gain.cancelScheduledValues(now);
+                    this.master.gain.setTargetAtTime(this.volume, now, 0.05);
+                }
+            }
+        }
+
+        return new MusicManager();
+    })();
+</script>
+
+<script>
+    /* =====================================================================
+       ReelSpace — main app
+       ===================================================================== */
+    (function() {
+        const scrollContainer = document.getElementById('scrollContainer');
+        const bgCanvas = document.getElementById('bgCanvas');
+        const musicIndicator = document.getElementById('musicIndicator');
+        const startOverlay = document.getElementById('startOverlay');
+        const loadReelSpaceBtn = document.getElementById('loadReelSpaceBtn');
+        const commentOverlay = document.getElementById('commentOverlay');
+        const commentList = document.getElementById('commentList');
+        const closeCommentsBtn = document.getElementById('closeCommentsBtn');
+        const langToggle = document.getElementById('langToggle');
+        const autoscrollToggle = document.getElementById('autoscrollToggle');
+        const badgeText = document.getElementById('badgeText');
+        const startSub = document.getElementById('startSub');
+
+        const bg = ChillSpaceGameplay.create(bgCanvas, { fps: 60 });
+        bg.start();
+        bg.setScene('jump');
+
+        const GAME_SCENES = ['jump', 'flappy', 'stack', 'runner', 'slidecoin', 'numbergame'];
+        let lastGameScene = null;
+
+        function pickRandomGame() {
+            let name;
+            let guard = 0;
+            do {
+                name = GAME_SCENES[Math.floor(Math.random() * GAME_SCENES.length)];
+                guard++;
+            } while (name === lastGameScene && guard < 20);
+            lastGameScene = name;
+            return name;
+        }
+
+        window.pauseReelSpaceMedia = function() {
+            ChillSpaceMusic.pause();
+            bg.stop();
+        };
+
+        window.resumeReelSpaceMedia = function() {
+            bg.start();
+            if (audioInitialized) {
+                ChillSpaceMusic.resume();
+            }
+        };
+
+        let currentLang = 'en';
+        let isAutoscrollEnabled = false;
+
+        window.onTTSDone = function() {
+            ChillSpaceMusic.duck(false);
+            if (isAutoscrollEnabled) {
+                setTimeout(() => {
+                    scrollToSlide(activeIndex + 1);
+                }, 1000);
+            }
+        };
+
+        function hashString(s) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+        }
+
+        function storySeed(index) {
+            const story = allStories[index];
+            if (!story) return 1;
+            return hashString(story.plainText + '|' + story.topic + '|' + story.rel);
+        }
+
+        function speakText(text, lang) {
+            ChillSpaceMusic.duck(true);
+
+            if (window.AndroidTTS && typeof window.AndroidTTS.speak === 'function') {
+                window.AndroidTTS.speak(text, lang || 'en');
+                return;
+            }
+            if (!window.speechSynthesis) {
+                ChillSpaceMusic.duck(false);
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.92;
+            utterance.pitch = 1.0;
+            utterance.volume = 0.9;
+            if (lang === 'ko') utterance.lang = 'ko-KR';
+            else utterance.lang = 'en-US';
+            const voices = speechSynthesis.getVoices();
+            let voice = null;
+            if (lang === 'ko') {
+                voice = voices.find(v => v.lang.startsWith('ko'));
+            } else {
+                voice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel'))) || voices.find(v => v.lang.startsWith('en'));
+            }
+            if (voice) utterance.voice = voice;
+            utterance.onend = () => {
+                ChillSpaceMusic.duck(false);
+                if (window.onTTSDone) window.onTTSDone();
+            };
+            utterance.onerror = () => {
+                ChillSpaceMusic.duck(false);
+            };
+            speechSynthesis.speak(utterance);
+        }
+
+        const wordSwapDict = {
+            "happy": ["happy", "joyful", "cheerful", "delighted", "ecstatic"],
+            "sad": ["sad", "melancholy", "sorrowful", "downcast", "gloomy"],
+            "big": ["big", "large", "huge", "enormous", "gigantic"],
+            "small": ["small", "tiny", "little", "compact", "miniature"],
+            "beautiful": ["beautiful", "gorgeous", "stunning", "lovely", "radiant"],
+            "ugly": ["ugly", "unsightly", "hideous", "grotesque", "repulsive"],
+            "fast": ["fast", "quick", "rapid", "speedy", "swift"],
+            "slow": ["slow", "sluggish", "leisurely", "gradual", "unhurried"],
+            "old": ["old", "ancient", "aged", "elderly", "vintage"],
+            "new": ["new", "fresh", "novel", "modern", "recent"],
+            "friend": ["friend", "companion", "pal", "confidant", "buddy"],
+            "person": ["person", "individual", "human", "being", "soul"],
+            "thing": ["thing", "idea", "item", "story"],
+            "story": ["story", "tale", "narrative", "account", "anecdote"],
+            "day": ["day", "daytime", "sunlight", "waking hours"],
+            "night": ["night", "evening", "darkness", "nightfall"],
+            "life": ["life", "existence", "being", "lifetime", "living"],
+            "love": ["love", "adore", "cherish", "treasure", "idolize"],
+            "hate": ["hate", "detest", "loathe", "despise", "abhor"],
+            "think": ["think", "believe", "consider", "contemplate", "ponder"],
+            "know": ["know", "understand", "comprehend", "grasp", "perceive"],
+            "hear": ["hear", "listen", "overhear", "attend"],
+            "start": ["start", "begin", "commence", "initiate"],
+            "end": ["end", "finish", "conclude", "terminate"],
+            "help": ["help", "assist", "aid", "support", "guide"],
+            "give": ["give", "offer", "provide", "supply"],
+            "want": ["want", "desire", "wish", "crave", "long for"],
+            "need": ["need", "require", "necessitate", "demand"],
+            "use": ["use", "utilize", "employ", "apply"],
+            "walk": ["walk", "stroll", "saunter", "amble"],
+            "talk": ["talk", "converse", "chat", "communicate"],
+            "listen": ["listen", "heed", "pay attention"],
+            "write": ["write", "compose", "pen", "draft"],
+            "read": ["read", "peruse", "scan", "browse"],
+            "eat": ["eat", "consume", "devour", "ingest"],
+            "drink": ["drink", "sip", "gulp", "quaff"],
+            "sleep": ["sleep", "rest", "slumber", "doze"],
+            "wake": ["wake", "awaken", "rouse", "stir"],
+            "open": ["open", "unlock", "unseal", "unfasten"],
+            "close": ["close", "shut", "seal", "lock"],
+            "try": ["try", "attempt", "endeavor", "strive"],
+            "win": ["win", "triumph", "succeed", "prevail"],
+            "lose": ["lose", "fail", "mislay", "forfeit"],
+            "keep": ["keep", "maintain", "preserve", "retain"],
+            "hold": ["hold", "grip", "clutch", "embrace"],
+            "visit": ["visit", "drop by", "call on", "see"],
+            "thank": ["thank", "appreciate", "grateful", "acknowledge"],
+            "sorry": ["sorry", "apologetic", "remorseful", "regretful"],
+            "maybe": ["maybe", "perhaps", "possibly", "conceivably"],
+            "always": ["always", "constantly", "continually", "perpetually"],
+            "never": ["never", "not ever", "at no time"],
+            "often": ["often", "frequently", "regularly", "repeatedly"],
+            "sometimes": ["sometimes", "occasionally", "periodically", "at times"],
+            "usually": ["usually", "generally", "commonly", "typically"],
+            "very": ["very", "extremely", "exceedingly", "immensely"],
+            "really": ["really", "truly", "genuinely", "actually"],
+            "quite": ["quite", "rather", "fairly", "somewhat"],
+            "much": ["much", "greatly", "considerably", "significantly"],
+            "little": ["little", "small", "slight", "minor"],
+            "short": ["short", "brief", "compressed", "concise"],
+            "easy": ["easy", "simple", "effortless", "uncomplicated"],
+            "bright": ["bright", "luminous", "radiant", "shiny"],
+            "dark": ["dark", "dim", "shadowy", "obscure"],
+            "warm": ["warm", "hot", "heated", "balmy"],
+            "cold": ["cold", "chilly", "freezing", "icy"],
+            "nice": ["nice", "pleasant", "kind", "friendly"],
+            "cruel": ["cruel", "brutal", "inhumane", "savage"],
+            "brave": ["brave", "courageous", "fearless", "valiant"],
+            "cowardly": ["cowardly", "timid", "faint-hearted", "craven"],
+            "wise": ["wise", "sensible", "prudent", "astute"],
+            "foolish": ["foolish", "silly", "unwise", "absurd"],
+            "strong": ["strong", "powerful", "mighty", "sturdy"],
+            "weak": ["weak", "fragile", "feeble", "frail"],
+            "healthy": ["healthy", "fit", "robust", "vigorous"],
+            "sick": ["sick", "ill", "unwell", "diseased"],
+            "rich": ["rich", "wealthy", "affluent", "prosperous"],
+            "poor": ["poor", "impoverished", "needy", "destitute"],
+            "young": ["young", "youthful", "juvenile", "immature"],
+            "early": ["early", "premature", "untimely", "prior"],
+            "late": ["late", "delayed", "overdue", "tardy"],
+            "near": ["near", "close", "adjacent", "proximate"],
+            "far": ["far", "distant", "remote", "faraway"],
+            "heavy": ["heavy", "weighty", "substantial", "massive"],
+            "deep": ["deep", "profound", "intense", "thorough"],
+            "shallow": ["shallow", "superficial", "surface", "trivial"],
+            "clean": ["clean", "pure", "spotless", "immaculate"],
+            "dirty": ["dirty", "filthy", "soiled", "grubby"],
+            "safe": ["safe", "secure", "protected", "guarded"],
+            "dangerous": ["dangerous", "perilous", "hazardous", "risky"],
+            "quiet": ["quiet", "silent", "hushed", "peaceful"],
+            "noisy": ["noisy", "loud", "boisterous", "clamorous"],
+            "busy": ["busy", "occupied", "engaged", "active"],
+            "lazy": ["lazy", "idle", "indolent", "slothful"],
+            "proud": ["proud", "arrogant", "haughty", "conceited"],
+            "humble": ["humble", "modest", "unassuming", "meek"],
+            "honest": ["honest", "truthful", "sincere", "candid"],
+            "dishonest": ["dishonest", "deceitful", "fraudulent", "untruthful"],
+            "loyal": ["loyal", "faithful", "devoted", "steadfast"],
+            "disloyal": ["disloyal", "unfaithful", "treacherous", "perfidious"],
+            "gentle": ["gentle", "mild", "soft", "tender"],
+            "smooth": ["smooth", "even", "polished", "silky"],
+            "dull": ["dull", "blunt", "tedious", "uninteresting"],
+            "smart": ["smart", "intelligent", "clever", "bright"],
+            "dumb": ["dumb", "stupid", "unintelligent", "thick"],
+            "serious": ["serious", "grave", "solemn", "earnest"],
+            "exciting": ["exciting", "thrilling", "stimulating", "electrifying"],
+            "boring": ["boring", "tedious", "mundane", "monotonous"],
+            "amazing": ["amazing", "astonishing", "incredible", "marvelous"],
+            "terrible": ["terrible", "horrific", "appalling", "dreadful"],
+            "wonderful": ["wonderful", "fantastic", "splendid", "magnificent"],
+            "awful": ["awful", "dreadful", "horrible", "appalling"],
+            "great": ["great", "excellent", "superb", "outstanding"],
+            "perfect": ["perfect", "flawless", "ideal", "immaculate"],
+            "hot": ["hot", "scorching", "boiling", "sizzling"],
+            "wet": ["wet", "damp", "moist", "soggy"],
+            "dry": ["dry", "arid", "parched", "dehydrated"],
+            "full": ["full", "filled", "brimming", "packed"],
+            "empty": ["empty", "void", "vacant", "deserted"],
+            "wide": ["wide", "broad", "extensive", "spacious"],
+            "narrow": ["narrow", "slender", "thin", "tight"],
+            "thick": ["thick", "dense", "heavy", "solid"],
+            "thin": ["thin", "slender", "slim", "narrow"],
+            "round": ["round", "circular", "spherical", "curved"],
+            "soft": ["soft", "gentle", "smooth", "plush"],
+            "dim": ["dim", "faint", "weak", "subdued"],
+            "loud": ["loud", "noisy", "boisterous", "deafening"],
+            "sweet": ["sweet", "delightful", "pleasant", "charming"],
+            "sour": ["sour", "acidic", "tart", "acerbic"],
+            "bitter": ["bitter", "acrid", "sharp", "harsh"],
+            "salty": ["salty", "briny", "saline", "flavored"],
+            "spicy": ["spicy", "hot", "piquant", "zesty"],
+            "fresh": ["fresh", "new", "recent", "novel"],
+            "stale": ["stale", "old", "musty", "flat"],
+            "angry": ["angry", "furious", "enraged", "irate"],
+            "calm": ["calm", "peaceful", "serene", "tranquil"],
+            "worried": ["worried", "anxious", "concerned", "uneasy"],
+            "excited": ["excited", "thrilled", "elated", "enthusiastic"],
+            "tired": ["tired", "exhausted", "weary", "fatigued"],
+            "energetic": ["energetic", "active", "lively", "dynamic"],
+            "nervous": ["nervous", "tense", "anxious", "jittery"],
+            "relaxed": ["relaxed", "calm", "at ease", "unwound"],
+            "confident": ["confident", "assured", "self-assured", "poised"],
+            "shy": ["shy", "timid", "reserved", "introverted"],
+            "outgoing": ["outgoing", "extroverted", "sociable", "gregarious"],
+            "friendly": ["friendly", "kind", "amiable", "cordial"],
+            "unfriendly": ["unfriendly", "hostile", "cold", "aloof"],
+            "polite": ["polite", "courteous", "well-mannered", "gracious"],
+            "rude": ["rude", "impolite", "discourteous", "offensive"],
+            "generous": ["generous", "benevolent", "charitable", "liberal"],
+            "stingy": ["stingy", "miserly", "tightfisted", "penny-pinching"],
+            "heroic": ["heroic", "courageous", "valiant", "fearless"],
+            "spineless": ["spineless", "timid", "cowardly", "faint-hearted"],
+            "cozy": ["cozy", "snug", "comfortable", "warm"],
+            "frigid": ["frigid", "freezing", "icy", "frosty"],
+            "scorching": ["scorching", "boiling", "sizzling", "very hot"],
+            "damp": ["damp", "moist", "wet", "soggy"],
+            "arid": ["arid", "parched", "dry", "dehydrated"],
+            "brimming": ["brimming", "packed", "full", "filled"],
+            "void": ["void", "vacant", "empty", "deserted"],
+            "extensive": ["extensive", "spacious", "wide", "broad"],
+            "slender": ["slender", "thin", "slim", "narrow"],
+            "dense": ["dense", "heavy", "solid", "thick"],
+            "circular": ["circular", "spherical", "curved", "round"],
+            "plush": ["plush", "soft", "gentle", "smooth"],
+            "rigid": ["rigid", "firm", "hard", "solid"],
+            "vivid": ["vivid", "brilliant", "luminous", "bright"],
+            "faint": ["faint", "weak", "subdued", "dim"],
+            "boisterous": ["boisterous", "deafening", "loud", "noisy"],
+            "hushed": ["hushed", "quiet", "soft", "low"],
+            "delightful": ["delightful", "pleasant", "charming", "sweet"],
+            "acidic": ["acidic", "tart", "acerbic", "sour"],
+            "acrid": ["acrid", "sharp", "harsh", "bitter"],
+            "briny": ["briny", "saline", "flavored", "salty"],
+            "piquant": ["piquant", "zesty", "hot", "spicy"],
+            "musty": ["musty", "flat", "stale", "old"],
+            "well-off": ["well-off", "wealthy", "affluent", "rich"],
+            "penniless": ["penniless", "impoverished", "needy", "poor"],
+            "glad": ["glad", "cheerful", "merry", "happy"],
+            "unhappy": ["unhappy", "melancholy", "sorrowful", "sad"],
+            "furious": ["furious", "enraged", "irate", "angry"],
+            "peaceful": ["peaceful", "serene", "tranquil", "calm"],
+            "anxious": ["anxious", "concerned", "uneasy", "worried"],
+            "thrilled": ["thrilled", "elated", "enthusiastic", "excited"],
+            "exhausted": ["exhausted", "weary", "fatigued", "tired"],
+            "active": ["active", "lively", "dynamic", "energetic"],
+            "tense": ["tense", "anxious", "jittery", "nervous"],
+            "at ease": ["at ease", "calm", "unwound", "relaxed"],
+            "assured": ["assured", "self-assured", "poised", "confident"],
+            "reserved": ["reserved", "introverted", "shy", "timid"],
+            "extroverted": ["extroverted", "sociable", "gregarious", "outgoing"],
+            "amiable": ["amiable", "cordial", "kind", "friendly"],
+            "hostile": ["hostile", "cold", "aloof", "unfriendly"],
+            "courteous": ["courteous", "well-mannered", "gracious", "polite"],
+            "impolite": ["impolite", "discourteous", "offensive", "rude"],
+            "benevolent": ["benevolent", "charitable", "liberal", "generous"],
+            "miserly": ["miserly", "tightfisted", "penny-pinching", "stingy"],
+            "courageous": ["courageous", "heroic", "valiant", "brave"],
+            "fearful": ["fearful", "spineless", "cowardly", "timid"],
+            "intelligent": ["intelligent", "clever", "bright", "smart"],
+            "stupid": ["stupid", "unwise", "foolish", "silly"],
+            "powerful": ["powerful", "tough", "sturdy", "strong"],
+            "feeble": ["feeble", "frail", "delicate", "weak"],
+            "fit": ["fit", "well", "robust", "healthy"],
+            "ill": ["ill", "diseased", "unwell", "sick"],
+            "affluent": ["affluent", "prosperous", "wealthy", "rich"],
+            "impoverished": ["impoverished", "needy", "destitute", "poor"],
+            "youthful": ["youthful", "childish", "immature", "young"],
+            "aged": ["aged", "elderly", "ancient", "old"],
+            "premature": ["premature", "untimely", "timely", "early"],
+            "tardy": ["tardy", "behind", "overdue", "late"],
+            "distant": ["distant", "remote", "faraway", "far"],
+            "weighty": ["weighty", "massive", "ponderous", "heavy"],
+            "weightless": ["weightless", "airy", "flimsy", "light"],
+            "profound": ["profound", "intense", "thorough", "deep"],
+            "pure": ["pure", "spotless", "immaculate", "clean"],
+            "filthy": ["filthy", "soiled", "grubby", "dirty"],
+            "secure": ["secure", "protected", "guarded", "safe"],
+            "perilous": ["perilous", "hazardous", "risky", "dangerous"],
+            "silent": ["silent", "hushed", "peaceful", "quiet"],
+            "clamorous": ["clamorous", "noisy", "loud", "boisterous"]
+        };
+
+        const ambiguousWords = new Set([
+            'good', 'well', 'bad', 'hard', 'light', 'kind', 'mean', 'right', 'left',
+            'call', 'just', 'even', 'long', 'cool', 'rough', 'sharp', 'funny', 'flat',
+            'level', 'surface', 'please', 'take', 'run', 'work', 'see', 'feel', 'go',
+            'time', 'play', 'close', 'come', 'make', 'hold', 'find', 'keep', 'try',
+            'win', 'lose', 'open', 'turn', 'fall', 'spring', 'still', 'fair', 'fine',
+            'set', 'stand', 'point', 'ground', 'back', 'hand', 'head', 'face', 'eye',
+            'foot', 'man', 'woman', 'child', 'house', 'home', 'room', 'door', 'water',
+            'fire', 'air', 'earth', 'world', 'death', 'touch', 'break', 'bring',
+            'carry', 'cut', 'draw', 'drive', 'fight', 'fly', 'grow', 'hit', 'hurt',
+            'lay', 'lead', 'leave', 'lie', 'meet', 'pay', 'put', 'ride', 'ring',
+            'rise', 'say', 'sell', 'send', 'shake', 'shoot', 'shut', 'sing', 'sink',
+            'sit', 'speak', 'spend', 'strike', 'swim', 'teach', 'tear', 'tell',
+            'throw', 'understand', 'wear', 'bear', 'beat', 'become', 'bend',
+            'bite', 'blow', 'build', 'burn', 'buy', 'catch', 'choose', 'cost',
+            'deal', 'dig', 'do', 'dream', 'feed', 'forget', 'forgive', 'freeze',
+            'get', 'hang', 'have', 'hide', 'lend', 'let', 'show', 'steal',
+            'stick', 'swim'
+        ]);
+
+        const filteredDict = {};
+        for (const [key, value] of Object.entries(wordSwapDict)) {
+            if (!ambiguousWords.has(key)) {
+                filteredDict[key] = value;
+            }
+        }
+        const safeSwapWords = Object.keys(filteredDict);
+
+        function replaceWordsInText(text) {
+            if (!text) return text;
+            const regex = new RegExp('\\b(' + safeSwapWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi');
+            return text.replace(regex, function(match) {
+                const lower = match.toLowerCase();
+                const synonyms = filteredDict[lower];
+                if (!synonyms) return match;
+                const chosen = synonyms[Math.floor(Math.random() * synonyms.length)];
+                if (match === match.toUpperCase()) return chosen.toUpperCase();
+                if (match[0] === match[0].toUpperCase()) return chosen.charAt(0).toUpperCase() + chosen.slice(1);
+                return chosen;
+            });
+        }
+
+        function replaceWordsInHtml(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while (node = walker.nextNode()) {
+                node.textContent = replaceWordsInText(node.textContent);
+            }
+            return doc.body.innerHTML;
+        }
+
+        const enTopics = [
+            "McDonalds", "knitting", "orange jelly beans", "sour gummy worms", "collecting stamps",
+            "pineapple on pizza", "reality TV shows", "antique door knobs", "competitive dog grooming",
+            "the mating habits of snails", "artisanal mayonnaise", "vintage lunch boxes",
+            "conspiracy theories about pigeons", "the history of spoons", "competitive staring",
+            "underwater basket weaving", "extreme ironing", "cheese sculpting", "professional cuddling",
+            "medieval reenactment", "taxidermy for beginners", "the philosophy of left socks",
+            "artisanal toast", "competitive yawning", "the science of why cats ignore you",
+            "professional line standing", "extreme napping", "the art of making hospital corners",
+            "competitive waiting", "the history of the high five", "the economics of lemonade stands",
+            "the physics of why toast lands butter-side down", "professional apology writing",
+            "the sociology of elevator silence", "the anthropology of dad jokes",
+            "the psychology of why we hate our own voice", "the biology of the perfect French fry",
+            "the chemistry of a perfect cup of tea", "the mathematics of queue jumping",
+            "the geography of lost socks", "the linguistics of baby talk",
+            "the archaeology of forgotten leftovers", "the meteorology of indoor fog",
+            "the botany of weeds in sidewalk cracks", "the zoology of house dust bunnies",
+            "the astronomy of ceiling stains", "the oceanography of puddles", "the geology of soap scum",
+            "the mythology of missing Tupperware lids", "the neuroscience of procrastination",
+            "the history of mismatched socks", "the philosophy of fridge magnets",
+            "the sociology of group chat names", "the economics of vending machine snacks",
+            "the psychology of autocorrect fails", "the biology of the office plant",
+            "the chemistry of burnt popcorn", "the physics of untangling headphones",
+            "the mathematics of splitting the bill", "the anthropology of emoji usage",
+            "the linguistics of passive-aggressive notes"
+        ];
+        const enRelations = [
+            "lil cousin", "best friend", "wife", "husband", "sister", "brother", "mom", "dad", "grandmother",
+            "grandfather", "aunt", "uncle", "nephew", "niece", "step-sister", "step-brother", "roommate",
+            "neighbor", "boss", "coworker", "cat", "dog", "goldfish", "imaginary friend", "pen pal",
+            "therapist", "mailman", "barista", "yoga instructor", "dentist", "Uber driver",
+            "personal trainer", "hairdresser", "accountant", "life coach", "dry cleaner",
+            "pizza delivery guy", "librarian", "parrot", "houseplant", "favorite barista",
+            "childhood nemesis"
+        ];
+        const enTemplates = [
+            "Neither of them planned on bonding over <span class=\"highlight\">${topic}</span>, it just happened somewhere between the third joke and the second round of drinks. OP's <span class=\"highlight\">${rel}</span> had this way of making even the smallest detail sound worth caring about, and OP was completely gone for it by the end of the conversation. They ended up closing the place down, still talking about it like it was the most fascinating topic in the world. That night, OP realized some connections don't need grand gestures — just someone who gets excited about the same weird things you do.",
+            "OP never expected a deep conversation about <span class=\"highlight\">${topic}</span> with their <span class=\"highlight\">${rel}</span>, but that's exactly what turned a boring afternoon into a core memory. What started as a casual mention quickly spiraled into a two-hour rabbit hole of stories, theories, and laughter. By the time they looked up, the sun had set and neither had noticed. It's funny how the smallest subjects can open the biggest doors between people.",
+            "The whole thing started because <span class=\"highlight\">${rel}</span> wouldn't stop talking about <span class=\"highlight\">${topic}</span>. By the time OP realized they were genuinely interested, it was already 2 AM. They were leaning forward, asking questions, and genuinely hanging on every word. Even now, OP can't hear about <span class=\"highlight\">${topic}</span> without smiling and thinking of that late-night conversation that changed everything.",
+            "It's funny how <span class=\"highlight\">${topic}</span> became the secret language between OP and their <span class=\"highlight\">${rel}</span>. Nobody else got it, and that was the best part. A single word, a raised eyebrow — and they'd both be in stitches while everyone else looked confused. It's the kind of bond that makes you feel like you belong somewhere, even when the rest of the world feels unfamiliar.",
+            "OP used to hate <span class=\"highlight\">${topic}</span> until <span class=\"highlight\">${rel}</span> explained it like it was the most important thing in the world. Now OP has a shelf dedicated to it. The transformation was so gradual that OP didn't even notice until they caught themselves defending it passionately at a dinner party. Credit goes entirely to their <span class=\"highlight\">${rel}</span> for making the mundane feel magical.",
+            "<span class=\"highlight\">${rel}</span> brought up <span class=\"highlight\">${topic}</span> during a road trip, and suddenly the next three hours felt like five minutes. Windows down, music off, just two voices filling the car with excitement. OP remembers thinking that this was the kind of conversation you chase your whole life — the one where time bends and the outside world disappears. They arrived at their destination feeling closer than ever.",
+            "The first time OP heard <span class=\"highlight\">${rel}</span> passionately defend <span class=\"highlight\">${topic}</span>, they knew this was a person who cared about things that mattered in the weirdest way. It wasn't about being right; it was about how much heart they poured into it. OP sat back and just watched, totally captivated. That was the moment they realized they wanted this person in their life for good.",
+            "They bonded over <span class=\"highlight\">${topic}</span> at a family gathering when no one else was paying attention. <span class=\"highlight\">${rel}</span> whispered a joke about it, and OP has never felt more seen. In a room full of people talking over each other, that quiet moment felt like an anchor. From then on, every family event became bearable because they knew they'd have their little inside world to escape to.",
+            "OP didn't think <span class=\"highlight\">${topic}</span> could be emotional, but <span class=\"highlight\">${rel}</span> told a story about it that made them tear up in a parking lot. It was late, the streetlights flickering, and suddenly OP saw the depth behind the laughter. That conversation turned a lighthearted topic into something deeply personal. They never looked at <span class=\"highlight\">${topic}</span> the same way again.",
+            "If it weren't for <span class=\"highlight\">${topic}</span>, OP and their <span class=\"highlight\">${rel}</span> might have stayed strangers. Now they send each other memes about it every single day. It became the thread that wove their friendship tighter with every laugh. Even on bad days, a notification about it can turn everything around. Some friendships are built on big moments; theirs was built on this one beautiful, ridiculous shared interest.",
+            "The obsession with <span class=\"highlight\">${topic}</span> started as a joke between OP and <span class=\"highlight\">${rel}</span>, and now there's a group chat with 12 people dedicated to it. What began as a sarcastic comment turned into a full-blown community. OP still can't believe how one inside joke snowballed into something so wholesome. It just goes to show that the best things often start when you're not taking yourself too seriously.",
+            "<span class=\"highlight\">${rel}</span> once gave OP a gift related to <span class=\"highlight\">${topic}</span> that was so perfectly weird, OP knew they'd be friends for life. It wasn't expensive, but the thought behind it spoke volumes. Every time OP sees that gift, they remember the exact moment they realized they'd found their person. True friendship isn't about grand gestures — it's about knowing someone well enough to buy the perfect weird present.",
+            "During a power outage, OP and <span class=\"highlight\">${rel}</span> ended up debating <span class=\"highlight\">${topic}</span> by candlelight, and honestly, it was the most alive OP had felt in years. No screens, no distractions — just two people and a conversation that lit up the dark room. They talked until the lights came back on, and then kept talking anyway. That night reminded OP what real connection feels like.",
+            "The moment <span class=\"highlight\">${rel}</span> admitted their secret love for <span class=\"highlight\">${topic}</span>, OP realized they'd found their person. It was such a small, vulnerable confession, and yet it changed everything. From that point on, they built an entire world around that shared passion. Sometimes the strongest bonds come from the quietest admissions.",
+            "OP never thought they'd be the type to stay up late reading about <span class=\"highlight\">${topic}</span>, but <span class=\"highlight\">${rel}</span> sent one article and the rabbit hole swallowed them whole. Hours vanished as they clicked link after link, their fascination growing with each new fact. Now they're the one sending articles back, and the cycle continues. It's amazing how one person's enthusiasm can light a fire you never knew you had.",
+            "It was <span class=\"highlight\">${rel}</span> who first introduced OP to <span class=\"highlight\">${topic}</span>, and while OP rolled their eyes at first, now they can't imagine a week without it. The shift happened so naturally: curiosity, then enjoyment, then full-blown obsession. OP owes their <span class=\"highlight\">${rel}</span> a lifetime of thanks for cracking open a door they didn't even know existed.",
+            "In a world full of small talk, <span class=\"highlight\">${rel}</span> chose to ask OP about <span class=\"highlight\">${topic}</span>. That question changed everything. It wasn't just a topic — it was an invitation into a deeper, more genuine space. OP will never forget that moment of being truly seen. One question, asked with genuine interest, can alter the course of a relationship forever.",
+            "The best compliment OP ever received was <span class=\"highlight\">${rel}</span> saying they reminded them of <span class=\"highlight\">${topic}</span>. It made absolutely no sense, but it meant the world. Because to <span class=\"highlight\">${rel}</span>, that comparison was the highest praise. OP carries that strange, beautiful compliment in their heart every day.",
+            "While everyone else was arguing, <span class=\"highlight\">${rel}</span> pulled OP aside and whispered something about <span class=\"highlight\">${topic}</span> that made them both lose it laughing. That stolen moment of humor in the middle of chaos sealed their bond. They became a team after that — always finding joy in the cracks. A shared laugh can be the foundation of an unbreakable alliance.",
+            "OP's <span class=\"highlight\">${rel}</span> has a theory about <span class=\"highlight\">${topic}</span> that sounds insane, but the more OP thinks about it, the more they believe it. They've spent hours debating the finer points, drawing diagrams on napkins and laughing at how seriously they're taking it. That kind of collaborative madness doesn't come around often. When it does, you hold on tight.",
+            "The way <span class=\"highlight\">${rel}</span> talks about <span class=\"highlight\">${topic}</span> makes OP feel like they're listening to a TED Talk from a genius who also happens to be their favorite human. Every word is filled with such passion and clarity that OP can't help but be drawn in. It's a masterclass in enthusiasm, and OP is an eager student. They've learned more from those monologues than from any textbook.",
+            "A random comment about <span class=\"highlight\">${topic}</span> from <span class=\"highlight\">${rel}</span> turned into a three-hour voice call. No regrets. They covered every angle, shared every opinion, and laughed until their throats hurt. That call is now a cherished memory — proof that the best conversations need no planning. Sometimes you just fall into something incredible.",
+            "OP thought they were the only one who cared about <span class=\"highlight\">${topic}</span> until <span class=\"highlight\">${rel}</span> pulled out a notebook filled with notes on it. In that moment, OP felt a rush of belonging they hadn't felt in years. They spent the next hour reading through the notes together, adding their own thoughts in the margins. It was the beginning of a beautiful, nerdy partnership.",
+            "The truest thing <span class=\"highlight\">${rel}</span> ever said was about <span class=\"highlight\">${topic}</span>, and OP has it tattooed on their brain. Those words became a mantra, a piece of guidance that shows up exactly when needed. It's incredible how one sentence can echo through your life and keep you grounded. Some advice is just dressed up in a very specific package.",
+            "If soulmates exist, OP and <span class=\"highlight\">${rel}</span> definitely found each other through <span class=\"highlight\">${topic}</span>. It wasn't a loud, dramatic meeting — just a quiet recognition that they spoke the same language. From that point on, everything clicked. The universe might be chaotic, but that connection felt like it was written in the stars.",
+            "Every time OP hears <span class=\"highlight\">${topic}</span> mentioned now, they automatically think of <span class=\"highlight\">${rel}</span>. It's a permanent association, woven into their brain. A word, a sound, a reference — all roads lead back to that person. It's a comforting constant in a changing world.",
+            "<span class=\"highlight\">${rel}</span> turned <span class=\"highlight\">${topic}</span> into a full-blown weekend project, and OP showed up with snacks and a ridiculous amount of enthusiasm. They worked side by side, getting paint on their clothes and laughing at their own mistakes. That weekend wasn't just about the project — it was about building something together. The result sits proudly in OP's home, a reminder of teamwork and joy.",
+            "The quietest person at the party (<span class=\"highlight\">${rel}</span>) suddenly lit up when someone mentioned <span class=\"highlight\">${topic}</span>. OP fell a little bit in love right there. It was like watching a flower bloom in real time. From that moment on, OP made it their mission to keep that light shining.",
+            "OP's favorite holiday memory is <span class=\"highlight\">${rel}</span> doing an impression related to <span class=\"highlight\">${topic}</span> that made the whole room cry laughing. Even years later, someone will reference it and the laughter starts all over again. That kind of joy is timeless. It's the gift that keeps on giving.",
+            "There's a specific look <span class=\"highlight\">${rel}</span> gets when <span class=\"highlight\">${topic}</span> is brought up, and OP lives for that look. It's a mix of excitement and mischief that promises a good story is coming. OP has learned to recognize it instantly and clear their schedule. That expression alone could power a small city.",
+            "The duo nobody expected: OP, <span class=\"highlight\">${rel}</span>, and an unhealthy amount of knowledge about <span class=\"highlight\">${topic}</span>. They've become the unofficial experts among their friends, always ready with a fun fact. What started as a quirky interest has turned into a whole identity. And honestly, they wouldn't have it any other way.",
+            "They built an entire friendship on <span class=\"highlight\">${topic}</span>. Sure, other things matter, but that's the foundation. It's the safe topic they return to when life gets messy, the anchor in stormy seas. No matter what happens, they can always talk about it for hours. A solid foundation makes any relationship stronger.",
+            "OP tried to act cool when <span class=\"highlight\">${rel}</span> mentioned <span class=\"highlight\">${topic}</span>, but their face betrayed them instantly. The blush, the awkward smile — it was all out there. <span class=\"highlight\">${rel}</span> just grinned and kept talking, clearly enjoying the reaction. That vulnerability became the first brick in a very strong wall of trust.",
+            "<span class=\"highlight\">${rel}</span> once explained <span class=\"highlight\">${topic}</span> using only hand gestures, and OP understood perfectly. That's connection. No words needed, just a shared wavelength that made communication effortless. It was hilarious, but also deeply meaningful. They still reference that moment as the peak of their friendship.",
+            "The fact that <span class=\"highlight\">${rel}</span> and OP can argue for hours about <span class=\"highlight\">${topic}</span> and still hug it out is proof that some bonds are unbreakable. Voices get raised, opinions clash, but at the end there's always a mutual respect. They've learned that disagreement doesn't mean disconnection. It just means they care enough to fight for their point.",
+            "OP's <span class=\"highlight\">${rel}</span> wrote a poem about <span class=\"highlight\">${topic}</span> as a joke, and it was so good OP framed it. The rhyming was terrible, the meter was off, but the heart was undeniable. That poem now hangs in OP's hallway, a daily reminder of creative love. It's the best bad poem ever written.",
+            "The origin story of OP and <span class=\"highlight\">${rel}</span> isn't dramatic, but it does involve <span class=\"highlight\">${topic}</span> and a very confused bystander. The bystander watched them go from strangers to best friends in under an hour, all because of a shared random interest. They still laugh about that bewildered expression. Some origin stories are quiet, but they're just as powerful.",
+            "<span class=\"highlight\">${rel}</span> has a conspiracy board about <span class=\"highlight\">${topic}</span>, and OP is honored to be the only one allowed to see it. Strings, photos, wild theories — it's a masterpiece of organized chaos. OP adds a new piece every visit, contributing to the beautiful madness. It's their shared secret universe.",
+            "When OP was having a terrible day, <span class=\"highlight\">${rel}</span> sent a voice note about <span class=\"highlight\">${topic}</span> that fixed everything in under two minutes. The sheer enthusiasm in that recording acted like a reset button for OP's brain. They played it three times in a row, feeling lighter each time. Never underestimate the healing power of shared nerdiness.",
+            "They don't need words anymore; <span class=\"highlight\">${rel}</span> just raises an eyebrow about <span class=\"highlight\">${topic}</span> and OP knows exactly what's up. That silent communication is the result of years of shared context. It's efficient, hilarious, and deeply satisfying. The ultimate level of friendship is an unspoken conversation.",
+            "The group chat exploded when <span class=\"highlight\">${rel}</span> shared their hot take on <span class=\"highlight\">${topic}</span>. OP defended them until their keyboard broke. It was a fierce, chaotic, and utterly joyful defense of a shared passion. By the end, even the critics had to admit <span class=\"highlight\">${rel}</span> had a point. That's what loyalty looks like.",
+            "OP's <span class=\"highlight\">${rel}</span> has a playlist inspired by <span class=\"highlight\">${topic}</span>, and it's weirdly perfect. Every song somehow captures the vibe, even if the lyrics have nothing to do with it. OP listens to it whenever they need a boost. It's a sonic time capsule of their friendship.",
+            "The way <span class=\"highlight\">${rel}</span> says the word <span class=\"highlight\">${topic}</span> is OP's favorite sound in the universe. The inflection, the tiny smile that follows — it's pure magic. OP has secretly recorded it (with permission) just to hear it on bad days. Small things can carry enormous weight.",
+            "A five-minute chat about <span class=\"highlight\">${topic}</span> with <span class=\"highlight\">${rel}</span> gave OP more joy than a whole week of vacation. It was so simple, yet so fulfilling. They walked away feeling lighter, brighter, and more connected. Sometimes the best moments are the shortest ones.",
+            "Sometimes OP randomly texts <span class=\"highlight\">${rel}</span> just the word <span class=\"highlight\">${topic}</span> and receives an entire essay back. It's their ritual. That one-word text is a bat signal of friendship, and the response never disappoints. Reading those essays is the highlight of OP's day.",
+            "The most romantic thing OP ever heard wasn't 'I love you' — it was <span class=\"highlight\">${rel}</span> saying 'I found a new documentary about <span class=\"highlight\">${topic}</span>.' In that moment, OP knew they were completely, hopelessly gone. Nothing says devotion like wanting to share the thing you love with the person you love.",
+            "OP used to think <span class=\"highlight\">${topic}</span> was boring, but <span class=\"highlight\">${rel}</span> talked about it with such passion that OP now owns three books on the subject. The conversion was so complete that OP sometimes gives lectures to unsuspecting friends. They've become the very thing they once mocked, and they're proud of it.",
+            "When <span class=\"highlight\">${rel}</span> and OP met, they almost didn't talk. Then <span class=\"highlight\">${topic}</span> came up and they've been inseparable since. That one topic was the key that unlocked everything else. Without it, they might have stayed polite strangers. The universe works in mysterious, wonderful ways.",
+            "There's a bench in the park where <span class=\"highlight\">${rel}</span> first opened up about <span class=\"highlight\">${topic}</span>. OP walks past it and smiles every time. That bench is now a landmark in their personal history, a physical reminder of a pivotal moment. If benches could talk, that one would tell a beautiful story.",
+            "The inside jokes about <span class=\"highlight\">${topic}</span> between OP and <span class=\"highlight\">${rel}</span> could fill a book. Maybe they should write one. They've already outlined chapters and designed a cover in their heads. It would be a bestseller, at least among their friend group. Perhaps one day they'll actually sit down and write it — that would be the ultimate tribute to their bond."
+        ];
+
+        const koTopics = [
+            "맥도날드", "뜨개질", "오렌지 젤리빈", "신맛 나는 구미 웜", "우표 수집",
+            "파인애플 피자", "리얼리티 TV 쇼", "골동품 문 손잡이", "경쟁적인 개 미용", "달팽이의 짝짓기 습성",
+            "장인 정신 마요네즈", "빈티지 점심 도시락", "비둘기에 관한 음모론",
+            "숟가락의 역사", "경쟁적인 응시", "수중 바구니 짜기", "극한 다림질", "치즈 조각",
+            "전문 포옹", "중세 재현", "초보자를 위한 박제", "왼쪽 양말의 철학", "장인 토스트",
+            "경쟁적인 하품", "고양이가 당신을 무시하는 이유에 대한 과학", "전문 줄 서기",
+            "극한 낮잠", "병원 시트 모서리 만드는 기술", "경쟁적인 기다리기", "하이파이브의 역사",
+            "레모네이드 가판대의 경제학", "토스트가 버터 면으로 떨어지는 물리학",
+            "전문 사과 편지 쓰기", "엘리베이터 침묵의 사회학", "아빠 농담의 인류학",
+            "자신의 목소리를 싫어하는 심리학", "완벽한 감자튀김의 생물학",
+            "완벽한 차 한 잔의 화학", "줄 서기 건너뛰기의 수학",
+            "잃어버린 양말의 지리학", "아기 말의 언어학", "버려진 음식물 찌꺼기의 고고학",
+            "실내 안개의 기상학", "보도 균열의 잡초 식물학", "집 먼지 토끼의 동물학",
+            "천장 얼룩의 천문학", "웅덩이의 해양학", "비누 찌꺼기의 지질학", "사라진 뚜껑의 신화",
+            "미루기의 신경과학", "짝이 맞지 않는 양말의 역사", "냉장고 자석의 철학",
+            "단체 채팅방 이름의 사회학", "자판기 간식의 경제학",
+            "자동 고침 실패의 심리학", "사무실 식물의 생물학", "탄 팝콘의 화학",
+            "헤드폰 풀기의 물리학", "계산서 나누기의 수학", "이모지 사용의 인류학",
+            "수동 공격적 메모의 언어학"
+        ];
+        const koRelations = [
+            "사촌 동생", "베스트 프렌드", "아내", "남편", "여동생", "오빠", "엄마", "아빠", "할머니",
+            "할아버지", "이모", "삼촌", "조카", "조카딸", "의붓 여동생", "의붓 오빠", "룸메이트",
+            "이웃", "상사", "동료", "고양이", "강아지", "금붕어", "상상의 친구", "펜팔", "심리 상담사", "우체부",
+            "바리스타", "요가 강사", "치과 의사", "우버 드라이버", "개인 트레이너", "미용사",
+            "회계사", "인생 코치", "드라이클리너", "피자 배달원", "사서", "앵무새", "화분",
+            "단골 바리스타", "어린 시절 라이벌"
+        ];
+        const koTemplates = [
+            "둘 다 <span class=\"highlight\">${topic}</span>에 대해 이야기할 계획은 없었지만, 세 번째 농담과 두 번째 음료 사이에 자연스럽게 시작됐다. OP의 <span class=\"highlight\">${rel}</span>은 사소한 세부사항조차도 관심을 가질 만하게 만드는 재주가 있었고, OP는 대화가 끝날 무렵 완전히 빠져들었다. 그들은 마지막까지 이야기하며, 그 주제를 세상에서 가장 흥미로운 주제처럼 다뤘다. 그날 밤, OP는 어떤 연결은 큰 제스처가 필요하지 않다는 것을 깨달았다 — 당신이 좋아하는 이상한 것에 대해 함께 흥분할 수 있는 사람이 있으면 된다는 것을.",
+            "OP는 <span class=\"highlight\">${rel}</span>과 <span class=\"highlight\">${topic}</span>에 대한 깊은 대화를 예상하지 못했지만, 그게 지루한 오후를 소중한 추억으로 바꿔놓았다. 가벼운 언급으로 시작된 것이 빠르게 두 시간의 이야기, 이론, 웃음의 소용돌이로 번졌다. 그들이 고개를 들었을 때는 해가 지고 있었고, 아무도 눈치채지 못했다. 가장 작은 주제가 사람들 사이에 가장 큰 문을 열 수 있다는 게 정말 재미있다.",
+            "모든 것은 <span class=\"highlight\">${rel}</span>이 <span class=\"highlight\">${topic}</span>에 대해 계속 이야기하면서 시작됐다. OP가 진심으로 관심을 가지게 된 시점은 이미 새벽 2시였다. 그들은 몸을 기울이고 질문하며 진심으로 모든 말에 귀를 기울였다. 지금도 OP는 <span class=\"highlight\">${topic}</span>에 대해 들으면 미소를 지으며 그 모든 것을 바꾼 심야 대화를 떠올린다.",
+            "<span class=\"highlight\">${topic}</span>이 OP와 <span class=\"highlight\">${rel}</span> 사이의 비밀 언어가 된 게 재미있다. 아무도 이해하지 못했고, 그게 가장 좋은 부분이었다. 한 단어, 눈썹을 치켜올리면 — 모두가 혼란스러운 동안 둘은 폭소를 터뜨렸다. 그건 세상이 낯설게 느껴질 때도 어딘가에 속해 있다는 느낌을 주는 유대감이다.",
+            "OP는 <span class=\"highlight\">${topic}</span>을 싫어했지만, <span class=\"highlight\">${rel}</span>이 세상에서 가장 중요한 것처럼 설명해줬다. 이제 OP는 그것을 위한 선반을 가지고 있다. 변화는 너무 점진적이어서 OP가 저녁 파티에서 열정적으로 변호하는 자신을 발견할 때까지 눈치채지 못했다. 모든 공은 <span class=\"highlight\">${rel}</span>에게 있다.",
+            "<span class=\"highlight\">${rel}</span>이 여행 중에 <span class=\"highlight\">${topic}</span>을 꺼냈고, 갑자기 다음 세 시간이 5분처럼 느껴졌다. 창문을 내리고 음악을 끄고, 오직 두 목소리만이 차를 흥분으로 채웠다. OP는 이것이 평생 쫓는 대화의 종류라고 생각했다 — 시간이 구부러지고 외부 세계가 사라지는 대화. 그들은 목적지에 도착했을 때 어느 때보다 가까워졌다.",
+            "OP가 <span class=\"highlight\">${rel}</span>이 <span class=\"highlight\">${topic}</span>을 열정적으로 변호하는 것을 처음 들었을 때, 그들은 이 사람이 이상한 방식으로 중요한 것에 관심을 갖는 사람임을 알았다. 그것은 옳고 그름의 문제가 아니라, 그들이 쏟아낸 마음의 양이었다. OP는 뒤로 앉아 완전히 매료되어 지켜봤다. 그 순간, 그들은 이 사람을 평생 곁에 두고 싶다는 것을 깨달았다.",
+            "그들은 모두가 관심을 기울이지 않는 가족 모임에서 <span class=\"highlight\">${topic}</span>에 대해 유대감을 형성했다. <span class=\"highlight\">${rel}</span>이 그것에 대해 농담을 속삭였고, OP는 그렇게 이해받은 적이 없었다. 서로 말하는 사람들로 가득한 방에서 그 조용한 순간은 닻과 같았다. 그 이후로 모든 가족 행사는 그들이 도피할 작은 내면의 세계가 있다는 것을 알기에 견딜 만해졌다.",
+            "OP는 <span class=\"highlight\">${topic}</span>이 감정적일 수 있다고 생각하지 않았지만, <span class=\"highlight\">${rel}</span>이 그것에 대한 이야기를 해서 주차장에서 눈물을 흘리게 했다. 늦은 시간, 가로등이 깜빡였고, 갑자기 OP는 웃음 뒤에 숨은 깊이를 보았다. 그 대화는 가벼운 주제를 깊이 개인적인 것으로 바꿔놓았다. 그들은 <span class=\"highlight\">${topic}</span>을 다시는 같은 방식으로 보지 않았다.",
+            "<span class=\"highlight\">${topic}</span>이 없었다면 OP와 <span class=\"highlight\">${rel}</span>은 낯선 사람으로 남았을지도 모른다. 이제 그들은 매일 그것에 대한 밈을 주고받는다. 그것은 그들의 우정을 모든 웃음마다 더욱 단단하게 엮는 실이 되었다. 나쁜 날에도 그것에 대한 알림은 모든 것을 바꿀 수 있다. 어떤 우정은 큰 순간에 기반을 두고, 그들의 우정은 이 하나의 아름답고 우스꽝스러운 공통 관심사에 기반을 두었다."
+        ];
+
+        function getTopics() { return currentLang === 'ko' ? koTopics : enTopics; }
+        function getRelations() { return currentLang === 'ko' ? koRelations : enRelations; }
+        function getTemplates() { return currentLang === 'ko' ? koTemplates : enTemplates; }
+
+        let allStories = [];
+
+        function generateStories(count) {
+            const topics = getTopics();
+            const relations = getRelations();
+            const templates = getTemplates();
+            const stories = [];
+            const usedCombos = new Set();
+            while (stories.length < count) {
+                const tpl = templates[Math.floor(Math.random() * templates.length)];
+                const topic = topics[Math.floor(Math.random() * topics.length)];
+                const rel = relations[Math.floor(Math.random() * relations.length)];
+                const key = `${tpl}|||${topic}|||${rel}`;
+                if (!usedCombos.has(key)) {
+                    usedCombos.add(key);
+                    let htmlText = tpl.replace(/\$\{topic\}/g, topic).replace(/\$\{rel\}/g, rel);
+                    let plainText = htmlText.replace(/<[^>]*>/g, '');
+                    if (currentLang === 'en') {
+                        htmlText = replaceWordsInHtml(htmlText);
+                        plainText = replaceWordsInText(plainText);
+                    }
+                    stories.push({ topic, rel, htmlText, plainText, id: stories.length + 1 });
+                }
+            }
+            for (let i = stories.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [stories[i], stories[j]] = [stories[j], stories[i]];
+            }
+            stories.forEach((s, idx) => { s.id = idx + 1; });
+            return stories;
+        }
+
+        function rebuildStories() {
+            allStories = generateStories(130);
+        }
+
+        function buildSlides() {
+            scrollContainer.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            allStories.forEach((story, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.dataset.storyId = story.id;
+                slide.dataset.index = index;
+                const likeCount = Math.floor(Math.random() * 95000) + 1200;
+                const commentCount = Math.floor(Math.random() * 8000) + 80;
+                const shareCount = Math.floor(Math.random() * 15000) + 200;
+                slide.innerHTML = `
+                            <div class="story-card">
+                                <div class="story-text">${story.htmlText}</div>
+                                <div class="story-buttons">
+                                    <button class="show-more-btn">${currentLang === 'ko' ? '더 보기' : 'Show more'}</button>
+                                    <button class="hide-btn">${currentLang === 'ko' ? '숨기기' : 'Hide'}</button>
+                                </div>
+                            </div>
+                            <button class="restore-story-btn">👁 ${currentLang === 'ko' ? '이야기 보기' : 'Show story'}</button>
+                            <div class="side-actions">
+                                <button class="side-action like-btn" data-index="${index}"><span class="icon-circle">❤️</span><span class="action-label like-count">${formatCount(likeCount)}</span></button>
+                                <button class="side-action comment-btn" data-index="${index}"><span class="icon-circle">💬</span><span class="action-label">${formatCount(commentCount)}</span></button>
+                                <button class="side-action"><span class="icon-circle">↗️</span><span class="action-label">${formatCount(shareCount)}</span></button>
+                                <button class="side-action bookmark-btn" data-index="${index}"><span class="icon-circle">🔖</span><span class="action-label">${currentLang === 'ko' ? '저장' : 'Save'}</span></button>
+                            </div>
+                        `;
+                fragment.appendChild(slide);
+            });
+            scrollContainer.appendChild(fragment);
+            setupIntersectionObserver();
+            activeIndex = 0;
+            scrollContainer.scrollTop = 0;
+        }
+
+        function formatCount(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function generateComments(topic, rel) {
+            const templates = [
+                `<span class="user">user_${Math.floor(Math.random()*9999)}</span> ${rel} was definitely a great person`,
+                `<span class="user">anon_${Math.floor(Math.random()*999)}</span> Thanks for reminding me how much I love ${topic}`,
+                `<span class="user">storylover</span> I can't believe ${rel} said that about ${topic}`,
+                `<span class="user">reddit_refugee</span> This is exactly why ${topic} matters so much`,
+                `<span class="user">just_lurking</span> ${rel} and ${topic} – name a more iconic duo`,
+                `<span class="user">deep_thinker</span> The way ${rel} talked about ${topic} changed my perspective`,
+                `<span class="user">random_user</span> I need more stories about ${topic} and ${rel}`
+            ];
+            const comments = [];
+            for (let i = 0; i < 5; i++) {
+                comments.push(templates[Math.floor(Math.random() * templates.length)]);
+            }
+            return comments;
+        }
+
+        function showComments(index) {
+            const story = allStories[index];
+            if (!story) return;
+            const comments = generateComments(story.topic, story.rel);
+            commentList.innerHTML = comments.map(c => `<div class="comment">${c}</div>`).join('');
+            commentOverlay.classList.add('show');
+        }
+
+        let observer = null;
+        let activeIndex = 0;
+
+        function setupIntersectionObserver() {
+            if (observer) observer.disconnect();
+            observer = new IntersectionObserver((entries) => {
+                let maxRatio = 0, mostVisible = activeIndex;
+                entries.forEach(e => {
+                    if (e.isIntersecting && e.intersectionRatio > maxRatio) {
+                        maxRatio = e.intersectionRatio;
+                        const idx = parseInt(e.target.dataset.index);
+                        if (!isNaN(idx)) mostVisible = idx;
+                    }
+                });
+                if (mostVisible !== activeIndex && maxRatio > 0.5) {
+                    const prev = activeIndex;
+                    activeIndex = mostVisible;
+                    onSlideChange(prev, activeIndex);
+                }
+            }, { root: scrollContainer, threshold: [0.3, 0.5, 0.6, 0.7, 0.8, 0.9] });
+            document.querySelectorAll('.slide').forEach(s => observer.observe(s));
+        }
+
+        let currentTTSIndex = -1;
+        let autoTTSTimeout = null;
+
+        function onSlideChange(prev, curr) {
+            stopTTS();
+            bg.setScene(pickRandomGame());
+            ChillSpaceMusic.play(storySeed(curr));
+            showMusicIndicator();
+            if (audioInitialized) {
+                if (autoTTSTimeout) clearTimeout(autoTTSTimeout);
+                autoTTSTimeout = setTimeout(() => {
+                    if (activeIndex === curr && currentTTSIndex === -1) speakStory(curr);
+                }, 400);
+            }
+        }
+
+        function showMusicIndicator() {
+            musicIndicator.classList.add('show');
+            clearTimeout(musicIndicator._timeout);
+            musicIndicator._timeout = setTimeout(() => musicIndicator.classList.remove('show'), 1500);
+        }
+
+        function stopTTS() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            ChillSpaceMusic.duck(false);
+            currentTTSIndex = -1;
+        }
+
+        function speakStory(index) {
+            if (!audioInitialized) return;
+            const story = allStories[index];
+            if (!story) return;
+            if (currentTTSIndex === index && (window.speechSynthesis?.speaking)) {
+                stopTTS();
+                return;
+            }
+            stopTTS();
+            speakText(story.plainText, currentLang);
+            currentTTSIndex = index;
+        }
+
+        let audioInitialized = false;
+
+        function startAudioAndTTS() {
+            if (audioInitialized) return;
+            audioInitialized = true;
+            ChillSpaceMusic.play(storySeed(activeIndex));
+            speakStory(activeIndex);
+        }
+
+        const likedStories = new Set();
+        const bookmarkedStories = new Set();
+
+        function toggleLike(index, btn) {
+            const key = `story-${index}`;
+            const label = btn.querySelector('.like-count');
+            if (likedStories.has(key)) {
+                likedStories.delete(key);
+                btn.classList.remove('liked');
+                label.textContent = formatCount(Math.max(0, parseCount(label.textContent) - 1));
+            } else {
+                likedStories.add(key);
+                btn.classList.add('liked');
+                label.textContent = formatCount(parseCount(label.textContent) + 1);
+                spawnHeartBurst(btn);
+            }
+        }
+
+        function parseCount(s) { if (s.endsWith('M')) return parseFloat(s) * 1000000; if (s.endsWith('K')) return parseFloat(s) * 1000; return parseInt(s) || 0; }
+
+        function spawnHeartBurst(el) {
+            const rect = el.getBoundingClientRect();
+            const heart = document.createElement('div');
+            heart.className = 'heart-burst';
+            heart.textContent = '❤️';
+            heart.style.left = rect.left + rect.width / 2 - 20 + 'px';
+            heart.style.top = rect.top + 'px';
+            document.body.appendChild(heart);
+            heart.addEventListener('animationend', () => heart.remove());
+        }
+
+        function toggleBookmark(index, btn) {
+            const key = `story-${index}`;
+            const icon = btn.querySelector('.icon-circle');
+            if (bookmarkedStories.has(key)) { bookmarkedStories.delete(key); icon.textContent = '🔖'; }
+            else { bookmarkedStories.add(key); icon.textContent = '📌'; }
+        }
+
+        function setupEvents() {
+            scrollContainer.addEventListener('click', (e) => {
+                const likeBtn = e.target.closest('.like-btn');
+                if (likeBtn) { e.preventDefault();
+                    const idx = parseInt(likeBtn.dataset.index); if (!isNaN(idx)) toggleLike(idx, likeBtn); return; }
+                const bookmarkBtn = e.target.closest('.bookmark-btn');
+                if (bookmarkBtn) { e.preventDefault();
+                    const idx = parseInt(bookmarkBtn.dataset.index); if (!isNaN(idx)) toggleBookmark(idx, bookmarkBtn); return; }
+                const commentBtn = e.target.closest('.comment-btn');
+                if (commentBtn) { e.preventDefault();
+                    const idx = parseInt(commentBtn.dataset.index); if (!isNaN(idx)) showComments(idx); return; }
+
+                const hideBtn = e.target.closest('.hide-btn');
+                if (hideBtn) {
+                    e.preventDefault();
+                    const slide = hideBtn.closest('.slide');
+                    if (slide) {
+                        const card = slide.querySelector('.story-card');
+                        if (card) card.classList.add('hidden');
+                        slide.classList.add('story-hidden');
+                    }
+                    return;
+                }
+
+                const restoreBtn = e.target.closest('.restore-story-btn');
+                if (restoreBtn) {
+                    e.preventDefault();
+                    const slide = restoreBtn.closest('.slide');
+                    if (slide) {
+                        const card = slide.querySelector('.story-card');
+                        if (card) card.classList.remove('hidden');
+                        slide.classList.remove('story-hidden');
+                    }
+                    return;
+                }
+
+                const showMoreBtn = e.target.closest('.show-more-btn');
+                if (showMoreBtn) {
+                    const storyText = showMoreBtn.parentElement.parentElement.querySelector('.story-text');
+                    if (!storyText) return;
+                    storyText.classList.toggle('expanded');
+                    showMoreBtn.textContent = storyText.classList.contains('expanded') ? (currentLang === 'ko' ? '간략히' : 'Show less') : (currentLang === 'ko' ? '더 보기' : 'Show more');
+                }
+            });
+            scrollContainer.addEventListener('dblclick', (e) => {
+                const slide = e.target.closest('.slide');
+                if (slide) { const idx = parseInt(slide.dataset.index);
+                    const likeBtn = slide.querySelector('.like-btn'); if (!isNaN(idx) && likeBtn && !likedStories.has(`story-${idx}`)) toggleLike(idx, likeBtn); }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); scrollToSlide(activeIndex + 1); }
+                else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); scrollToSlide(activeIndex - 1); }
+                else if (e.key === 'l') { e.preventDefault();
+                    const slide = document.querySelector(`.slide[data-index="${activeIndex}"]`); if (slide) {
+                        const lb = slide.querySelector('.like-btn'); if (lb && !likedStories.has(`story-${activeIndex}`)) toggleLike(activeIndex, lb); } }
+            });
+        }
+
+        function scrollToSlide(index) {
+            const clamped = Math.max(0, Math.min(index, allStories.length - 1));
+            const slide = document.querySelector(`.slide[data-index="${clamped}"]`);
+            if (slide) slide.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function switchLanguage(lang) {
+            if (lang === currentLang) return;
+            currentLang = lang;
+            if (lang === 'ko') {
+                badgeText.textContent = '📖 무한 이야기';
+                langToggle.textContent = 'English';
+                autoscrollToggle.textContent = `자동 스크롤: ${isAutoscrollEnabled ? '켜기' : '끄기'}`;
+                startSub.textContent = '탭하여 경험을 시작하세요';
+                document.querySelector('#header .logo .ko').textContent = '릴스페이스';
+                document.querySelector('#loadReelSpaceBtn').textContent = '릴스페이스 시작';
+            } else {
+                badgeText.textContent = '📖 Infinite Stories';
+                langToggle.textContent = '한국어';
+                autoscrollToggle.textContent = `Autoscroll: ${isAutoscrollEnabled ? 'On' : 'Off'}`;
+                startSub.textContent = 'tap to start the experience';
+                document.querySelector('#header .logo .ko').textContent = '릴스페이스';
+                document.querySelector('#loadReelSpaceBtn').textContent = 'Load ReelSpace';
+            }
+            rebuildStories();
+            buildSlides();
+            activeIndex = 0;
+            if (audioInitialized) speakStory(0);
+        }
+
+        loadReelSpaceBtn.addEventListener('click', () => {
+            startOverlay.classList.add('hidden');
+            startOverlay.classList.add('hidden-display');
+            startAudioAndTTS();
+        });
+
+        langToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            switchLanguage(currentLang === 'en' ? 'ko' : 'en');
+        });
+
+        autoscrollToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isAutoscrollEnabled = !isAutoscrollEnabled;
+            autoscrollToggle.classList.toggle('active', isAutoscrollEnabled);
+            const offText = currentLang === 'ko' ? '끄기' : 'Off';
+            const onText = currentLang === 'ko' ? '켜기' : 'On';
+            const label = currentLang === 'ko' ? '자동 스크롤' : 'Autoscroll';
+            autoscrollToggle.textContent = `${label}: ${isAutoscrollEnabled ? onText : offText}`;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === ' ' || e.key === 'Enter') && !startOverlay.classList.contains('hidden')) {
+                e.preventDefault();
+                loadReelSpaceBtn.click();
+            }
+        });
+
+        closeCommentsBtn.addEventListener('click', () => {
+            commentOverlay.classList.remove('show');
+        });
+
+        function init() {
+            rebuildStories();
+            buildSlides();
+            setupEvents();
+            if (window.speechSynthesis) {
+                speechSynthesis.getVoices();
+                speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+            }
+            console.log('🚀 ReelSpace ready – click "Load ReelSpace" to begin.');
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+        else init();
+    })();
+</script>
+</body>
+</html>
