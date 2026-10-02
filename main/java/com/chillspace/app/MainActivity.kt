@@ -12,7 +12,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
@@ -73,17 +72,6 @@ class MainActivity : AppCompatActivity() {
         onPermissionGranted = null
     }
 
-    // Request code for contacts permission
-    private val PERMISSION_REQUEST_READ_CONTACTS = 123
-
-    // Activity result launcher for contacts permission
-    private val contactsPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        // Call the JS callback on all WebViews to ensure the active one receives it
-        val script = "if(window.contactPermissionResult) window.contactPermissionResult($granted);"
-        listOf(webViewFeed, webViewReelSpace, webViewMessages, webViewShop, webViewGame).forEach { 
-            it.evaluateJavascript(script, null)
-        }
-    }
 
     // Activity result launcher for file picker
     private val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -97,9 +85,12 @@ class MainActivity : AppCompatActivity() {
                     results = arrayOf(it)
                 }
             } else {
-                val dataString = data.dataString
-                if (dataString != null) {
-                    results = arrayOf(Uri.parse(dataString))
+                val uri = data.data
+                if (uri != null) {
+                    val mimeType = applicationContext.contentResolver.getType(uri) ?: ""
+                    val isVideo = mimeType.startsWith("video") || uri.toString().contains("video", true)
+                    val storedUri = copyUriToStorage(uri, isVideo)
+                    results = arrayOf(storedUri)
                 }
             }
             filePathCallback?.onReceiveValue(results)
@@ -107,6 +98,20 @@ class MainActivity : AppCompatActivity() {
             filePathCallback?.onReceiveValue(null)
         }
         filePathCallback = null
+    }
+
+    private fun copyUriToStorage(sourceUri: Uri, isVideo: Boolean): Uri {
+        return try {
+            val destFile = if (isVideo) createVideoFile() else createImageFile()
+            applicationContext.contentResolver.openInputStream(sourceUri)?.use { input ->
+                destFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            Uri.fromFile(destFile)
+        } catch (e: Exception) {
+            sourceUri
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,16 +158,13 @@ class MainActivity : AppCompatActivity() {
                     showTab(webViewReelSpace)
                     true
                 }
-                R.id.nav_messages -> {
-                    showTab(webViewMessages)
+                R.id.nav_shop -> {
+                    webViewShop.loadUrl("file:///android_asset/shop.html")
+                    showTab(webViewShop)
                     true
                 }
                 R.id.nav_game -> {
                     showTab(webViewGame)
-                    true
-                }
-                R.id.nav_profile -> {
-                    showTab(webViewProfile)
                     true
                 }
                 else -> false
@@ -245,13 +247,8 @@ class MainActivity : AppCompatActivity() {
                     showTab(webViewReelSpace)
                     return true
                 }
-                path.startsWith("/messages") -> {
-                    bottomNav.selectedItemId = R.id.nav_messages
-                    webViewMessages.loadUrl("file:///android_asset/messages.html")
-                    showTab(webViewMessages)
-                    return true
-                }
-                path.startsWith("/shop") -> {
+                path.startsWith("/messages") || path.startsWith("/shop") -> {
+                    bottomNav.selectedItemId = R.id.nav_shop
                     webViewShop.loadUrl("file:///android_asset/shop.html")
                     showTab(webViewShop)
                     return true
@@ -306,14 +303,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 path.startsWith("/profile") -> {
                     bottomNav.selectedItemId = R.id.nav_profile
-                    webViewProfile.loadUrl("file:///android_asset/profile.html")
                     showTab(webViewProfile)
                     return true
                 }
                 path == "/" || path == "" -> {
                     bottomNav.selectedItemId = R.id.nav_feed
-                    val feedAsset = if (Locale.getDefault().language == "ko") "file:///android_asset/feedko.html" else "file:///android_asset/feed.html"
-                    webViewFeed.loadUrl(feedAsset)
+                    val assetName = if (Locale.getDefault().language == "ko") "feedko.html" else "feed.html"
+                    val query = if (!uri.query.isNullOrEmpty()) "?${uri.query}" else ""
+                    webViewFeed.loadUrl("file:///android_asset/$assetName$query")
                     showTab(webViewFeed)
                     return true
                 }
@@ -523,9 +520,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // ---------- Add JavaScript interface for Contacts & Utils ----------
+        // ---------- Add JavaScript interface for Utils ----------
         val bridge = ContactBridge(this)
-        webView.addJavascriptInterface(bridge, "AndroidContacts")
         webView.addJavascriptInterface(bridge, "AndroidUtils")
         // ---------- Add JavaScript interface for TTS ----------
         webView.addJavascriptInterface(ttsBridge, "AndroidTTS")
@@ -594,62 +590,92 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // Pause all WebViews when the app goes into the background
+        if (::tts.isInitialized) {
+            tts.stop()
+        }
         val webViews = listOf(webViewFeed, webViewProfile, webViewReelSpace, webViewMessages, webViewShop, webViewGame)
-        webViews.forEach { it.onPause() }
+        webViews.forEach { wv ->
+            try {
+                wv.onPause()
+                wv.pauseTimers()
+                wv.evaluateJavascript("if(window.pauseAllMediaAndScripts) window.pauseAllMediaAndScripts();", null)
+            } catch (e: Exception) {}
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        // Resume ONLY the active WebView when the app comes back to the foreground
         val webViews = listOf(webViewFeed, webViewProfile, webViewReelSpace, webViewMessages, webViewShop, webViewGame)
-        webViews.forEach { 
-            if (it.isVisible) {
-                it.onResume()
-                // Explicitly resume ReelSpace if it's the active one
-                if (it == webViewReelSpace) {
-                    it.evaluateJavascript("if(window.resumeReelSpaceMedia) resumeReelSpaceMedia();", null)
+        webViews.forEach { wv ->
+            try {
+                wv.resumeTimers()
+                if (wv.isVisible) {
+                    wv.onResume()
+                    if (wv == webViewReelSpace) {
+                        wv.evaluateJavascript("if(window.resumeReelSpaceMedia) resumeReelSpaceMedia();", null)
+                    }
                 }
-            }
+            } catch (e: Exception) {}
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Shutdown TTS to release resources
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
         }
-
-        // Destroy WebViews to release resources
-        webViewFeed.destroy()
-        webViewProfile.destroy()
-        webViewReelSpace.destroy()
-        webViewMessages.destroy()
-        webViewShop.destroy()
-        webViewGame.destroy()
+        val webViews = listOf(webViewFeed, webViewProfile, webViewReelSpace, webViewMessages, webViewShop, webViewGame)
+        webViews.forEach { wv ->
+            try {
+                wv.loadUrl("about:blank")
+                wv.clearCache(true)
+                wv.destroy()
+            } catch (e: Exception) {}
+        }
     }
 
-    // ---------- Contact & Utils Bridge: lets JavaScript read contacts and delete files ----------
+    // ---------- Utils Bridge: lets JavaScript manage files and share content ----------
     inner class ContactBridge(private val context: Context) {
 
         /**
-         * Triggers the Android system permission dialog for contacts.
+         * Returns the latest media file URI from Pictures or Movies directory.
          */
         @JavascriptInterface
-        fun requestContactsPermission() {
-            runOnUiThread {
-                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_CONTACTS) 
-                    == PackageManager.PERMISSION_GRANTED) {
-                    // Already granted, call the result immediately
-                    val script = "if(window.contactPermissionResult) window.contactPermissionResult(true);"
-                    listOf(webViewFeed, webViewProfile, webViewReelSpace, webViewMessages, webViewShop, webViewGame).forEach { 
-                        it.evaluateJavascript(script, null)
+        fun getLatestMediaUri(isVideo: Boolean): String {
+            return try {
+                val dir = if (isVideo) getExternalFilesDir(Environment.DIRECTORY_MOVIES) else getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                if (dir != null) {
+                    val fileDir = dir as File
+                    if (fileDir.exists()) {
+                        val files = fileDir.listFiles()
+                        if (files != null && files.isNotEmpty()) {
+                            val sorted = files.sortedByDescending { it.lastModified() }
+                            return Uri.fromFile(sorted[0]).toString()
+                        }
                     }
-                } else {
-                    contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                 }
+                ""
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        /**
+         * Launches the native Android system share menu for post sharing.
+         */
+        @JavascriptInterface
+        fun shareText(text: String) {
+            runOnUiThread {
+                try {
+                    val sendIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, "Share Post")
+                    context.startActivity(shareIntent)
+                } catch (e: Exception) {}
             }
         }
 
@@ -669,10 +695,10 @@ class MainActivity : AppCompatActivity() {
                     if (fileName != null) {
                         val picturesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
                         val moviesDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES)
-                        
+
                         val fileInPictures = File(picturesDir, fileName)
                         val fileInMovies = File(moviesDir, fileName)
-                        
+
                         if (fileInPictures.exists()) return fileInPictures.delete()
                         if (fileInMovies.exists()) return fileInMovies.delete()
                     }
@@ -686,86 +712,5 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        @JavascriptInterface
-        fun getContacts(): String {
-            // If we don't have permission, return empty array immediately
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_CONTACTS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return "[]"
-            }
-
-            val contacts = JSONArray()
-            val resolver = context.contentResolver
-            
-            // Map to group data by contact ID
-            val contactMap = mutableMapOf<String, JSONObject>()
-
-            // 1. Query Names and Phones
-            val phoneCursor = resolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER
-                ),
-                null, null, null
-            )
-
-            phoneCursor?.use { cursor ->
-                val idIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-                val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numberIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-
-                while (cursor.moveToNext()) {
-                    val id = cursor.getString(idIdx)
-                    val name = cursor.getString(nameIdx) ?: "Unknown"
-                    val number = cursor.getString(numberIdx) ?: ""
-
-                    if (!contactMap.containsKey(id)) {
-                        val contactObj = JSONObject().apply {
-                            put("name", name)
-                            put("phone", number)
-                            put("email", "") // Placeholder
-                        }
-                        contactMap[id] = contactObj
-                    }
-                }
-            }
-
-            // 2. Query Emails
-            val emailCursor = resolver.query(
-                ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Email.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Email.DATA
-                ),
-                null, null, null
-            )
-
-            emailCursor?.use { cursor ->
-                val idIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.CONTACT_ID)
-                val emailIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA)
-
-                while (cursor.moveToNext()) {
-                    val id = cursor.getString(idIdx)
-                    val email = cursor.getString(emailIdx) ?: ""
-                    
-                    val contactObj = contactMap[id]
-                    if (contactObj != null && contactObj.getString("email").isEmpty()) {
-                        contactObj.put("email", email)
-                    }
-                }
-            }
-
-            // Convert map values to JSONArray
-            for (contact in contactMap.values) {
-                contacts.put(contact)
-            }
-
-            return contacts.toString()
-        }
     }
 }

@@ -9,9 +9,9 @@
         android:icon="@android:drawable/ic_menu_slideshow"
         android:title="Reels" />
     <item
-        android:id="@+id/nav_messages"
-        android:icon="@android:drawable/ic_menu_send"
-        android:title="Messages" />
+        android:id="@+id/nav_shop"
+        android:icon="@android:drawable/ic_menu_save"
+        android:title="Shop" />
     <item
         android:id="@+id/nav_game"
         android:icon="@android:drawable/ic_menu_compass"

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ChillSpace — Shop &amp; Vinyl</title>
-    <meta name="description" content="ChillSpace — Shop real SHEIN items with Price Match™ and grab vibrant vinyl. Fake checkout, real dopamine." />
+    <meta name="description" content="ChillSpace — Shop procedurally generated fashion with Price Match™ and grab vibrant vinyl. Fake checkout, real dopamine." />
     <style>
         /* ================================================================
            GLOBAL RESET + VARS
@@ -47,7 +47,7 @@
         }
 
         /* ================================================================
-           GLOBAL TAB BAR
+           GLOBAL TAB BAR (with shared cart)
            ================================================================ */
         .global-tabs {
           position: fixed;
@@ -55,6 +55,7 @@
           height: var(--tab-h);
           z-index: 1000;
           display: flex;
+          align-items: stretch;
           background: rgba(255, 255, 255, 0.94);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -87,6 +88,54 @@
           background: linear-gradient(90deg, #ff6b9d, #9b59b6);
           border-radius: 3px 3px 0 0;
         }
+
+        /* Shared cart button inside the tab bar */
+        .global-cart-btn {
+          flex-shrink: 0;
+          width: 62px;
+          border: none;
+          background: transparent;
+          font-family: var(--font);
+          font-size: 1.4rem;
+          line-height: 1;
+          cursor: pointer;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-left: 1px solid var(--border);
+          transition: background 0.2s, transform 0.15s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .global-cart-btn:hover { background: rgba(255, 107, 157, 0.06); }
+        .global-cart-btn:active {
+          transform: scale(0.92);
+          background: rgba(255, 107, 157, 0.12);
+        }
+        .global-cart-btn .cart-badge {
+          position: absolute;
+          top: 6px;
+          right: 8px;
+          background: linear-gradient(135deg, #ff6b9d, #e84393);
+          color: #fff;
+          font-size: 0.6rem;
+          font-weight: 700;
+          min-width: 18px;
+          height: 18px;
+          border-radius: 9px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4);
+          animation: badgeBounce 0.4s ease-out;
+        }
+        @keyframes badgeBounce {
+          0% { transform: scale(0.3); }
+          60% { transform: scale(1.25); }
+          100% { transform: scale(1); }
+        }
+
         .app-view { display: none; }
         .app-view.active { display: block; }
 
@@ -184,52 +233,6 @@
           letter-spacing: 0.5px;
           text-transform: uppercase;
           font-weight: 500;
-        }
-        #shopView .header-actions {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-        #shopView .cart-btn {
-          position: relative;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          color: var(--text);
-          width: 42px;
-          height: 42px;
-          border-radius: 50%;
-          cursor: pointer;
-          font-size: 1.2rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-        #shopView .cart-btn:active {
-          transform: scale(0.92);
-          background: #d5dbe3;
-        }
-        #shopView .cart-badge {
-          position: absolute;
-          top: -4px;
-          right: -4px;
-          background: var(--accent);
-          color: #fff;
-          font-size: 0.68rem;
-          font-weight: 700;
-          min-width: 20px;
-          height: 20px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 5px;
-          animation: badgeBounce 0.4s ease-out;
-        }
-        @keyframes badgeBounce {
-          0% { transform: scale(0.3); }
-          60% { transform: scale(1.25); }
-          100% { transform: scale(1); }
         }
 
         .price-match-banner {
@@ -395,16 +398,22 @@
           position: relative;
           overflow: hidden;
         }
-        .product-image img {
+        .product-svg-wrap {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8%;
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .product-svg-wrap svg {
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          transition: transform 0.3s;
+          display: block;
+          filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.10));
         }
-        .product-image .img-emoji {
-          font-size: 4rem;
-          filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
-        }
+        .product-card:hover .product-svg-wrap { transform: scale(1.06) rotate(-1.2deg); }
         .shein-tag {
           position: absolute;
           top: 8px;
@@ -624,38 +633,6 @@
           display: flex;
           align-items: center;
           gap: 18px;
-        }
-        #vinylView .cart-btn {
-          position: relative;
-          border: none;
-          font-size: 2rem;
-          cursor: pointer;
-          transition: transform 0.2s;
-          padding: 4px 8px;
-          border-radius: 12px;
-          background: rgba(255, 107, 157, 0.08);
-          line-height: 1;
-        }
-        #vinylView .cart-btn:hover {
-          transform: scale(1.12);
-          background: rgba(255, 107, 157, 0.16);
-        }
-        #vinylView .cart-badge {
-          position: absolute;
-          top: -6px;
-          right: -6px;
-          background: linear-gradient(135deg, #ff6b9d, #e84393);
-          color: #fff;
-          font-size: 0.7rem;
-          font-weight: 700;
-          min-width: 22px;
-          height: 22px;
-          border-radius: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 6px;
-          box-shadow: 0 2px 12px rgba(255, 107, 157, 0.4);
         }
         #vinylView .backlink {
           font-size: 0.8rem;
@@ -900,6 +877,17 @@
           justify-content: center;
           font-size: 1.6rem;
         }
+        .cart-item .mini-svg {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          flex-shrink: 0;
+          background: #fff;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+          overflow: hidden;
+          padding: 4px;
+        }
+        .cart-item .mini-svg svg { width: 100%; height: 100%; display: block; }
         .cart-item .info { flex: 1; text-align: left; min-width: 0; }
         .cart-item .info .artist {
           font-weight: 700;
@@ -1175,6 +1163,103 @@
           line-height: 1;
         }
 
+        /* ================================================================
+           UNBOXING FLOW
+           ================================================================ */
+        .unbox-start-btn {
+          width: 100%;
+          margin-top: 16px;
+          padding: 14px;
+          border: none;
+          border-radius: 40px;
+          font-weight: 800;
+          font-size: 1.05rem;
+          cursor: pointer;
+          background: linear-gradient(135deg, #6cb4ff, #4a8ed0);
+          color: #fff;
+          box-shadow: 0 4px 20px rgba(108, 180, 255, 0.35);
+          transition: all 0.25s;
+          font-family: var(--font);
+          letter-spacing: 0.3px;
+        }
+        .unbox-start-btn:hover { transform: scale(1.02); box-shadow: 0 6px 28px rgba(108,180,255,0.5); }
+        .unbox-start-btn:active { transform: scale(0.97); }
+
+        .unbox-bar {
+          width: 70%;
+          max-width: 260px;
+          height: 8px;
+          margin: 14px auto 0;
+          border-radius: 6px;
+          background: #f0ecff;
+          overflow: hidden;
+        }
+        .unbox-bar-fill {
+          height: 100%;
+          border-radius: 6px;
+          background: linear-gradient(90deg, #ff6b9d, #9b59b6);
+          transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .unbox-counter {
+          margin-top: 10px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #a8a4d0;
+        }
+        .unbox-item-svg {
+          width: 170px;
+          aspect-ratio: 3 / 4;
+          margin: 4px auto 8px;
+          animation: unboxPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+          filter: drop-shadow(0 10px 24px rgba(155, 89, 182, 0.16));
+        }
+        .unbox-item-svg svg { width: 100%; height: 100%; display: block; }
+        @keyframes unboxPop {
+          0%   { transform: scale(0.35) rotate(-10deg); opacity: 0; }
+          55%  { transform: scale(1.08) rotate(3deg);   opacity: 1; }
+          100% { transform: scale(1) rotate(0deg);      opacity: 1; }
+        }
+        .checkout-box .unbox-item-name {
+          font-size: 1.3rem;
+          font-weight: 800;
+          margin-bottom: 4px;
+          line-height: 1.2;
+          letter-spacing: -0.3px;
+        }
+        .unbox-next-btn {
+          width: 100%;
+          margin-top: 16px;
+          padding: 14px;
+          border: none;
+          border-radius: 40px;
+          font-weight: 800;
+          font-size: 1.05rem;
+          cursor: pointer;
+          background: linear-gradient(135deg, #ff6b9d, #e84393);
+          color: #fff;
+          box-shadow: 0 4px 20px rgba(255, 107, 157, 0.30);
+          transition: all 0.25s;
+          font-family: var(--font);
+          letter-spacing: 0.3px;
+        }
+        .unbox-next-btn:hover { transform: scale(1.02); box-shadow: 0 6px 28px rgba(255,107,157,0.45); }
+        .unbox-next-btn:active { transform: scale(0.97); }
+        .unbox-skip {
+          display: block;
+          margin: 12px auto 0;
+          background: none;
+          border: none;
+          color: #b0acd0;
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: underline;
+          font-family: var(--font);
+        }
+        .unbox-skip:hover { color: #ff6b9d; }
+
         .checkout-box .close-checkout {
           margin-top: 24px;
           padding: 12px 40px;
@@ -1238,6 +1323,8 @@
           .parcel-emoji, .parcel-emoji-static { font-size: 4.5rem; }
         }
         @media (max-width: 440px) {
+          .global-tab { font-size: 0.88rem; }
+          .global-cart-btn { width: 56px; font-size: 1.25rem; }
           .vinyl-grid {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 12px;
@@ -1251,11 +1338,15 @@
 <body>
 
 <!-- ================================================================
-     GLOBAL TAB BAR
+     GLOBAL TAB BAR (Shop / Vinyl / shared Cart)
      ================================================================ -->
 <nav class="global-tabs">
     <button class="global-tab active" data-view="shop">🛍️ Shop</button>
     <button class="global-tab" data-view="vinyl">💿 Vinyl</button>
+    <button class="global-cart-btn js-open-cart" title="Your cart" aria-label="Open cart">
+        🛒
+        <span class="cart-badge js-cart-badge" style="display:none;">0</span>
+    </button>
 </nav>
 
 <!-- ================================================================
@@ -1272,12 +1363,6 @@
                     <div class="header-subtitle">by chillspace.ai</div>
                 </div>
             </div>
-            <div class="header-actions">
-                <button class="cart-btn js-open-cart" title="Your cart">
-                    🛒
-                    <span class="cart-badge js-cart-badge" style="display:none;">0</span>
-                </button>
-            </div>
         </header>
 
         <div class="price-match-banner">
@@ -1289,10 +1374,7 @@
         <div class="category-tabs" id="categoryTabs">
             <button class="cat-tab active" data-cat="all">🛒 All</button>
             <button class="cat-tab" data-cat="clothes">👕 Clothes</button>
-            <button class="cat-tab" data-cat="homeware">🏠 Homeware</button>
             <button class="cat-tab" data-cat="accessories">💍 Accessories</button>
-            <button class="cat-tab" data-cat="beauty">💄 Beauty</button>
-            <button class="cat-tab" data-cat="party">🎉 Party</button>
         </div>
 
         <div class="products-scroll" id="productsScroll">
@@ -1332,10 +1414,6 @@
         </div>
         <div class="header-actions">
             <a href="https://chillspace.ai/" target="_blank" rel="noopener" class="backlink">🏠 ChillSpace</a>
-            <button class="cart-btn js-open-cart" aria-label="Open cart">
-                🛒
-                <span class="cart-badge js-cart-badge" style="display:none;">0</span>
-            </button>
         </div>
     </header>
 
@@ -1380,23 +1458,1209 @@
 </div>
 
 <!-- ================================================================
-     HIDDEN AUDIO
+     PROCEDURAL MUSIC ENGINE (no external files)
      ================================================================ -->
-<audio id="audioPlayer" style="display:none;"></audio>
+<script>
+    /* ═══════════════════════════════════════════════════════════════════════
+       ChillSpace Procedural Music Engine — "Varied Band Edition"
 
-<!-- ================================================================
-     EXTERNAL SHOP DATA
-     ================================================================ -->
-<script src="shein-products (1).js"></script>
+       NOTE: assigned to window.ChillSpaceMusic so that subsequent scripts
+       can reliably reach it via window.ChillSpaceMusic (a top-level `const`
+       would live in the script-level lexical scope, not on `window`).
+       ═══════════════════════════════════════════════════════════════════════ */
+    window.ChillSpaceMusic = (function () {
+        'use strict';
+
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        const KEY_PCS = [0, 2, 4, 5, 7, 9, 10, 11];
+
+        const MODES = [
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 11],
+            [0, 2, 4, 6, 7, 9, 11],
+            [0, 2, 4, 6, 7, 9, 11],
+            [0, 2, 4, 5, 7, 9, 10],
+            [0, 2, 4, 5, 7, 9, 10],
+            [0, 2, 4, 7, 9],
+            [0, 2, 3, 5, 7, 8, 10],
+            [0, 2, 3, 5, 7, 8, 10],
+            [0, 2, 3, 5, 7, 9, 10],
+            [0, 2, 3, 5, 7, 9, 10]
+        ];
+
+        const PROGS = [
+            [0, 4, 5, 3], [0, 4, 5, 3], [0, 5, 3, 4], [0, 3, 4, 5],
+            [5, 3, 0, 4], [0, 4, 3, 5], [0, 3, 0, 4], [5, 4, 0, 3],
+            [0, 5, 2, 6], [0, 6, 5, 4], [0, 2, 5, 4], [3, 4, 0, 5],
+            [0, 4, 5, 3], [0, 3, 5, 4]
+        ];
+
+        function degToMidi(rootPc, scale, deg, octShift) {
+            const n = scale.length;
+            const o = Math.floor(deg / n) + (octShift || 0);
+            const i = ((deg % n) + n) % n;
+            return (o + 1) * 12 + rootPc + scale[i];
+        }
+
+        function generateSong(seed) {
+            const rnd = mulberry32(seed >>> 0);
+            const pick = arr => arr[Math.floor(rnd() * arr.length)];
+
+            const keyPc = pick(KEY_PCS);
+            const scale = pick(MODES);
+            const prog  = pick(PROGS);
+
+            const tempo = 76 + Math.floor(rnd() * 76);
+            const bars = pick([6, 8, 8, 8, 8, 10]);
+            const totalBeats = bars * 4;
+            const beatsPerChord = pick([1, 2, 2, 2, 2, 4]);
+            const chordCount = Math.floor(totalBeats / beatsPerChord);
+
+            const profile = {
+                bassOct:    pick([1, 2, 2, 3]),
+                padOct:     pick([1, 2, 2, 3]),
+                guitarOct:  pick([2, 3, 3, 4]),
+                arpOct:     pick([2, 3, 3, 4, 5]),
+                synthOct:   pick([3, 4, 4, 5, 5]),
+
+                guitarBright: 3500 + rnd() * 9500,
+                guitarDark:   350 + rnd() * 1000,
+                synthBright:  2200 + rnd() * 5800,
+                synthDark:    700 + rnd() * 1700,
+                padBright:    1500 + rnd() * 4000,
+                bassBright:   280 + rnd() * 500,
+
+                arpSkip:    0.12 + rnd() * 0.45,
+                hatSkip:    rnd() < 0.5 ? 0 : 0.35,
+                kickStyle:  pick(['1-3', '1-3', '1-3', 'four', 'sparse', 'break']),
+                bassRhythm: pick(['8ths', '8ths', '8ths', 'quarters', '16ths']),
+                arpStyle:   pick(['up', 'updown', 'up', 'down', 'random', 'downup']),
+
+                padVol:    0.30 + rnd() * 0.25,
+                guitarVol: 0.35 + rnd() * 0.28,
+                bassVol:   0.40 + rnd() * 0.25,
+                arpVol:    0.16 + rnd() * 0.20,
+                synthVol:  0.26 + rnd() * 0.20,
+                kickVol:   0.75 + rnd() * 0.20,
+                snareVol:  0.60 + rnd() * 0.20,
+                hatVol:    0.28 + rnd() * 0.18,
+
+                hasArp:     rnd() < 0.78,
+                hasLead:    rnd() < 0.82,
+                hasPad:     rnd() < 0.92,
+                hasGuitar:  rnd() < 0.88,
+                hasDrums:   rnd() < 0.94,
+                hasGhostKick:    rnd() < 0.4,
+                hasGuitarSkank:  rnd() < 0.55,
+                hasSnare:        rnd() < 0.85,
+
+                leadCount:  4 + Math.floor(rnd() * 6)
+            };
+
+            const events = [];
+
+            if (profile.hasDrums) {
+                for (let b = 0; b < totalBeats; b++) {
+                    const beatInBar = b % 4;
+
+                    let doKick = false;
+                    switch (profile.kickStyle) {
+                        case '1-3':    doKick = (beatInBar === 0 || beatInBar === 2); break;
+                        case 'four':   doKick = true; break;
+                        case 'sparse': doKick = (beatInBar === 0); break;
+                        case 'break':  doKick = (beatInBar === 0 || beatInBar === 2 || (beatInBar === 3 && rnd() < 0.5)); break;
+                    }
+                    if (doKick) {
+                        events.push({ time: b, kind: 'kick', velocity: profile.kickVol });
+                    }
+                    if (profile.hasGhostKick && beatInBar === 3 && rnd() < 0.35) {
+                        events.push({ time: b + 0.75, kind: 'kick', velocity: profile.kickVol * 0.55 });
+                    }
+
+                    if (profile.hasSnare && (beatInBar === 1 || beatInBar === 3)) {
+                        events.push({ time: b, kind: 'snare', velocity: profile.snareVol });
+                    }
+
+                    if (!profile.hatSkip || rnd() > profile.hatSkip) {
+                        events.push({ time: b, kind: 'hat', velocity: profile.hatVol });
+                    }
+                    if (!profile.hatSkip || rnd() > profile.hatSkip) {
+                        events.push({ time: b + 0.5, kind: 'hat', velocity: profile.hatVol * 0.7 });
+                    }
+                }
+            }
+
+            const bassStep = profile.bassRhythm === '16ths' ? 0.25
+                           : profile.bassRhythm === '8ths'  ? 0.5
+                           : 1.0;
+
+            for (let c = 0; c < chordCount; c++) {
+                const deg = prog[c % prog.length];
+                const t = c * beatsPerChord;
+
+                if (profile.hasPad) {
+                    const padNotes = [
+                        degToMidi(keyPc, scale, deg,     profile.padOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.padOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.padOct)
+                    ];
+                    events.push({
+                        time: t, duration: beatsPerChord,
+                        kind: 'pad', notes: padNotes,
+                        velocity: profile.padVol
+                    });
+                }
+
+                if (profile.hasGuitar) {
+                    const guitarNotes = [
+                        degToMidi(keyPc, scale, deg,     profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.guitarOct),
+                        degToMidi(keyPc, scale, deg + 7, profile.guitarOct + 1)
+                    ];
+                    events.push({
+                        time: t, duration: 0.9,
+                        kind: 'guitar', notes: guitarNotes,
+                        velocity: profile.guitarVol
+                    });
+                    if (profile.hasGuitarSkank && beatsPerChord > 1) {
+                        events.push({
+                            time: t + 1, duration: 0.4,
+                            kind: 'guitar',
+                            notes: [guitarNotes[0], guitarNotes[2]],
+                            velocity: profile.guitarVol * 0.65
+                        });
+                    }
+                }
+
+                const bassNote = degToMidi(keyPc, scale, deg, profile.bassOct);
+                for (let b = 0; b < beatsPerChord; b += bassStep) {
+                    events.push({
+                        time: t + b,
+                        duration: bassStep * 0.85,
+                        kind: 'bass',
+                        notes: [bassNote],
+                        velocity: profile.bassVol * (b === 0 ? 1 : 0.72)
+                    });
+                }
+            }
+
+            if (profile.hasArp) {
+                const step = 0.25;
+                const stepsPerChord = Math.round(beatsPerChord / step);
+
+                for (let c = 0; c < chordCount; c++) {
+                    const deg = prog[c % prog.length];
+                    const pool = [
+                        degToMidi(keyPc, scale, deg,     profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 2, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 4, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 7, profile.arpOct),
+                        degToMidi(keyPc, scale, deg + 9, profile.arpOct)
+                    ];
+                    for (let s = 0; s < stepsPerChord; s++) {
+                        if (s !== 0 && rnd() < profile.arpSkip) continue;
+                        let idx;
+                        if (profile.arpStyle === 'up') idx = s % pool.length;
+                        else if (profile.arpStyle === 'down') idx = (pool.length - 1) - (s % pool.length);
+                        else if (profile.arpStyle === 'updown') {
+                            const cyc = s % (pool.length * 2 - 2);
+                            idx = cyc < pool.length ? cyc : (pool.length * 2 - 2 - cyc);
+                        } else if (profile.arpStyle === 'downup') {
+                            const cyc = s % (pool.length * 2 - 2);
+                            const dcyc = cyc < pool.length ? cyc : (pool.length * 2 - 2 - cyc);
+                            idx = (pool.length - 1) - dcyc;
+                        } else idx = Math.floor(rnd() * pool.length);
+                        events.push({
+                            time: c * beatsPerChord + s * step,
+                            duration: step * 0.85,
+                            kind: 'arp',
+                            notes: [pool[idx]],
+                            velocity: profile.arpVol
+                        });
+                    }
+                }
+            }
+
+            if (profile.hasLead && profile.leadCount > 0) {
+                for (let i = 0; i < profile.leadCount; i++) {
+                    const t = i * (totalBeats / profile.leadCount) + rnd() * 0.4;
+                    const d = Math.floor(rnd() * scale.length) + 7;
+                    events.push({
+                        time: t,
+                        duration: 0.6 + rnd() * 0.9,
+                        kind: 'synth',
+                        notes: [degToMidi(keyPc, scale, d, profile.synthOct)],
+                        velocity: profile.synthVol
+                    });
+                }
+            }
+
+            events.sort((a, b) => a.time - b.time);
+            return { tempo, bars, beatsPerBar: 4, totalBeats, events, seed, profile };
+        }
+
+        const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+
+        class LoopPlayer {
+            constructor(ctx, dest, song) {
+                this.ctx = ctx;
+                this.dest = dest;
+                this.song = song;
+                this.profile = song.profile || {};
+                this.secPerBeat = 60 / song.tempo;
+                this.loopSeconds = song.totalBeats * this.secPerBeat;
+                this.out = ctx.createGain();
+                this.out.gain.value = 0;
+                this.out.connect(dest);
+                this.running = false;
+                this.timer = null;
+                this.loopStartTime = 0;
+                this.loopIteration = 0;
+                this.eventIndex = 0;
+                this.sources = new Set();
+
+                const nSamples = Math.floor(ctx.sampleRate * 0.5);
+                this.noiseBuffer = ctx.createBuffer(1, nSamples, ctx.sampleRate);
+                const nd = this.noiseBuffer.getChannelData(0);
+                for (let i = 0; i < nSamples; i++) nd[i] = Math.random() * 2 - 1;
+            }
+
+            start(when, fadeIn) {
+                this.running = true;
+                this.loopStartTime = when;
+                this.loopIteration = 0;
+                this.eventIndex = 0;
+                const g = this.out.gain;
+                g.cancelScheduledValues(when);
+                g.setValueAtTime(0.0001, when);
+                g.exponentialRampToValueAtTime(1, when + (fadeIn || 0.5));
+                this.timer = setInterval(() => this.tick(), 25);
+                this.tick();
+            }
+
+            tick() {
+                if (!this.running) return;
+                const ctx = this.ctx;
+                const horizon = ctx.currentTime + 0.35;
+                let guard = 0;
+                while (guard++ < 1000) {
+                    if (this.eventIndex >= this.song.events.length) {
+                        this.eventIndex = 0;
+                        this.loopIteration++;
+                        continue;
+                    }
+                    const ev = this.song.events[this.eventIndex];
+                    const absTime = this.loopStartTime
+                                  + this.loopIteration * this.loopSeconds
+                                  + ev.time * this.secPerBeat;
+                    if (absTime > horizon) break;
+                    if (absTime >= ctx.currentTime - 0.02) {
+                        this.schedule(ev, absTime);
+                    }
+                    this.eventIndex++;
+                }
+            }
+
+            schedule(ev, when) {
+                switch (ev.kind) {
+                    case 'kick':   this.kick(ev, when);   break;
+                    case 'snare':  this.snare(ev, when);  break;
+                    case 'hat':    this.hat(ev, when);    break;
+                    case 'bass':   this.bass(ev, when);   break;
+                    case 'pad':    this.pad(ev, when);    break;
+                    case 'guitar': this.guitar(ev, when); break;
+                    case 'arp':    this.arp(ev, when);    break;
+                    case 'synth':  this.synth(ev, when);  break;
+                }
+            }
+
+            _track(node, stopAt) {
+                this.sources.add(node);
+                const ms = Math.max(0, (stopAt - this.ctx.currentTime + 0.5) * 1000);
+                setTimeout(() => this.sources.delete(node), ms);
+            }
+
+            kick(ev, t) {
+                const ctx = this.ctx;
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(160, t);
+                osc.frequency.exponentialRampToValueAtTime(42, t + 0.09);
+
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(ev.velocity, t + 0.003);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+
+                osc.connect(g).connect(this.out);
+                osc.start(t);
+                osc.stop(t + 0.4);
+                this._track(osc, t + 0.4);
+            }
+
+            snare(ev, t) {
+                const ctx = this.ctx;
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = this.noiseBuffer;
+
+                const nf = ctx.createBiquadFilter();
+                nf.type = 'highpass';
+                nf.frequency.value = 1800;
+
+                const ng = ctx.createGain();
+                ng.gain.setValueAtTime(ev.velocity * 0.75, t);
+                ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+
+                noise.connect(nf).connect(ng).connect(this.out);
+                noise.start(t);
+                noise.stop(t + 0.25);
+
+                const body = ctx.createOscillator();
+                body.type = 'triangle';
+                body.frequency.setValueAtTime(220, t);
+                body.frequency.exponentialRampToValueAtTime(140, t + 0.1);
+
+                const bg = ctx.createGain();
+                bg.gain.setValueAtTime(ev.velocity * 0.45, t);
+                bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+
+                body.connect(bg).connect(this.out);
+                body.start(t);
+                body.stop(t + 0.16);
+
+                this._track(noise, t + 0.3);
+                this._track(body, t + 0.2);
+            }
+
+            hat(ev, t) {
+                const ctx = this.ctx;
+                const noise = ctx.createBufferSource();
+                noise.buffer = this.noiseBuffer;
+
+                const f = ctx.createBiquadFilter();
+                f.type = 'highpass';
+                f.frequency.value = 8000;
+
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(ev.velocity * 0.18, t);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+
+                noise.connect(f).connect(g).connect(this.out);
+                noise.start(t);
+                noise.stop(t + 0.1);
+                this._track(noise, t + 0.15);
+            }
+
+            bass(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const endTime = t + dur + 0.2;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.55;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.008);
+                g.gain.setTargetAtTime(0.0001, t + dur * 0.4, 0.16);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 4.5;
+                const bright = p.bassBright || 500;
+                lp.frequency.setValueAtTime(bright * 0.4, t);
+                lp.frequency.exponentialRampToValueAtTime(bright * 2.2, t + 0.05);
+                lp.frequency.exponentialRampToValueAtTime(bright, t + dur);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    const saw = ctx.createOscillator();
+                    saw.type = 'sawtooth';
+                    saw.frequency.value = f;
+                    saw.connect(lp);
+                    saw.start(t);
+                    saw.stop(endTime);
+                    this._track(saw, endTime);
+
+                    const sub = ctx.createOscillator();
+                    sub.type = 'sine';
+                    sub.frequency.value = f / 2;
+                    const sg = ctx.createGain();
+                    sg.gain.value = 0.6;
+                    sub.connect(sg).connect(lp);
+                    sub.start(t);
+                    sub.stop(endTime);
+                    this._track(sub, endTime);
+                });
+            }
+
+            pad(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const attack = 0.18, release = 0.7;
+                const endTime = t + dur + release + 0.2;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.16;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + attack);
+                g.gain.setValueAtTime(peak * 0.75, t + dur * 0.5);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.value = p.padBright || 3500;
+                lp.Q.value = 0.7;
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach((midi, i) => {
+                    const f = midiToFreq(midi);
+                    [-9, 0, 9].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune + i * 2;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            guitar(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const decay = 0.7 + dur * 1.1;
+                const endTime = t + decay + 0.15;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.32;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+
+                const body = ctx.createBiquadFilter();
+                body.type = 'peaking';
+                body.frequency.value = 380;
+                body.Q.value = 2;
+                body.gain.value = 6;
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 1.8;
+                lp.frequency.setValueAtTime(p.guitarBright || 8000, t);
+                lp.frequency.exponentialRampToValueAtTime(p.guitarDark || 600, t + decay);
+                lp.connect(body).connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    [0, 5].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            arp(ev, t) {
+                const ctx = this.ctx;
+                const dur = ev.duration * this.secPerBeat;
+                const decay = 0.22 + dur * 0.7;
+                const endTime = t + decay + 0.06;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.28;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + 0.004);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 1.4;
+                lp.frequency.setValueAtTime(7000, t);
+                lp.frequency.exponentialRampToValueAtTime(1800, t + decay);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'triangle';
+                    osc.frequency.value = midiToFreq(midi);
+                    osc.connect(lp);
+                    osc.start(t);
+                    osc.stop(endTime);
+                    this._track(osc, endTime);
+                });
+            }
+
+            synth(ev, t) {
+                const ctx = this.ctx;
+                const p = this.profile;
+                const dur = ev.duration * this.secPerBeat;
+                const attack = 0.025, release = 0.35;
+                const endTime = t + dur + release + 0.1;
+
+                const g = ctx.createGain();
+                const peak = ev.velocity * 0.3;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(peak, t + attack);
+                g.gain.setValueAtTime(peak * 0.82, t + dur * 0.55);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
+
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.Q.value = 3;
+                lp.frequency.setValueAtTime(500, t);
+                lp.frequency.exponentialRampToValueAtTime(p.synthBright || 4000, t + 0.09);
+                lp.frequency.exponentialRampToValueAtTime(p.synthDark || 1400, t + dur + release);
+                lp.connect(g).connect(this.out);
+
+                ev.notes.forEach(midi => {
+                    const f = midiToFreq(midi);
+                    [-7, 7].forEach(detune => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = f;
+                        osc.detune.value = detune;
+                        osc.connect(lp);
+                        osc.start(t);
+                        osc.stop(endTime);
+                        this._track(osc, endTime);
+                    });
+                });
+            }
+
+            fadeOutAndStop(dur) {
+                if (!this.running) return;
+                const now = this.ctx.currentTime;
+                const g = this.out.gain;
+                g.cancelScheduledValues(now);
+                g.setValueAtTime(Math.max(0.0001, g.value), now);
+                g.exponentialRampToValueAtTime(0.0001, now + dur);
+                this.running = false;
+                const myTimer = this.timer;
+                this.timer = null;
+                setTimeout(() => {
+                    if (myTimer) clearInterval(myTimer);
+                    for (const src of this.sources) {
+                        try { src.stop(); } catch (e) {}
+                    }
+                    this.sources.clear();
+                    try { this.out.disconnect(); } catch (e) {}
+                }, dur * 1000 + 150);
+            }
+        }
+
+        class MusicManager {
+            constructor() {
+                this.ctx = null;
+                this.master = null;
+                this.voiceGain = null;
+                this.current = null;
+                this.currentSeed = null;
+                this.volume = 0.45;
+                this.ducked = false;
+            }
+
+            ensureContext() {
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') {
+                        try { this.ctx.resume(); } catch (e) {}
+                    }
+                    return this.ctx;
+                }
+                const Ctor = window.AudioContext || window.webkitAudioContext;
+                if (!Ctor) return null;
+                this.ctx = new Ctor();
+
+                this.voiceGain = this.ctx.createGain();
+                this.voiceGain.gain.value = 1;
+
+                this.master = this.ctx.createGain();
+                this.master.gain.value = this.volume;
+
+                const comp = this.ctx.createDynamicsCompressor();
+                comp.threshold.value = -12;
+                comp.knee.value = 22;
+                comp.ratio.value = 6;
+                comp.attack.value = 0.004;
+                comp.release.value = 0.18;
+
+                this.voiceGain.connect(this.master);
+                this.master.connect(comp);
+                comp.connect(this.ctx.destination);
+                return this.ctx;
+            }
+
+            unlock() {
+                const ctx = this.ensureContext();
+                if (ctx && ctx.state === 'suspended') {
+                    try { ctx.resume(); } catch (e) {}
+                }
+                return ctx;
+            }
+
+            play(seed) {
+                seed = seed >>> 0;
+                if (seed === this.currentSeed && this.current) return;
+                const ctx = this.ensureContext();
+                if (!ctx) return;
+
+                const old = this.current;
+                const song = generateSong(seed);
+                const player = new LoopPlayer(ctx, this.voiceGain, song);
+                this.current = player;
+                this.currentSeed = seed;
+
+                if (old) old.fadeOutAndStop(0.5);
+                player.start(ctx.currentTime + 0.02, 0.9);
+            }
+
+            stop(fade) {
+                if (this.current) {
+                    this.current.fadeOutAndStop(fade == null ? 0.4 : fade);
+                    this.current = null;
+                    this.currentSeed = null;
+                }
+            }
+
+            duck(on) {
+                if (!this.voiceGain || !this.ctx) return;
+                if (this.ducked === !!on) return;
+                this.ducked = !!on;
+                const now = this.ctx.currentTime;
+                const target = on ? 0.32 : 1;
+                const tc = on ? 0.06 : 0.22;
+                const g = this.voiceGain.gain;
+                g.cancelScheduledValues(now);
+                g.setValueAtTime(g.value, now);
+                g.setTargetAtTime(target, now, tc);
+            }
+
+            pause() {
+                if (this.ctx && this.ctx.state === 'running') {
+                    try { this.ctx.suspend(); } catch (e) {}
+                }
+            }
+
+            resume() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    try { this.ctx.resume(); } catch (e) {}
+                }
+            }
+
+            setVolume(v) {
+                this.volume = Math.max(0, Math.min(1, v));
+                if (this.master && this.ctx) {
+                    const now = this.ctx.currentTime;
+                    this.master.gain.cancelScheduledValues(now);
+                    this.master.gain.setTargetAtTime(this.volume, now, 0.05);
+                }
+            }
+        }
+
+        return new MusicManager();
+    })();
+</script>
 
 <script>
     (function () {
       'use strict';
 
       /* ==============================================================
-         1. SHOP DATA (from external file)
+         1. PROCEDURAL PRODUCT GENERATION
+            Every product = 2 random colours + 1 random pattern
+            (stripes / polkadot / checkered / plaid / stars / hearts /
+             kawaii) + 1 random item, rendered as an inline SVG.
+            ~1 in 10 items is plain (solid colour, no pattern).
+
+            The generation PARAMETERS (itemKey, patternKey, cols, isPlain)
+            are stored on each product and on each cart item, so the SVG
+            can be regenerated with fresh unique IDs wherever it's shown
+            (product grid, cart thumbnail, unboxing reveal) — guaranteeing
+            the unboxing shows the exact same item the user added.
          ============================================================== */
-      const shopProducts = (typeof SHEIN_PRODUCTS !== 'undefined') ? SHEIN_PRODUCTS : [];
+
+      const ITEM_TYPES = [
+        { key: 'dress',       name: 'Dress',       cat: 'clothes' },
+        { key: 'trousers',    name: 'Trousers',    cat: 'clothes' },
+        { key: 'tshirt',      name: 'T-Shirt',     cat: 'clothes' },
+        { key: 'socks',       name: 'Socks',       cat: 'clothes' },
+        { key: 'hat',         name: 'Beanie',      cat: 'clothes' },
+        { key: 'slippers',    name: 'Slippers',    cat: 'clothes' },
+        { key: 'keyring',     name: 'Keyring',     cat: 'accessories' },
+        { key: 'bracelet',    name: 'Bracelet',    cat: 'accessories' },
+        { key: 'badgeCircle', name: 'Enamel Pin',  cat: 'accessories' },
+        { key: 'badgeHeart',  name: 'Heart Pin',   cat: 'accessories' },
+        { key: 'phonecase',   name: 'Phone Case',  cat: 'accessories' }
+      ];
+
+      const PATTERNS = ['stripes', 'polkadot', 'checkered', 'plaid', 'stars', 'hearts', 'kawaii'];
+      const PATTERN_WORDS = {
+        stripes:   'Striped',
+        polkadot:  'Polka-Dot',
+        checkered: 'Checkered',
+        plaid:     'Plaid',
+        stars:     'Star',
+        hearts:    'Heart',
+        kawaii:    'Kawaii'
+      };
+      const STYLE_WORDS = [
+        'Vintage', 'Oversized', 'Cozy', 'Retro', 'Premium', 'Essential',
+        'Everyday', 'Statement', 'Soft-Touch', 'Classic', 'Bold', 'Minimal',
+        'Cropped', 'Relaxed', 'Limited', 'Studio'
+      ];
+
+      const PLAIN_CHANCE = 0.10; // ~1 in 10 items is plain
+
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+      /* ---------- colour helpers ---------- */
+      function hslToHex(h, s, l) {
+        s /= 100; l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+        return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+      }
+
+      function shadeHex(hex, amt) {
+        const n = parseInt(hex.slice(1), 16);
+        let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        const f = v => {
+          const out = amt < 0 ? v * (1 + amt) : v + (255 - v) * amt;
+          return Math.max(0, Math.min(255, Math.round(out)));
+        };
+        r = f(r); g = f(g); b = f(b);
+        return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+      }
+
+      function makeColourPair() {
+        const h1 = randInt(0, 359);
+        const h2 = (h1 + 80 + randInt(0, 200)) % 360;
+        const s1 = randInt(55, 95);
+        const l1 = randInt(42, 68);
+        const s2 = randInt(45, 95);
+        const l2 = randInt(26, 62);
+        const hexA = hslToHex(h1, s1, l1);
+        const hexB = hslToHex(h2, s2, l2);
+        return {
+          a: hexA,
+          b: hexB,
+          dark: shadeHex(hexA, -0.42)
+        };
+      }
+
+      /* ---------- SVG pattern defs ---------- */
+      let svgUid = 0;
+
+      function buildPatternDef(id, type, colA, colB) {
+        if (type === 'stripes') {
+          const s = 34;
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<rect width="' + (s / 2) + '" height="' + s + '" fill="' + colB + '"/>' +
+                 '</pattern>';
+        }
+        if (type === 'polkadot') {
+          const s = 34, r = 6.5;
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<circle cx="' + (s / 2) + '" cy="' + (s / 2) + '" r="' + r + '" fill="' + colB + '"/>' +
+                 '<circle cx="0" cy="0" r="' + r + '" fill="' + colB + '"/>' +
+                 '<circle cx="' + s + '" cy="0" r="' + r + '" fill="' + colB + '"/>' +
+                 '<circle cx="0" cy="' + s + '" r="' + r + '" fill="' + colB + '"/>' +
+                 '<circle cx="' + s + '" cy="' + s + '" r="' + r + '" fill="' + colB + '"/>' +
+                 '</pattern>';
+        }
+        if (type === 'checkered') {
+          const s = 34, h = s / 2;
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<rect width="' + h + '" height="' + h + '" fill="' + colB + '"/>' +
+                 '<rect x="' + h + '" y="' + h + '" width="' + h + '" height="' + h + '" fill="' + colB + '"/>' +
+                 '</pattern>';
+        }
+        if (type === 'plaid') {
+          const s = 46, band = 15;
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<rect width="' + s + '" height="' + band + '" fill="' + colB + '" opacity="0.55"/>' +
+                 '<rect width="' + band + '" height="' + s + '" fill="' + colB + '" opacity="0.55"/>' +
+                 '<rect width="' + band + '" height="' + band + '" fill="' + colB + '" opacity="0.85"/>' +
+                 '<rect x="' + (band + 4) + '" width="2" height="' + s + '" fill="' + colB + '" opacity="0.5"/>' +
+                 '<rect y="' + (band + 4) + '" width="' + s + '" height="2" fill="' + colB + '" opacity="0.5"/>' +
+                 '</pattern>';
+        }
+        if (type === 'stars') {
+          const s = 46;
+          const star = 'M0,-10 L2.9,-3.1 L10,-3.1 L4.4,1.2 L6.2,8.1 L0,4.5 L-6.2,8.1 L-4.4,1.2 L-10,-3.1 L-2.9,-3.1 Z';
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<g transform="translate(12,12)"><path d="' + star + '" fill="' + colB + '"/></g>' +
+                 '<g transform="translate(35,35) scale(0.7)"><path d="' + star + '" fill="' + colB + '"/></g>' +
+                 '</pattern>';
+        }
+        if (type === 'hearts') {
+          const s = 42;
+          const heart = 'M0,9 C-8,2 -13,-2 -13,-6 C-13,-10 -10,-12 -7,-12 C-4,-12 -1.5,-10 0,-7.5 C1.5,-10 4,-12 7,-12 C10,-12 13,-10 13,-6 C13,-2 8,2 0,9 Z';
+          return '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                 '" patternUnits="userSpaceOnUse">' +
+                 '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>' +
+                 '<g transform="translate(11,14) scale(0.85)"><path d="' + heart + '" fill="' + colB + '"/></g>' +
+                 '<g transform="translate(31,32) scale(0.55)"><path d="' + heart + '" fill="' + colB + '"/></g>' +
+                 '</pattern>';
+        }
+        if (type === 'kawaii') {
+          const s = 60;
+          let p = '<pattern id="' + id + '" width="' + s + '" height="' + s +
+                  '" patternUnits="userSpaceOnUse">' +
+                  '<rect width="' + s + '" height="' + s + '" fill="' + colA + '"/>';
+          p += '<polygon points="' + (s*0.27) + ',' + (s*0.33) + ' ' +
+               (s*0.30) + ',' + (s*0.13) + ' ' + (s*0.46) + ',' + (s*0.28) + '" fill="' + colB + '"/>';
+          p += '<polygon points="' + (s*0.54) + ',' + (s*0.28) + ' ' +
+               (s*0.70) + ',' + (s*0.13) + ' ' + (s*0.73) + ',' + (s*0.33) + '" fill="' + colB + '"/>';
+          p += '<rect x="' + (s*0.22) + '" y="' + (s*0.27) + '" width="' + (s*0.56) +
+               '" height="' + (s*0.50) + '" rx="' + (s*0.16) + '" fill="' + colB + '"/>';
+          p += '<circle cx="' + (s*0.38) + '" cy="' + (s*0.50) + '" r="' + (s*0.04) +
+               '" fill="' + colA + '"/>';
+          p += '<circle cx="' + (s*0.62) + '" cy="' + (s*0.50) + '" r="' + (s*0.04) +
+               '" fill="' + colA + '"/>';
+          p += '<ellipse cx="' + (s*0.31) + '" cy="' + (s*0.60) + '" rx="' + (s*0.05) +
+               '" ry="' + (s*0.03) + '" fill="#ff9ec0" opacity="0.75"/>';
+          p += '<ellipse cx="' + (s*0.69) + '" cy="' + (s*0.60) + '" rx="' + (s*0.05) +
+               '" ry="' + (s*0.03) + '" fill="#ff9ec0" opacity="0.75"/>';
+          p += '<path d="M' + (s*0.44) + ',' + (s*0.60) +
+               ' Q' + (s*0.47) + ',' + (s*0.65) + ' ' + (s*0.50) + ',' + (s*0.62) +
+               ' Q' + (s*0.53) + ',' + (s*0.65) + ' ' + (s*0.56) + ',' + (s*0.60) +
+               '" fill="none" stroke="' + colA + '" stroke-width="' + (s*0.022) +
+               '" stroke-linecap="round" stroke-linejoin="round"/>';
+          p += '</pattern>';
+          return p;
+        }
+        return '<pattern id="' + id + '" width="4" height="4" patternUnits="userSpaceOnUse">' +
+               '<rect width="4" height="4" fill="' + colA + '"/></pattern>';
+      }
+
+      /* ---------- SVG item shapes (viewBox 0 0 300 400) ---------- */
+      const ITEM_SHAPES = {
+        tshirt: function (f, d, uid) {
+          var body = 'M124,86 C128,116 172,116 176,86 ' +
+                     'L206,98 L262,124 L238,192 L196,176 ' +
+                     'L204,352 L96,352 L104,176 L62,192 L38,124 L94,98 Z';
+          return '' +
+            '<path d="' + body + '" fill="' + f + '"/>' +
+            '<path d="' + body + '" fill="url(#tsh' + uid + ')"/>' +
+            '<path d="' + body + '" fill="none" stroke="' + d + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+            '<path d="M124,78 C130,124 170,124 176,78 C170,106 130,106 124,78 Z" ' +
+              'fill="' + f + '" stroke="' + d + '" stroke-width="2.2" stroke-linejoin="round"/>' +
+            '<path d="M127,80 C132,116 168,116 173,80" fill="none" stroke="' + d +
+              '" stroke-width="1.2" opacity="0.28"/>' +
+            '<path d="M68,186 L108,170" fill="none" stroke="' + d + '" stroke-width="2.6" opacity="0.42"/>' +
+            '<path d="M232,186 L192,170" fill="none" stroke="' + d + '" stroke-width="2.6" opacity="0.42"/>' +
+            '<path d="M72,190 L112,174" fill="none" stroke="' + d + '" stroke-width="1.3" opacity="0.30" stroke-dasharray="4 4"/>' +
+            '<path d="M228,190 L188,174" fill="none" stroke="' + d + '" stroke-width="1.3" opacity="0.30" stroke-dasharray="4 4"/>' +
+            '<path d="M100,343 L200,343" fill="none" stroke="' + d + '" stroke-width="2.6" opacity="0.38"/>' +
+            '<path d="M102,348 L198,348" fill="none" stroke="' + d + '" stroke-width="1.4" opacity="0.34" stroke-dasharray="4 4"/>' +
+            '<path d="M108,178 Q120,206 116,246" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.15"/>' +
+            '<path d="M192,178 Q180,206 184,246" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.15"/>' +
+            '<path d="M150,198 Q146,252 152,338" fill="none" stroke="#000" stroke-width="2" opacity="0.08"/>' +
+            '<path d="M126,240 Q150,252 174,240" fill="none" stroke="#fff" stroke-width="2" opacity="0.08"/>' +
+            '<defs><linearGradient id="tsh' + uid + '" x1="0%" y1="0%" x2="100%" y2="35%">' +
+              '<stop offset="0%" stop-color="#000" stop-opacity="0.22"/>' +
+              '<stop offset="28%" stop-color="#fff" stop-opacity="0.18"/>' +
+              '<stop offset="52%" stop-color="#fff" stop-opacity="0.05"/>' +
+              '<stop offset="100%" stop-color="#000" stop-opacity="0.28"/>' +
+            '</linearGradient></defs>';
+        },
+
+        dress: function (f, d, uid) {
+          var body = 'M120,72 Q150,98 180,72 L198,96 Q192,124 186,150 Q184,176 186,200 ' +
+                     'Q204,272 254,356 Q150,372 46,356 Q96,272 114,200 ' +
+                     'Q116,176 114,150 Q108,124 102,96 Z';
+          return '' +
+            '<path d="' + body + '" fill="' + f + '"/>' +
+            '<path d="' + body + '" fill="url(#drsh' + uid + ')"/>' +
+            '<path d="' + body + '" fill="none" stroke="' + d + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+            '<path d="M120,68 Q150,102 180,68 Q150,88 120,68 Z" ' +
+              'fill="' + f + '" stroke="' + d + '" stroke-width="2.2" stroke-linejoin="round"/>' +
+            '<path d="M124,71 Q150,98 176,71" fill="none" stroke="' + d + '" stroke-width="1.2" opacity="0.26"/>' +
+            '<path d="M114,200 Q150,212 186,200" fill="none" stroke="' + d + '" stroke-width="3" opacity="0.42"/>' +
+            '<path d="M116,204 Q150,216 184,204" fill="none" stroke="' + d + '" stroke-width="1.3" opacity="0.28" stroke-dasharray="4 4"/>' +
+            '<path d="M133,160 Q140,182 135,198" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.20"/>' +
+            '<path d="M167,160 Q160,182 165,198" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.20"/>' +
+            '<path d="M132,208 Q118,282 98,350" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.15"/>' +
+            '<path d="M150,212 Q147,284 150,364" fill="none" stroke="#000" stroke-width="2" opacity="0.09"/>' +
+            '<path d="M168,208 Q182,282 202,350" fill="none" stroke="' + d + '" stroke-width="2" opacity="0.15"/>' +
+            '<path d="M110,240 Q150,256 190,240" fill="none" stroke="#fff" stroke-width="2" opacity="0.07"/>' +
+            '<path d="M58,348 Q150,364 242,348" fill="none" stroke="' + d + '" stroke-width="1.6" opacity="0.28" stroke-dasharray="5 5"/>' +
+            '<defs><radialGradient id="drsh' + uid + '" cx="50%" cy="36%" r="66%">' +
+              '<stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>' +
+              '<stop offset="50%" stop-color="#fff" stop-opacity="0.04"/>' +
+              '<stop offset="100%" stop-color="#000" stop-opacity="0.30"/>' +
+            '</radialGradient></defs>';
+        },
+
+        trousers: function (f, d, uid) {
+          var body = 'M94,72 L206,72 L216,130 L214,200 L206,356 L156,356 ' +
+                     'L150,214 L144,356 L94,356 L86,200 L84,130 Z';
+          return '' +
+            '<path d="' + body + '" fill="' + f + '"/>' +
+            '<path d="' + body + '" fill="url(#trsh' + uid + ')"/>' +
+            '<path d="' + body + '" fill="none" stroke="' + d + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+            '<rect x="92" y="70" width="116" height="28" rx="3" fill="' + f + '" stroke="' + d + '" stroke-width="3"/>' +
+            '<rect x="92" y="70" width="116" height="28" rx="3" fill="#000" opacity="0.14"/>' +
+            '<rect x="108" y="67" width="5" height="33" rx="2" fill="' + d + '" opacity="0.55"/>' +
+            '<rect x="147" y="67" width="5" height="33" rx="2" fill="' + d + '" opacity="0.55"/>' +
+            '<rect x="186" y="67" width="5" height="33" rx="2" fill="' + d + '" opacity="0.55"/>' +
+            '<circle cx="150" cy="88" r="6" fill="' + d + '" opacity="0.85"/>' +
+            '<circle cx="150" cy="88" r="2.4" fill="#fff" opacity="0.5"/>' +
+            '<path d="M150,98 L150,146 Q152,172 163,192" fill="none" stroke="' + d + '" stroke-width="3" opacity="0.5"/>' +
+            '<path d="M154,100 L154,144" fill="none" stroke="' + d + '" stroke-width="1.3" opacity="0.3" stroke-dasharray="4 4"/>' +
+            '<path d="M204,104 Q193,132 175,144" fill="none" stroke="' + d + '" stroke-width="2.8" opacity="0.38"/>' +
+            '<path d="M96,104 Q107,132 125,144" fill="none" stroke="' + d + '" stroke-width="2.8" opacity="0.38"/>' +
+            '<path d="M150,192 Q150,208 150,216" fill="none" stroke="' + d + '" stroke-width="2.5" opacity="0.35"/>' +
+            '<path d="M186,226 L182,344" fill="none" stroke="#fff" stroke-width="3" opacity="0.13"/>' +
+            '<path d="M184,226 L180,344" fill="none" stroke="#000" stroke-width="1.5" opacity="0.09"/>' +
+            '<path d="M114,226 L118,344" fill="none" stroke="#fff" stroke-width="3" opacity="0.13"/>' +
+            '<path d="M116,226 L120,344" fill="none" stroke="#000" stroke-width="1.5" opacity="0.09"/>' +
+            '<path d="M96,344 L143,344" fill="none" stroke="' + d + '" stroke-width="2.4" opacity="0.35"/>' +
+            '<path d="M157,344 L204,344" fill="none" stroke="' + d + '" stroke-width="2.4" opacity="0.35"/>' +
+            '<defs><linearGradient id="trsh' + uid + '" x1="0%" y1="0%" x2="100%" y2="25%">' +
+              '<stop offset="0%" stop-color="#000" stop-opacity="0.24"/>' +
+              '<stop offset="26%" stop-color="#fff" stop-opacity="0.16"/>' +
+              '<stop offset="54%" stop-color="#fff" stop-opacity="0.04"/>' +
+              '<stop offset="100%" stop-color="#000" stop-opacity="0.26"/>' +
+            '</linearGradient></defs>';
+        },
+
+        socks: function (f, d) {
+          return '<path d="M118,62 L186,62 L186,262 Q186,296 152,296 L96,296 Q62,296 62,270 Q62,244 96,244 L132,244 L132,62 Z" ' +
+                 'fill="' + f + '" stroke="' + d + '" stroke-width="4" stroke-linejoin="round"/>' +
+                 '<path d="M118,96 L186,96" fill="none" stroke="' + d + '" stroke-width="3" opacity="0.45"/>';
+        },
+        hat: function (f, d) {
+          return '<path d="M62,254 C62,110 110,84 150,84 C190,84 238,110 238,254 Z" ' +
+                 'fill="' + f + '" stroke="' + d + '" stroke-width="4" stroke-linejoin="round"/>' +
+                 '<circle cx="150" cy="76" r="25" fill="' + f + '" stroke="' + d + '" stroke-width="4"/>' +
+                 '<rect x="50" y="246" width="200" height="46" rx="23" ' +
+                 'fill="' + f + '" stroke="' + d + '" stroke-width="4"/>';
+        },
+        slippers: function (f, d, uid) {
+          var openingCX = 0, openingCY = -18, openingRX = 36, openingRY = 52;
+
+          var fluff = '';
+          var N = 22;
+          for (var i = 0; i < N; i++) {
+            var a = (i / N) * Math.PI * 2;
+            var cosA = Math.cos(a), sinA = Math.sin(a);
+            var ex = openingCX + cosA * openingRX;
+            var ey = openingCY + sinA * openingRY;
+
+            var nx = cosA / openingRX;
+            var ny = sinA / openingRY;
+            var nl = Math.sqrt(nx * nx + ny * ny) || 1;
+            nx /= nl; ny /= nl;
+
+            var len = 9 + (i % 3) * 2;
+            var side = (i % 2 === 0) ? 1 : -1;
+            var midX = ex + nx * (len * 0.5) - ny * side * 2.5;
+            var midY = ey + ny * (len * 0.5) + nx * side * 2.5;
+            var outX = ex + nx * len;
+            var outY = ey + ny * len;
+
+            fluff += '<path d="M' + ex.toFixed(1) + ',' + ey.toFixed(1) +
+                     ' Q' + midX.toFixed(1) + ',' + midY.toFixed(1) +
+                     ' ' + outX.toFixed(1) + ',' + outY.toFixed(1) + '"/>';
+          }
+
+          var solePath  = 'M0,-118 C-44,-118 -62,-98 -62,-60 C-62,-8 -56,52 -46,88 ' +
+                          'C-42,106 -22,117 0,117 C22,117 42,106 46,88 C56,52 62,-8 62,-60 ' +
+                          'C62,-98 44,-118 0,-118 Z';
+          var upperPath = 'M0,-112 C-40,-112 -56,-94 -56,-60 C-56,-10 -50,48 -42,82 ' +
+                          'C-38,98 -20,108 0,108 C20,108 38,98 42,82 C50,48 56,-10 56,-60 ' +
+                          'C56,-94 40,-112 0,-112 Z';
+
+          var makeSlipper = function (tx) {
+            return '' +
+              '<g transform="translate(' + tx + ',200)">' +
+                '<path d="' + solePath + '" fill="' + d + '"/>' +
+                '<path d="' + upperPath + '" fill="' + f + '"/>' +
+                '<ellipse cx="0" cy="-18" rx="36" ry="52" fill="' + d + '" opacity="0.92"/>' +
+                '<ellipse cx="0" cy="-18" rx="29" ry="44" fill="#14141a" opacity="0.55"/>' +
+                '<path d="M-24,-58 Q0,-68 24,-58" fill="none" stroke="#ffffff" ' +
+                  'stroke-width="2.6" opacity="0.20" stroke-linecap="round"/>' +
+                '<g stroke="' + d + '" stroke-width="2.4" stroke-linecap="round" ' +
+                  'opacity="0.7" fill="none">' + fluff + '</g>' +
+                '<path d="M-38,66 Q0,82 38,66" fill="none" stroke="' + d + '" ' +
+                  'stroke-width="2.4" opacity="0.45"/>' +
+                '<path d="' + upperPath + '" fill="url(#slsh' + uid + ')" opacity="0.6"/>' +
+                '<circle cx="0" cy="-88" r="21" fill="' + f + '" stroke="' + d +
+                  '" stroke-width="3"/>' +
+                '<g stroke="' + d + '" stroke-width="1.8" stroke-linecap="round" ' +
+                  'opacity="0.55" fill="none">' +
+                  '<path d="M-12,-97 Q-6,-101 0,-101"/>' +
+                  '<path d="M0,-101 Q6,-101 12,-97"/>' +
+                  '<path d="M-15,-88 Q-15,-93 -12,-97"/>' +
+                  '<path d="M15,-88 Q15,-93 12,-97"/>' +
+                  '<path d="M-15,-88 Q-15,-83 -12,-79"/>' +
+                  '<path d="M15,-88 Q15,-83 12,-79"/>' +
+                  '<path d="M-12,-79 Q-6,-75 0,-75"/>' +
+                  '<path d="M0,-75 Q6,-75 12,-79"/>' +
+                '</g>' +
+              '</g>';
+          };
+
+          return '' +
+            '<defs>' +
+              '<linearGradient id="slsh' + uid + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                '<stop offset="0%" stop-color="#fff" stop-opacity="0.24"/>' +
+                '<stop offset="45%" stop-color="#fff" stop-opacity="0.04"/>' +
+                '<stop offset="100%" stop-color="#000" stop-opacity="0.32"/>' +
+              '</linearGradient>' +
+            '</defs>' +
+            makeSlipper(78) +
+            makeSlipper(222);
+        },
+        keyring: function (f, d) {
+          return '' +
+            '<circle cx="150" cy="100" r="50" fill="none" stroke="' + d + '" stroke-width="10"/>' +
+            '<circle cx="150" cy="100" r="50" fill="none" stroke="' + f + '" stroke-width="4" opacity="0.55"/>' +
+            '<circle cx="150" cy="165" r="13" fill="none" stroke="' + d + '" stroke-width="5"/>' +
+            '<path d="M118,178 L182,178 L182,300 Q182,330 150,330 Q118,330 118,300 Z" ' +
+              'fill="' + f + '" stroke="' + d + '" stroke-width="4" stroke-linejoin="round"/>' +
+            '<circle cx="150" cy="204" r="11" fill="none" stroke="' + d + '" stroke-width="3"/>' +
+            '<path d="M130,278 L170,278" fill="none" stroke="' + d + '" stroke-width="2.5" opacity="0.5" stroke-dasharray="6 5"/>' +
+            '<path d="M130,294 L170,294" fill="none" stroke="' + d + '" stroke-width="2.5" opacity="0.5" stroke-dasharray="6 5"/>';
+        },
+        bracelet: function (f, d) {
+          var html = '';
+          var n = 16;
+          var rx = 95, ry = 78;
+          html += '<ellipse cx="150" cy="200" rx="' + rx + '" ry="' + ry +
+                  '" fill="none" stroke="' + d + '" stroke-width="5" opacity="0.9"/>';
+          for (var i = 0; i < n; i++) {
+            var angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+            var bx = 150 + Math.cos(angle) * rx;
+            var by = 200 + Math.sin(angle) * ry;
+            var r = (i % 3 === 0) ? 16 : 11;
+            html += '<circle cx="' + bx.toFixed(1) + '" cy="' + by.toFixed(1) + '" r="' + r +
+                    '" fill="' + f + '" stroke="' + d + '" stroke-width="3"/>';
+          }
+          var kAngle = Math.PI * 0.85;
+          var kx = 150 + Math.cos(kAngle) * rx;
+          var ky = 200 + Math.sin(kAngle) * ry;
+          html += '<circle cx="' + kx.toFixed(1) + '" cy="' + ky.toFixed(1) + '" r="4" fill="' + d + '"/>';
+          return html;
+        },
+        badgeCircle: function (f, d) {
+          return '<circle cx="150" cy="200" r="112" fill="' + f + '" stroke="' + d + '" stroke-width="7"/>' +
+                 '<circle cx="150" cy="200" r="88" fill="none" stroke="' + d + '" stroke-width="3" opacity="0.45"/>';
+        },
+        badgeHeart: function (f, d) {
+          return '<path d="M150,318 C62,254 40,176 82,132 C114,98 150,122 150,164 C150,122 186,98 218,132 C260,176 238,254 150,318 Z" ' +
+                 'fill="' + f + '" stroke="' + d + '" stroke-width="7" stroke-linejoin="round"/>';
+        },
+        phonecase: function (f, d) {
+          return '<rect x="86" y="46" width="128" height="308" rx="26" ' +
+                 'fill="' + f + '" stroke="' + d + '" stroke-width="5"/>' +
+                 '<rect x="102" y="64" width="58" height="58" rx="15" fill="' + d + '" opacity="0.85"/>' +
+                 '<circle cx="120" cy="82" r="10" fill="#ffffff" opacity="0.8"/>' +
+                 '<circle cx="144" cy="104" r="10" fill="#ffffff" opacity="0.8"/>';
+        }
+      };
+
+      /* Regenerates an SVG for the given product parameters using a
+         FRESH uid so pattern/gradient IDs never collide with other
+         instances of the same product already in the DOM. */
+      function buildProductSVG(itemKey, patternKey, cols, isPlain) {
+        const uid = svgUid++;
+        const pid = 'cspat' + uid;
+        let defs;
+        if (isPlain) {
+          defs = '<defs><pattern id="' + pid +
+                 '" width="1" height="1" patternUnits="userSpaceOnUse">' +
+                 '<rect width="1" height="1" fill="' + cols.a + '"/></pattern></defs>';
+        } else {
+          defs = '<defs>' + buildPatternDef(pid, patternKey, cols.a, cols.b) + '</defs>';
+        }
+        const shapeFn = ITEM_SHAPES[itemKey] || ITEM_SHAPES.tshirt;
+        const shape = shapeFn('url(#' + pid + ')', cols.dark, uid);
+        return '<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg" ' +
+               'preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+               defs + shape + '</svg>';
+      }
+
+      /* ---------- product factory ---------- */
+      function makeProduct(id) {
+        const item = pick(ITEM_TYPES);
+        const isPlain = Math.random() < PLAIN_CHANCE;
+        const pattern = isPlain ? null : pick(PATTERNS);
+        const cols = makeColourPair();
+        const svg = buildProductSVG(item.key, pattern, cols, isPlain);
+
+        const name = isPlain
+          ? pick(STYLE_WORDS) + ' ' + item.name
+          : pick(STYLE_WORDS) + ' ' + PATTERN_WORDS[pattern] + ' ' + item.name;
+
+        const base = 9.99 + Math.random() * 62;
+        const originalPrice = Math.round(base) + 0.99;
+        const factor = 0.35 + Math.random() * 0.40;
+        let price = Math.round(originalPrice * factor) + 0.99;
+        if (price >= originalPrice) price = Math.max(1.99, originalPrice - 1);
+
+        return {
+          id: id,
+          name: name,
+          category: item.cat,
+          itemKey: item.key,
+          patternKey: pattern,
+          cols: cols,
+          isPlain: isPlain,
+          svg: svg,
+          originalPrice: originalPrice,
+          price: price
+        };
+      }
+
+      function generateShopProducts(count, startId) {
+        startId = startId || 0;
+        const out = [];
+        for (let i = 0; i < count; i++) out.push(makeProduct(startId + i));
+        return out;
+      }
+
+      /* Rebuilds an SVG string for a cart item using fresh IDs. */
+      function svgForCartItem(item) {
+        return buildProductSVG(item.itemKey, item.patternKey, item.cols, item.isPlain);
+      }
+
+      let shopProducts = [];
       let activeCategory = 'all';
       let totalSavedLifetime = 0;
       let dopamineHits = 0;
@@ -1489,8 +2753,8 @@
          4. SHARED STATE
          ============================================================== */
       const cart = {
-        shop: [],    // [{id, name, emoji, originalPrice, price}]
-        vinyl: {}    // { vinylId: qty }
+        shop: [],
+        vinyl: {}
       };
 
       let vinylProducts = [];
@@ -1519,7 +2783,6 @@
 
       const checkoutOverlay = document.getElementById('checkoutOverlay');
       const checkoutContent = document.getElementById('checkoutContent');
-      const audioEl         = document.getElementById('audioPlayer');
 
       /* ==============================================================
          6. SHARED CART FUNCTIONS
@@ -1567,10 +2830,16 @@
           if (navigator.vibrate) navigator.vibrate(10);
           return;
         }
+        /* Store the generation params so the exact same product image
+           can be regenerated anywhere (cart thumbnail, unboxing, etc.). */
         cart.shop.push({
           id: product.id,
           name: product.name,
           emoji: '🛍️',
+          itemKey: product.itemKey,
+          patternKey: product.patternKey,
+          cols: product.cols,
+          isPlain: product.isPlain,
           originalPrice: product.originalPrice,
           price: product.price
         });
@@ -1631,14 +2900,16 @@
 
         let html = '';
 
-        // --- Shop items ---
         cart.shop.forEach(function (item) {
           const saveAmt = item.originalPrice - item.price;
+          /* Regenerate the SVG with a fresh uid so its pattern/gradient
+             IDs don't clash with other instances elsewhere in the DOM. */
+          const thumbSvg = svgForCartItem(item);
           html +=
             '<div class="cart-item" data-type="shop" data-id="' + item.id + '">' +
-              '<div class="mini-emoji">' + item.emoji + '</div>' +
+              '<div class="mini-svg">' + thumbSvg + '</div>' +
               '<div class="info">' +
-                '<div class="artist">' + item.name + '</div>' +
+                '<div class="artist">' + escapeHtml(item.name) + '</div>' +
                 '<div class="album">SHEIN Price Match™</div>' +
                 '<div class="price">' +
                   '<span class="strike">$' + item.originalPrice.toFixed(2) + '</span>' +
@@ -1650,7 +2921,6 @@
             '</div>';
         });
 
-        // --- Vinyl items ---
         for (const id in cart.vinyl) {
           const qty = cart.vinyl[id];
           const p = vinylProducts.find(function (v) { return v.id === parseInt(id, 10); });
@@ -1659,8 +2929,8 @@
             '<div class="cart-item" data-type="vinyl" data-id="' + id + '">' +
               '<div class="mini-vinyl" style="background:' + p.color + ';"></div>' +
               '<div class="info">' +
-                '<div class="artist">' + p.artist + '</div>' +
-                '<div class="album">' + p.album + '</div>' +
+                '<div class="artist">' + escapeHtml(p.artist) + '</div>' +
+                '<div class="album">' + escapeHtml(p.album) + '</div>' +
                 '<div class="price">$' + p.price.toFixed(2) + '</div>' +
               '</div>' +
               '<div class="qty-control">' +
@@ -1684,7 +2954,6 @@
           cartSavingsLine.style.display = 'none';
         }
 
-        // Events
         cartItemsEl.querySelectorAll('.qty-dec').forEach(function (btn) {
           btn.addEventListener('click', function () { changeVinylQty(btn.dataset.id, -1); });
         });
@@ -1711,35 +2980,13 @@
       }
 
       /* ==============================================================
-         7. SHOP RENDERING
+         7. SHOP RENDERING (with infinite scroll)
          ============================================================== */
       const BATCH_SIZE = 30;
+      const INITIAL_COUNT = 60;
       let currentList = [];
       let renderedCount = 0;
-
-      const AD_TEXTS = [
-        'BARGAIN', 'SALE%3A%0AEVERYTHING+MUST+GO', 'CLEARANCE', 'HOT+DEAL',
-        'LIMITED+TIME+OFFER', 'PRICE+DROP', 'FINAL+SALE', "DON%27T+MISS+OUT"
-      ];
-      const COLOR_PAIRS = [
-        ['c0392b', 'ffffff'], ['e67e22', 'ffffff'], ['111111', 'ffed00'],
-        ['d81b60', 'ffffff'], ['1a1a1a', 'ff3b30'], ['2c3e50', 'ffffff'],
-        ['8e0000', 'ffffff'], ['f39c12', '111111'], ['1e88e5', 'ffffff'],
-        ['0d47a1', 'ffffff'], ['42a5f5', '111111']
-      ];
-      const FONTS = [
-        'lato', 'lora', 'montserrat', 'noto-sans', 'open-sans', 'oswald',
-        'playfair-display', 'poppins', 'pt-sans', 'raleway', 'roboto',
-        'source-sans-pro'
-      ];
-      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-      function generateAdBannerImage(size) {
-        size = size || 600;
-        const text = pick(AD_TEXTS);
-        const pair = pick(COLOR_PAIRS);
-        const font = pick(FONTS);
-        return 'https://placehold.co/' + size + 'x' + size + '/' + pair[0] + '/' + pair[1] + '?text=' + text + '&font=' + font;
-      }
+      let generatingLock = false;
 
       function buildAdCardHTML() {
         return '' +
@@ -1760,17 +3007,13 @@
       function buildCardHTML(p, index) {
         const hasDiscount = p.originalPrice > p.price;
         const savingsPercent = hasDiscount ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
-        const adImageUrl = generateAdBannerImage();
-        const fallbackEmoji = '🛍️';
         const adHtml = (index > 0 && index % 20 === 0) ? buildAdCardHTML() : '';
         return '' +
           adHtml +
           '<div class="product-card" data-id="' + p.id + '">' +
             '<div class="product-image">' +
               '<span class="shein-tag">SHEIN MATCH</span>' +
-              '<img src="' + adImageUrl + '" alt="' + escapeHtml(p.name) + '" loading="lazy" ' +
-                'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" />' +
-              '<span class="img-emoji" style="display:none;">' + fallbackEmoji + '</span>' +
+              '<div class="product-svg-wrap">' + p.svg + '</div>' +
             '</div>' +
             '<div class="product-info">' +
               '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
@@ -1801,21 +3044,38 @@
         });
       }
 
-      function renderProducts() {
+      function refreshCurrentList() {
         currentList = activeCategory === 'all'
           ? shopProducts
           : shopProducts.filter(function (p) { return p.category === activeCategory; });
+      }
+
+      function renderProducts() {
+        refreshCurrentList();
         renderedCount = 0;
         productsGrid.innerHTML = '';
         loadMoreSentinel.classList.remove('hidden');
         loadNextBatch();
       }
 
+      function generateMoreProducts() {
+        if (generatingLock) return;
+        generatingLock = true;
+        const newItems = generateShopProducts(BATCH_SIZE * 2, shopProducts.length);
+        for (let i = 0; i < newItems.length; i++) shopProducts.push(newItems[i]);
+        refreshCurrentList();
+        generatingLock = false;
+      }
+
       function loadNextBatch() {
         if (renderedCount >= currentList.length) {
-          loadMoreSentinel.classList.add('hidden');
+          generateMoreProducts();
+        }
+
+        if (renderedCount >= currentList.length) {
           return;
         }
+
         const nextItems = currentList.slice(renderedCount, renderedCount + BATCH_SIZE);
         const frag = document.createElement('div');
         let html = '';
@@ -1828,20 +3088,30 @@
         }
         bindCardButtons(productsGrid);
         renderedCount += nextItems.length;
-        if (renderedCount >= currentList.length) {
-          loadMoreSentinel.classList.add('hidden');
-        }
       }
 
       const infiniteScrollObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
-          if (entry.isIntersecting) loadNextBatch();
+          if (entry.isIntersecting) {
+            setTimeout(loadNextBatch, 0);
+          }
         });
-      }, { root: productsScroll, rootMargin: '400px' });
+      }, { root: productsScroll, rootMargin: '600px' });
       infiniteScrollObserver.observe(loadMoreSentinel);
 
+      let scrollDebounce = null;
+      productsScroll.addEventListener('scroll', function () {
+        if (scrollDebounce) clearTimeout(scrollDebounce);
+        scrollDebounce = setTimeout(function () {
+          const nearBottom =
+            productsScroll.scrollTop + productsScroll.clientHeight >=
+            productsScroll.scrollHeight - 800;
+          if (nearBottom) loadNextBatch();
+        }, 120);
+      }, { passive: true });
+
       /* ==============================================================
-         8. PULL TO REFRESH (SHOP)
+         8. PULL TO REFRESH (SHOP) — regenerates a fresh product set
          ============================================================== */
       (function setupPullToRefresh() {
         const THRESHOLD = 70;
@@ -1896,7 +3166,7 @@
           pullRefreshLabel.textContent = 'Shuffling…';
           if (navigator.vibrate) navigator.vibrate(12);
           setTimeout(function () {
-            shuffleArray(shopProducts);
+            shopProducts = generateShopProducts(INITIAL_COUNT);
             renderProducts();
             productsScroll.scrollTop = 0;
             refreshing = false;
@@ -1936,7 +3206,41 @@
       }
 
       /* ==============================================================
-         10. CHECKOUT / DELIVERY FLOW
+         10. PROCEDURAL MUSIC HELPERS
+         ============================================================== */
+      function hashString(s) {
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+      }
+
+      let musicCounter = 0;
+      function nextMusicSeed() {
+        musicCounter++;
+        const s = 'chillspace|' + Date.now() + '|' + musicCounter + '|' +
+                  Math.random() + '|' + Math.random();
+        return hashString(s);
+      }
+
+      function playArrivalMusic() {
+        try {
+          if (!window.ChillSpaceMusic) return;
+          window.ChillSpaceMusic.setVolume(0.42);
+          window.ChillSpaceMusic.play(nextMusicSeed());
+        } catch (e) { /* ignore */ }
+      }
+
+      function stopArrivalMusic(fade) {
+        try {
+          if (window.ChillSpaceMusic) window.ChillSpaceMusic.stop(fade);
+        } catch (e) { /* ignore */ }
+      }
+
+      /* ==============================================================
+         11. CHECKOUT / DELIVERY FLOW
          ============================================================== */
       const TRACKING_LOCATIONS = [
         '📦 Order Confirmed · Warehouse',
@@ -1955,19 +3259,20 @@
         statsApplied: false
       };
 
-      let audioPlaying = false;
-
       function startCheckout() {
         if (getCartCount() === 0) return;
+
+        /* Unlock the audio engine inside this user gesture so the
+           procedural music can play later during delivery. */
+        try {
+          if (window.ChillSpaceMusic) window.ChillSpaceMusic.unlock();
+        } catch (e) { /* ignore */ }
 
         closeCart();
         checkoutOverlay.classList.add('open');
         document.body.style.overflow = 'hidden';
 
-        // reset
-        audioEl.pause();
-        audioEl.src = '';
-        audioPlaying = false;
+        stopArrivalMusic(0.15);
         checkoutState.statsApplied = false;
         if (checkoutState.trackingInterval) {
           clearInterval(checkoutState.trackingInterval);
@@ -2040,11 +3345,15 @@
         }, 1500);
       }
 
+      /* ==============================================================
+         UNBOXING STATE
+         ============================================================== */
+      let unboxState = { items: [], index: 0 };
+
       function renderArrived() {
         const hasShop  = cart.shop.length > 0;
         const hasVinyl = Object.keys(cart.vinyl).length > 0;
 
-        // stats (once per checkout)
         if (!checkoutState.statsApplied) {
           checkoutState.statsApplied = true;
           const totals = getCartTotals();
@@ -2055,28 +3364,28 @@
         }
 
         if (hasVinyl && hasShop) {
-          // --- BOTH: parcel emoji + text, click emoji → vinyl animation + music ---
           checkoutContent.innerHTML =
             '<span class="step-icon">🏠</span>' +
             '<h2>Your items have arrived!</h2>' +
             '<p class="sub-text">Tap the parcel to reveal your vinyl 🎵</p>' +
             '<div class="parcel-emoji" id="parcelEmoji">📦</div>' +
             '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
-          document.getElementById('parcelEmoji').addEventListener('click', function () {
-            renderVinylArrived();
-          });
+          document.getElementById('parcelEmoji').addEventListener('click', renderVinylArrived);
           document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
+
         } else if (hasVinyl) {
-          // --- ONLY VINYL: vinyl animation + music ---
           renderVinylArrived();
+
         } else {
-          // --- ONLY SHOP: parcel emoji as text, nothing on click ---
+          const n = cart.shop.length;
           checkoutContent.innerHTML =
             '<span class="step-icon">🏠</span>' +
             '<h2>Your items have arrived!</h2>' +
-            '<p class="sub-text">Thanks for shopping! Your items are ready.</p>' +
-            '<div class="parcel-emoji-static">📦</div>' +
+            '<p class="sub-text">Tap the parcel to unbox your ' +
+              n + ' item' + (n === 1 ? '' : 's') + '</p>' +
+            '<div class="parcel-emoji" id="parcelEmoji">📦</div>' +
             '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+          document.getElementById('parcelEmoji').addEventListener('click', startUnboxing);
           document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
           playDopamineSound();
         }
@@ -2089,15 +3398,108 @@
           const p = vinylProducts.find(function (v) { return v.id === parseInt(firstVinylId, 10); });
           if (p) color = p.color;
         }
+
+        const shopCount = cart.shop.length;
+        const unboxBtn = shopCount > 0
+          ? '<button class="unbox-start-btn" id="unboxStartBtn">📦 Unbox your items (' +
+              shopCount + ')</button>'
+          : '';
+
         checkoutContent.innerHTML =
           '<span class="step-icon">🏠</span>' +
           '<h2>Your vinyl has arrived!</h2>' +
           '<p class="sub-text">Time to spin it! 🎶</p>' +
           '<div class="arrived-vinyl">' + vinylSVG(color, 200) + '</div>' +
           '<p style="color:#6c68a0; font-size:0.95rem; margin-top:4px;">🎵 Your vinyl is spinning!</p>' +
+          unboxBtn +
+          '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+
+        document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
+        const ub = document.getElementById('unboxStartBtn');
+        if (ub) ub.addEventListener('click', startUnboxing);
+
+        playArrivalMusic();
+      }
+
+      function startUnboxing() {
+        unboxState.items = cart.shop.slice();
+        unboxState.index = 0;
+        renderUnboxStep();
+      }
+
+      function renderUnboxStep() {
+        const total = unboxState.items.length;
+
+        if (unboxState.index >= total) {
+          renderUnboxDone();
+          return;
+        }
+
+        const n = unboxState.index + 1;
+        const pct = Math.round((unboxState.index / total) * 100);
+
+        checkoutContent.innerHTML =
+          '<span class="step-icon">📦</span>' +
+          '<h2>Package ' + n + ' of ' + total + '</h2>' +
+          '<p class="sub-text">Tap the parcel to open it</p>' +
+          '<div class="parcel-emoji" id="unboxParcel">📦</div>' +
+          '<div class="unbox-bar"><div class="unbox-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="unbox-counter">' + n + ' / ' + total + '</div>' +
+          '<button class="unbox-skip" id="unboxSkipBtn">Skip unboxing →</button>';
+
+        document.getElementById('unboxParcel').addEventListener('click', renderUnboxReveal);
+        document.getElementById('unboxSkipBtn').addEventListener('click', function () {
+          unboxState.index = unboxState.items.length;
+          renderUnboxDone();
+        });
+      }
+
+      function renderUnboxReveal() {
+        const item  = unboxState.items[unboxState.index];
+        const total = unboxState.items.length;
+        const isLast = unboxState.index >= total - 1;
+        const saveAmt = item.originalPrice - item.price;
+
+        const priceHtml = saveAmt > 0
+          ? '<span style="text-decoration:line-through;color:#bbb;">$' +
+              item.originalPrice.toFixed(2) + '</span> ' +
+            '<strong style="color:#2e7d32;">$' + item.price.toFixed(2) + '</strong>' +
+            ' <span style="color:#2e7d32;font-weight:700;">(Save $' + saveAmt.toFixed(2) + ')</span>'
+          : '<strong>$' + item.price.toFixed(2) + '</strong>';
+
+        /* Regenerate the SVG from stored params with fresh IDs —
+           visually identical to the product grid / cart thumbnail. */
+        const revealSvg = svgForCartItem(item);
+
+        checkoutContent.innerHTML =
+          '<span class="step-icon">✨</span>' +
+          '<div class="unbox-item-svg">' + revealSvg + '</div>' +
+          '<h2 class="unbox-item-name">' + escapeHtml(item.name) + '</h2>' +
+          '<p class="sub-text" style="margin-bottom:6px;">' + priceHtml + '</p>' +
+          '<div class="unbox-bar"><div class="unbox-bar-fill" style="width:' +
+            Math.round(((unboxState.index + 1) / total) * 100) + '%"></div></div>' +
+          '<div class="unbox-counter">' + (unboxState.index + 1) + ' / ' + total + '</div>' +
+          '<button class="unbox-next-btn" id="unboxNextBtn">' +
+            (isLast ? '🎉 Finish Unboxing' : '📦 Next Package') +
+          '</button>';
+
+        document.getElementById('unboxNextBtn').addEventListener('click', function () {
+          unboxState.index++;
+          renderUnboxStep();
+        });
+
+        playDopamineSound();
+        if (navigator.vibrate) navigator.vibrate(12);
+      }
+
+      function renderUnboxDone() {
+        checkoutContent.innerHTML =
+          '<span class="step-icon">🎉</span>' +
+          '<h2>All unboxed!</h2>' +
+          '<p class="sub-text">Everything is yours. Enjoy! 💖</p>' +
           '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
         document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
-        playRandomAudio();
+        spawnConfetti();
       }
 
       function closeCheckout() {
@@ -2110,48 +3512,19 @@
           checkoutState.stepTimeout = null;
         }
 
-        // clear cart
         cart.shop = [];
         cart.vinyl = {};
+        unboxState.items = [];
+        unboxState.index = 0;
         updateCartBadges();
 
         checkoutOverlay.classList.remove('open');
         document.body.style.overflow = '';
-        audioEl.pause();
-        audioEl.src = '';
-        audioPlaying = false;
+        stopArrivalMusic(0.5);
       }
 
       /* ==============================================================
-         11. AUDIO — weighted random
-         ============================================================== */
-      const AUDIO_FILES = [
-        { url: 'file:///android_asset/song5.mp3', weight: 40 },
-        { url: 'file:///android_asset/song1.mp3', weight: 15 },
-        { url: 'file:///android_asset/song2.mp3', weight: 15 },
-        { url: 'file:///android_asset/song3.mp3', weight: 15 },
-        { url: 'file:///android_asset/song4.mp3', weight: 15 }
-      ];
-
-      function playRandomAudio() {
-        if (audioPlaying) return;
-        let r = Math.random() * 100;
-        let url = AUDIO_FILES[0].url;
-        for (let i = 0; i < AUDIO_FILES.length; i++) {
-          if (r < AUDIO_FILES[i].weight) { url = AUDIO_FILES[i].url; break; }
-          r -= AUDIO_FILES[i].weight;
-        }
-        try {
-          audioEl.src = url;
-          audioEl.volume = 0.6;
-          audioEl.play().catch(function () { /* autoplay blocked */ });
-          audioPlaying = true;
-          audioEl.onended = function () { audioPlaying = false; };
-        } catch (e) { /* ignore */ }
-      }
-
-      /* ==============================================================
-         12. SOUNDS (WebAudio, shop)
+         12. SOUNDS (WebAudio, procedural UI blips)
          ============================================================== */
       function playDopamineSound() {
         try {
@@ -2236,7 +3609,6 @@
          15. EVENT BINDINGS
          ============================================================== */
 
-      // Category tabs
       categoryTabs.addEventListener('click', function (e) {
         const tab = e.target.closest('.cat-tab');
         if (!tab) return;
@@ -2250,7 +3622,6 @@
         renderProducts();
       });
 
-      // Cart openers (both views)
       document.querySelectorAll('.js-open-cart').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault();
@@ -2258,26 +3629,21 @@
         });
       });
 
-      // Cart close
       cartCloseBtn.addEventListener('click', closeCart);
       cartOverlay.addEventListener('click', function (e) {
         if (e.target === cartOverlay) closeCart();
       });
 
-      // Buy now
       buyNowBtn.addEventListener('click', startCheckout);
 
-      // Escape key
       document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         if (checkoutOverlay.classList.contains('open')) {
-          // Only allow close if the "Keep Shopping" button is present
           if (document.getElementById('closeCheckoutBtn')) closeCheckout();
         }
         if (cartOverlay.classList.contains('open')) closeCart();
       });
 
-      // Easter egg: shop logo clicks
       let logoClicks = 0;
       const shopLogo = document.getElementById('shopLogo');
       if (shopLogo) {
@@ -2295,7 +3661,6 @@
         });
       }
 
-      // Tab switching
       document.querySelectorAll('.global-tab').forEach(function (tab) {
         tab.addEventListener('click', function () {
           const view = tab.dataset.view;
@@ -2313,21 +3678,18 @@
          16. INIT
          ============================================================== */
       function init() {
-        // Vinyl products
         vinylProducts = buildVinylProducts();
         renderVinylGrid();
 
-        // Shop products
-        if (shopProducts.length > 0) {
-          shuffleArray(shopProducts);
-          renderProducts();
-        }
+        shopProducts = generateShopProducts(INITIAL_COUNT);
+        shuffleArray(shopProducts);
+        renderProducts();
 
         updateFooterStats();
         updateCartBadges();
 
-        console.log('🛍️💿 ChillSpace merged app loaded — Shop: ' +
-          shopProducts.length + ' items, Vinyl: ' + vinylProducts.length + ' items.');
+        console.log('🛍️💿 ChillSpace merged app loaded — Shop: procedurally generated (infinite scroll), Vinyl: ' +
+          vinylProducts.length + ' items. Music: procedural (no external files).');
       }
 
       init();

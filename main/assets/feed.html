@@ -632,7 +632,7 @@
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.16);
-            z-index: 500;
+            z-index: 2500;
             overflow: hidden;
             animation: popIn .18s ease both;
         }
@@ -1212,7 +1212,7 @@
             background: #fff;
         }
         #composer-post-row {
-            display: none;
+            display: flex;
             justify-content: flex-end;
             margin-top: 8px;
         }
@@ -1920,14 +1920,14 @@
     <div class="header-inner">
         <div class="logo"><h1>ChillSpace</h1></div>
         <div id="bell-wrap">
+            <button type="button" class="header-btn autoscroll-btn" id="autoscrollHeaderBtn" onclick="toggleFeedAutoscrollFromHeader(this)">🤖 Auto-scroll: Off</button>
             <button id="bellBtn" aria-label="Notifications">🔔<span id="bell-badge"></span></button>
             <div id="notif-panel">
                 <div class="notif-header">Notifications</div>
                 <div id="notif-list"></div>
             </div>
             <button id="friendsHeaderBtn" class="header-btn friends-btn" onclick="openFriendsModal()">👥 Connections</button>
-            <a href="/blog" class="header-btn dm-btn">Blog</a>
-            <a href="/gaming" class="header-btn gaming-btn">Gaming</a>
+            <button type="button" class="header-btn dm-btn" onclick="location.href='messages.html'">💬 DM</button>
         </div>
     </div>
 </header>
@@ -1968,10 +1968,13 @@
             <!-- New media row: file upload + camera -->
             <div id="composer-media-row">
                 <input type="file" id="composer-image-input" accept="image/*" style="display:none;">
+                <input type="file" id="composer-image-capture-input" accept="image/*" capture="environment" style="display:none;">
                 <input type="file" id="composer-video-input" accept="video/*" style="display:none;">
+                <input type="file" id="composer-video-capture-input" accept="video/*" capture="environment" style="display:none;">
                 <button type="button" class="composer-media-btn" id="composer-upload-image-btn">📷 Upload Image</button>
                 <button type="button" class="composer-media-btn" id="composer-take-photo-btn">📸 Take Photo</button>
                 <button type="button" class="composer-media-btn" id="composer-upload-video-btn">🎬 Upload Video</button>
+                <button type="button" class="composer-media-btn" id="composer-record-video-btn">🎥 Record Video</button>
             </div>
             <div id="composer-media-preview">
                 <div class="media-preview-item" id="composer-image-preview-container">
@@ -2737,7 +2740,7 @@
         "My screen time is down 80% since joining. My plants are thriving too",
         "Actually talked to a human IRL today instead of posting about it",
         "The algorithm shows me 3 posts and says 'go touch grass'. 10/10",
-        "Between <a href='/kpop/'>the K-pop game</a> & <a href='/rs/'>Reelspace</a>, I found out my addiction wasn't TikTok - it was music",
+        "Between <a href='file:///android_asset/rhythmgame.html'>the Rhythm Game</a> & <a href='file:///android_asset/reel.html'>ReelSpace</a>, I found out my addiction wasn't TikTok - it was music",
         "Why when you close Facebook and open ChillSpace are you suddenly up for doing everything you needed to do? It's almost like closing Facebook closed the procrastinator inside me",
         "Me: I deleted Tinder just for you babe! My friends: Why are you calling ChillSpace 'babe'?",
         "Why have I wondered what happiness is for so long when it's always been right here on ChillSpace?",
@@ -3611,7 +3614,7 @@
           </div>
         </div>
         <div class="post-content">${coloredText}</div>
-        <iframe class="ad-video" id="FBSlot" src="${slotSrc}" title="Facebook Slots" style="border:none; width:100%; height:460px; display:block;" loading="lazy"></iframe>
+        <iframe class="ad-video" id="FBSlot" src="${slotSrc}" title="ChillSpace Slots" style="border:none; width:100%; height:460px; display:block;" loading="lazy"></iframe>
         <div class="actions">
           <button type="button" class="like-btn" data-base="0" onclick="toggleLike(this)">👍 0</button>
           <button type="button" onclick="openCommentModal(this)">💬 Comment</button>
@@ -4476,16 +4479,31 @@
     const autoscrollOn = new URLSearchParams(window.location.search).get('autoscroll') === 'on';
     let isAutoscrollActive = autoscrollOn;
 
+    function syncAutoscrollButtons() {
+        const headerBtn = document.getElementById('autoscrollHeaderBtn');
+        if (headerBtn) {
+            headerBtn.textContent = isAutoscrollActive ? '🤖 Auto-scroll: On' : '🤖 Auto-scroll: Off';
+            headerBtn.style.background = isAutoscrollActive ? 'linear-gradient(135deg,#7c3aed,#06b6d4)' : '#e4e6eb';
+            headerBtn.style.color = isAutoscrollActive ? '#fff' : '#1c1e21';
+        }
+        const adBtn = document.querySelector('.autoscroll-btn-toggle');
+        if (adBtn) {
+            adBtn.textContent = isAutoscrollActive ? 'Disable AI Auto-scroll' : 'Enable AI Auto-scroll';
+            adBtn.style.background = isAutoscrollActive ? '#e4e6eb' : 'linear-gradient(135deg,#7c3aed,#06b6d4)';
+            adBtn.style.color = isAutoscrollActive ? '#1c1e21' : '#fff';
+        }
+    }
+
     function toggleFeedAutoscroll(btn) {
         isAutoscrollActive = !isAutoscrollActive;
-        if (btn) {
-            btn.textContent = isAutoscrollActive ? 'Disable AI Auto-scroll' : 'Enable AI Auto-scroll';
-            btn.style.background = isAutoscrollActive ? '#e4e6eb' : 'linear-gradient(135deg,#7c3aed,#06b6d4)';
-            btn.style.color = isAutoscrollActive ? '#1c1e21' : '#fff';
-        }
-        if (isAutoscrollActive) {
-            showToast("AI Auto-scroll enabled! 🤖");
-        }
+        syncAutoscrollButtons();
+        showToast(isAutoscrollActive ? "AI Auto-scroll enabled! 🤖" : "AI Auto-scroll disabled");
+    }
+
+    function toggleFeedAutoscrollFromHeader(headerBtn) {
+        isAutoscrollActive = !isAutoscrollActive;
+        syncAutoscrollButtons();
+        showToast(isAutoscrollActive ? "AI Auto-scroll enabled! 🤖" : "AI Auto-scroll disabled");
     }
 
     const politicians = [
@@ -6471,67 +6489,23 @@
     window.sharePostWithComment = sharePostWithComment;
 
     function openRepostMenu(btn) {
-        document.querySelectorAll('.repost-menu').forEach(m => m.remove());
         const postEl = btn.closest('.post');
-        const link = getPostLink(postEl);
-        const encodedLink = encodeURIComponent(link);
-        const menu = document.createElement('div');
-        menu.className = 'repost-menu';
-        menu.innerHTML = `
-        <button type="button" class="repost-menu-item" data-action="messages">
-          <span class="repost-icon">✉️</span> ChillSpace Messages
-        </button>
-        <button type="button" class="repost-menu-item" data-action="repost">
-          <span class="repost-icon">↗️</span> ChillSpace Repost
-        </button>
-        <div class="repost-menu-divider"></div>
-        <button type="button" class="repost-menu-item" data-action="more">
-          <span class="repost-icon">⋯</span> More
-        </button>
-      `;
-        document.body.appendChild(menu);
-        const rect = btn.getBoundingClientRect();
-        let left = rect.left;
-        let top = rect.bottom + 6;
-        const menuWidth = 220;
-        if (left + menuWidth > window.innerWidth - 12) {
-            left = Math.max(12, window.innerWidth - menuWidth - 12);
+        const nameEl = postEl ? postEl.querySelector('.name') : null;
+        const contentEl = postEl ? postEl.querySelector('.post-content, .post-question') : null;
+        const creator = nameEl ? nameEl.textContent.replace(/Ad|Shared Post|Pinned post/g, '').replace(/·.*/g, '').trim() : 'ChillSpace Friend';
+        const textContent = contentEl ? contentEl.textContent.trim() : 'Check out this post on ChillSpace!';
+        const shareUrl = `https://chillspace.ai/?post_creator=${encodeURIComponent(creator)}&post_content=${encodeURIComponent(textContent)}`;
+
+        if (window.AndroidUtils && typeof window.AndroidUtils.shareText === 'function') {
+            window.AndroidUtils.shareText(shareUrl);
+        } else if (navigator.share) {
+            navigator.share({
+                title: 'ChillSpace Post',
+                url: shareUrl
+            }).catch(() => {});
+        } else {
+            showToast("Share link copied!");
         }
-        menu.style.left = left + 'px';
-        menu.style.top = top + 'px';
-        requestAnimationFrame(() => {
-            const menuRect = menu.getBoundingClientRect();
-            if (menuRect.bottom > window.innerHeight - 12) {
-                menu.style.top = (rect.top - menuRect.height - 6) + 'px';
-            }
-        });
-        menu.querySelectorAll('.repost-menu-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = item.dataset.action;
-                menu.remove();
-                if (action === 'messages') {
-                    window.open(`https://chillspace.ai/messages?text=${encodedLink}`, '_blank', 'noopener');
-                } else if (action === 'repost') {
-                    window.open(`https://chillspace.ai/?post_intent=${encodedLink}`, '_blank', 'noopener');
-                } else if (action === 'more') {
-                    const data = { title: 'ChillSpace', url: link };
-                    if (navigator.share) {
-                        navigator.share(data).catch(() => {});
-                    } else {
-                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(link)}`, '_blank',
-                            'noopener');
-                    }
-                }
-            });
-        });
-        const closeHandler = (e) => {
-            if (!menu.contains(e.target) && e.target !== btn) {
-                menu.remove();
-                document.removeEventListener('click', closeHandler);
-            }
-        };
-        setTimeout(() => { document.addEventListener('click', closeHandler); }, 10);
     }
     window.openRepostMenu = openRepostMenu;
 
@@ -6864,17 +6838,33 @@
         const videoRemoveBtn = document.getElementById('composer-video-remove');
 
         let postType = 'story';
+        const mediaRow = document.getElementById('composer-media-row');
+        let imageFile = null;
+        let videoFile = null;
+
+        function updateMediaRowVisibility() {
+            if (mediaRow) {
+                mediaRow.style.display = (postType === 'post') ? 'flex' : 'none';
+            }
+            if (postType === 'story') {
+                imageFile = null;
+                videoFile = null;
+                if (imagePreview) imagePreview.src = '';
+                if (videoPreview) videoPreview.src = '';
+                updatePreviews();
+            }
+        }
+
         const typeBtns = document.querySelectorAll('.type-btn');
         typeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 typeBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 postType = btn.dataset.type;
+                updateMediaRowVisibility();
             });
         });
-
-        let imageFile = null;
-        let videoFile = null;
+        updateMediaRowVisibility();
 
         function updatePreviews() {
             imagePreviewContainer.style.display = imageFile ? 'block' : 'none';
@@ -6902,18 +6892,16 @@
             updatePreviews();
         }
 
-        uploadImageBtn.addEventListener('click', () => imageInput.click());
-        imageInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleImageFile(e.target.files[0]);
-            imageInput.value = '';
+        uploadImageBtn.addEventListener('click', () => {
+            imageInput.removeAttribute('capture');
+            imageInput.click();
         });
-
         takePhotoBtn.addEventListener('click', () => {
             imageInput.setAttribute('capture', 'environment');
             imageInput.click();
         });
         imageInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleImageFile(e.target.files[0]);
+            if (e.target.files && e.target.files.length) handleImageFile(e.target.files[0]);
             imageInput.removeAttribute('capture');
             imageInput.value = '';
         });
@@ -6994,6 +6982,15 @@
                     likes: 0
                 });
                 showToast("Post saved to your profile! 💾");
+            } else {
+                try {
+                    if (window.AndroidUtils && typeof window.AndroidUtils.deleteLastCapturedFile === 'function') {
+                        window.AndroidUtils.deleteLastCapturedFile();
+                    }
+                    if (mediaUrl && window.AndroidUtils && typeof window.AndroidUtils.deleteFile === 'function') {
+                        window.AndroidUtils.deleteFile(mediaUrl);
+                    }
+                } catch (e) {}
             }
 
             const feed = document.getElementById('feed');
@@ -7094,18 +7091,14 @@
         const text = contentEl.textContent.toLowerCase();
         const found = SOCIAL_KEYWORDS.some(keyword => text.includes(keyword));
         if (!found) return;
-        var ua = navigator.userAgent;
-        var isWebView = /wv/i.test(ua) || (/\bAndroid\b/.test(ua) && /\bChrome\/(?!.*\bEdg\b)/.test(ua) && /Version\/\d+\.\d+/.test(ua));
-        var slotSrc = isWebView ? 'file:///android_asset/fb-slot.html' : 'fb-slot.html';
         const gif = document.createElement('iframe');
         gif.className = 'post-gif ad-video';
         gif.id = 'FBSlot';
-        gif.src = slotSrc;
-        gif.title = 'Facebook Slots';
-        gif.style.border = 'none';
-        gif.style.width = '100%';
-        gif.style.height = '460px';
-        gif.style.display = 'block';
+        var ua = navigator.userAgent;
+        var isWebView = /wv/i.test(ua) || (/\bAndroid\b/.test(ua) && /\bChrome\/(?!.*\bEdg\b)/.test(ua) && /Version\/\d+\.\d+/.test(ua));
+        gif.src = isWebView ? 'file:///android_asset/fb-slot.html' : 'fb-slot.html';
+        gif.title = 'ChillSpace Slots';
+        gif.style.cssText = 'border:none; width:100%; height:460px; display:block;';
         gif.loading = 'lazy';
         const actions = postEl.querySelector('.actions');
         if (actions) {
@@ -7168,15 +7161,48 @@
         const count = Math.floor(Math.random() * 7) + 2;
         document.getElementById('bell-badge').textContent = count;
         const notifList = document.getElementById('notif-list');
+        const feed = document.getElementById('feed');
+
         for (let n = 0; n < count; n++) {
             const name1 = `${rand(firstNames)} ${rand(lastNames)}`;
             const isRepost = Math.random() < 0.35 && n > 0;
-            let html = '';
             const initial = name1[0];
+            const notifPostId = `notif-post-${n}-${Date.now()}`;
+            const previewPost = makeContent(false).text;
+
+            // Create target post in feed
+            if (feed) {
+                const targetPostEl = document.createElement('article');
+                targetPostEl.className = 'post';
+                targetPostEl.id = notifPostId;
+                targetPostEl.dataset.postId = notifPostId;
+                applyRandomFontToPost(targetPostEl);
+                const likeBase = Math.floor(Math.random() * 9998);
+                targetPostEl.innerHTML = `
+                  <div class="post-head">
+                    <div class="comment-avatar" style="width:40px;height:40px;font-size:17px;font-weight:800;">${initial}</div>
+                    <div class="meta">
+                      <div class="name">${escapeHtml(name1)}</div>
+                      <div class="time">Just now · 🌐</div>
+                    </div>
+                  </div>
+                  <div class="post-content" dir="auto">${linkifyText(previewPost)}</div>
+                  <div class="actions">
+                    <button type="button" class="like-btn" data-base="${likeBase}" onclick="toggleLike(this)">👍 ${likeBase.toLocaleString()}</button>
+                    <button type="button" onclick="openCommentModal(this)">💬 Comment</button>
+                    <button type="button" onclick="openRepostMenu(this)">↗️ Repost</button>
+                    <button type="button" class="ai-btn" onclick="chillAI(this)">✨ ChillSpace AI</button>
+                  </div>
+                `;
+                feed.insertBefore(targetPostEl, feed.firstChild);
+                const likeBtn = targetPostEl.querySelector('.like-btn');
+                if (likeBtn) startTickingLikes(likeBtn, true);
+            }
+
+            let html = '';
             if (isRepost) {
                 const name2 = `${rand(firstNames)} ${rand(lastNames)}`;
-                const previewPost = makeContent(false).text;
-                html = `<div class="notif-item">
+                html = `<div class="notif-item" data-target-post-id="${notifPostId}" style="cursor:pointer;">
             <div class="notif-avatar">${initial}</div>
             <div class="notif-text">
               <strong>${name1}</strong>, who you follow, reposted <strong>${name2}</strong>'s post
@@ -7184,8 +7210,7 @@
             </div>
           </div>`;
             } else {
-                const previewPost = makeContent(false).text;
-                html = `<div class="notif-item">
+                html = `<div class="notif-item" data-target-post-id="${notifPostId}" style="cursor:pointer;">
             <div class="notif-avatar">${initial}</div>
             <div class="notif-text">
               <strong>${name1}</strong>, who you follow, posted
@@ -7195,8 +7220,29 @@
             }
             notifList.insertAdjacentHTML('beforeend', html);
         }
+
         const bellBtn = document.getElementById('bellBtn');
         const panel = document.getElementById('notif-panel');
+
+        notifList.querySelectorAll('.notif-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                panel.classList.remove('open');
+                const targetId = item.dataset.targetPostId;
+                const post = document.getElementById(targetId) || document.querySelector(`[data-post-id="${targetId}"]`);
+                if (post) {
+                    post.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    post.style.transition = 'outline 0.3s ease, transform 0.3s ease';
+                    post.style.outline = '3px solid #1877f2';
+                    post.style.transform = 'scale(1.02)';
+                    setTimeout(() => {
+                        post.style.outline = 'none';
+                        post.style.transform = 'none';
+                    }, 1800);
+                }
+            });
+        });
+
         bellBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             panel.classList.toggle('open');
@@ -7204,6 +7250,7 @@
                 document.getElementById('bell-badge').style.display = 'none';
             }
         });
+
         document.addEventListener('click', (e) => {
             if (!document.getElementById('bell-wrap').contains(e.target)) {
                 panel.classList.remove('open');
@@ -7540,15 +7587,24 @@
         const PAUSE_AFTER_MANUAL_SCROLL_MS = 2500;
         let lastTime = null;
         let pausedUntil = 0;
+        let scrollAccumulator = 0;
 
         function pauseBriefly() { pausedUntil = performance.now() + PAUSE_AFTER_MANUAL_SCROLL_MS; }
         window.addEventListener('wheel', pauseBriefly, { passive: true });
         window.addEventListener('touchmove', pauseBriefly, { passive: true });
+        window.addEventListener('touchstart', pauseBriefly, { passive: true });
 
         function step(timestamp) {
             if (lastTime !== null && isAutoscrollActive && timestamp >= pausedUntil) {
                 const deltaSeconds = (timestamp - lastTime) / 1000;
-                window.scrollBy(0, PIXELS_PER_SECOND * deltaSeconds);
+                scrollAccumulator += PIXELS_PER_SECOND * deltaSeconds;
+                if (scrollAccumulator >= 1) {
+                    const pixelsToScroll = Math.floor(scrollAccumulator);
+                    scrollAccumulator -= pixelsToScroll;
+                    window.scrollBy(0, pixelsToScroll);
+                }
+            } else {
+                scrollAccumulator = 0;
             }
             lastTime = timestamp;
             requestAnimationFrame(step);
@@ -7561,7 +7617,7 @@
         const CHALLENGE_TYPES = {
             scroll_posts: { label: 'Scroll through', unit: 'posts', link: null },
             send_messages: { label: 'Send', unit: 'messages', link: '/messages' },
-            rank_songs: { label: 'Rank', unit: 'songs', link: '/kpop' },
+            rank_songs: { label: 'Rank', unit: 'songs', link: 'file:///android_asset/rhythmgame.html' },
             do_numbers: { label: 'Do', unit: 'numbers', link: '/numbers' }
         };
 
@@ -7676,31 +7732,41 @@
 
     // ---- Init ----
     document.addEventListener('DOMContentLoaded', () => {
-        const feed = document.getElementById('feed');
-        const pinned = feed.querySelectorAll('.pinned-post');
-        feed.innerHTML = '';
-        pinned.forEach(p => feed.appendChild(p));
-        loadFeed();
-        loadPinnedPostFromURL();
-        setupInfiniteScroll();
-        setupComposer();
-        applyPostIntentFromURL();
-        setupAutoScroll();
-        setupBell();
-        setupPersonalityRows();
-        setupFriendResponses();
+        try {
+            const feed = document.getElementById('feed');
+            if (feed) {
+                const pinned = feed.querySelectorAll('.pinned-post');
+                feed.innerHTML = '';
+                pinned.forEach(p => feed.appendChild(p));
+            }
+        } catch (e) {
+            console.error("Error clearing feed:", e);
+        }
 
-        window.openFriendsModal = openFriendsModal;
-        window.openProfile = openProfile;
-        window.toggleFriend = toggleFriend;
-        window.refreshFeed = refreshFeed;
-        window.getFollowing = getFollowing;
-        window.getFriends = getFriends;
-        window.followUser = followUser;
-        window.unfollowUser = unfollowUser;
-        window.isFollowing = isFollowing;
-        window.isFriend = isFriend;
-        window.handleFollowClick = handleFollowClick;
+        const safeRun = (fn, name) => {
+            try { if (typeof fn === 'function') fn(); } catch (e) { console.error(`Error in ${name}:`, e); }
+        };
+
+        safeRun(loadFeed, 'loadFeed');
+        safeRun(loadPinnedPostFromURL, 'loadPinnedPostFromURL');
+        safeRun(setupInfiniteScroll, 'setupInfiniteScroll');
+        safeRun(setupComposer, 'setupComposer');
+        safeRun(applyPostIntentFromURL, 'applyPostIntentFromURL');
+        safeRun(setupAutoScroll, 'setupAutoScroll');
+        safeRun(setupBell, 'setupBell');
+        safeRun(setupPersonalityRows, 'setupPersonalityRows');
+        safeRun(setupFriendResponses, 'setupFriendResponses');
+
+        window.openFriendsModal = typeof openFriendsModal !== 'undefined' ? openFriendsModal : null;
+        window.openProfile = typeof openProfile !== 'undefined' ? openProfile : null;
+        window.refreshFeed = typeof refreshFeed !== 'undefined' ? refreshFeed : null;
+        window.getFollowing = typeof getFollowing !== 'undefined' ? getFollowing : null;
+        window.getFriends = typeof getFriends !== 'undefined' ? getFriends : null;
+        window.followUser = typeof followUser !== 'undefined' ? followUser : null;
+        window.unfollowUser = typeof unfollowUser !== 'undefined' ? unfollowUser : null;
+        window.isFollowing = typeof isFollowing !== 'undefined' ? isFollowing : null;
+        window.isFriend = typeof isFriend !== 'undefined' ? isFriend : null;
+        window.handleFollowClick = typeof handleFollowClick !== 'undefined' ? handleFollowClick : null;
     });
 </script>
 </body>

@@ -369,8 +369,30 @@
        Storage helpers
        --------------------------------------------------------------- */
     function getPosts() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-        catch (e) { return []; }
+        try {
+            const posts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            let updated = false;
+            posts.forEach(post => {
+                if (post.mediaUrl && (post.mediaUrl.startsWith('blob:') || !post.mediaUrl.includes('://'))) {
+                    try {
+                        if (window.AndroidUtils && typeof window.AndroidUtils.getLatestMediaUri === 'function') {
+                            const isVideo = post.mediaType === 'video';
+                            const localUri = window.AndroidUtils.getLatestMediaUri(isVideo);
+                            if (localUri) {
+                                post.mediaUrl = localUri;
+                                updated = true;
+                            }
+                        }
+                    } catch (e) {}
+                }
+            });
+            if (updated) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+            }
+            return posts;
+        } catch (e) {
+            return [];
+        }
     }
     function savePosts(posts) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
@@ -493,9 +515,9 @@
             let mediaHtml = '';
             if (post.mediaUrl) {
                 if (post.mediaType === 'video') {
-                    mediaHtml = `<video class="post-video" src="${post.mediaUrl}" controls></video>`;
+                    mediaHtml = `<video class="post-video" src="${post.mediaUrl}" controls playsinline preload="metadata"></video>`;
                 } else {
-                    mediaHtml = `<img class="post-image" src="${post.mediaUrl}" alt="">`;
+                    mediaHtml = `<img class="post-image" src="${post.mediaUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`;
                 }
             }
 
@@ -734,8 +756,11 @@
         const posts = getPosts();
         const post = posts.find(p => String(p.id) === key);
 
-        if (post && post.mediaUrl && window.AndroidUtils && window.AndroidUtils.deleteFile) {
-            window.AndroidUtils.deleteFile(post.mediaUrl);
+        if (post && window.AndroidUtils && typeof window.AndroidUtils.deleteFile === 'function') {
+            try {
+                if (post.fileUri) window.AndroidUtils.deleteFile(post.fileUri);
+                if (post.mediaUrl) window.AndroidUtils.deleteFile(post.mediaUrl);
+            } catch (e) {}
         }
 
         // Stop its ticker and drop its like count
@@ -817,6 +842,7 @@
        Cross-tab sync
        --------------------------------------------------------------- */
     window.addEventListener('storage', (e) => {
+        if (document.querySelector('video:not(:paused)')) return;
         if (e.key === NAME_KEY) render();
         if (e.key === STORAGE_KEY) { render(); updateStats(); }
     });
@@ -827,7 +853,13 @@
     setInterval(persistLikes, 5000);
     window.addEventListener('beforeunload', persistLikes);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') persistLikes();
+        if (document.visibilityState === 'hidden') {
+            persistLikes();
+        } else if (document.visibilityState === 'visible') {
+            if (!document.querySelector('video:not(:paused)')) {
+                render();
+            }
+        }
     });
 
     /* ---------------------------------------------------------------
