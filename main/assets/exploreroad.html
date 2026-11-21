@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Road Explorer — Cockpit</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; width: 100%; height: 100%;
+    overflow: hidden; overscroll-behavior: none;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #0a0d12; color: #fff;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  canvas { display: block; touch-action: none; }
+
+  .hud { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+
+  /* ---- Sun / moon ---- */
+  .sun {
+    position: absolute;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    background: radial-gradient(circle at 38% 32%,
+      #fffce8 0%, #ffe98a 38%, #ffc94a 62%, #f09a24 100%);
+    box-shadow: 0 0 34px 12px rgba(255,225,130,.55),
+                0 0 90px 34px rgba(255,200,80,.22);
+    transition: transform .18s ease, box-shadow .35s ease, background .35s ease;
+  }
+  .sun:active { transform: scale(.9); }
+  .sun.dawn {
+    background: radial-gradient(circle at 38% 32%,
+      #fff3d8 0%, #ffc98a 40%, #ff9c5c 70%, #e8703c 100%);
+    box-shadow: 0 0 34px 12px rgba(255,190,120,.55),
+                0 0 90px 34px rgba(255,150,80,.22);
+  }
+  .sun.dusk {
+    background: radial-gradient(circle at 38% 32%,
+      #ffeed6 0%, #ffb06a 40%, #ef7a4a 72%, #c94f30 100%);
+    box-shadow: 0 0 34px 12px rgba(255,150,90,.55),
+                0 0 90px 34px rgba(240,110,60,.22);
+  }
+  .sun.night {
+    background: radial-gradient(circle at 38% 32%,
+      #ffffff 0%, #e7eeff 45%, #c2cee6 78%, #9fadc8 100%);
+    box-shadow: 0 0 30px 10px rgba(200,220,255,.45),
+                0 0 80px 26px rgba(150,180,240,.18);
+  }
+
+  .hint {
+    position: absolute;
+    left: 50%; bottom: max(10px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    max-width: 94vw; text-align: center;
+    font-size: 12.5px; line-height: 1.4;
+    opacity: .8;
+    text-shadow: 0 1px 8px #000c, 0 0 3px #0008;
+    pointer-events: none;
+  }
+  @media (max-width: 420px) { .hint { font-size: 11.5px; } }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div class="hud">
+  <button class="sun" id="sunBtn" aria-label="Change time of day"></button>
+  <div class="hint">drag to drive &nbsp;·&nbsp; tap the sun / moon to change the time of day</div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   Canvas
+   ============================================================ */
+const canvas = document.getElementById("world");
+const ctx    = canvas.getContext("2d", { alpha: false });
+const sunBtn = document.getElementById("sunBtn");
+
+let W = 0, H = 0, DPR = 1;
+
+/* ============================================================
+   Camera / projection
+   ============================================================ */
+const CAM_H = 30;              // eye height above the road (world units)
+let   F = 600;                 // focal length in px
+let   horizonY = 0;            // screen y of the horizon
+let   NEAR = 60, FAR = 4200;   // depth range
+let   depth = [];              // band boundaries
+
+const NBANDS = 36;
+const SC     = 300;            // scenery grid cell
+
+let camX = 0, camY = 0;
+
+const sx = (wx, z) => W * 0.5 + (wx - camX) * F / z;
+const groundY = z => horizonY + CAM_H * F / z;
+const sy = (h, z) => horizonY + (CAM_H - h) * F / z;
+
+function computeProjection() {
+  F = W * 0.70;
+  horizonY = H * 0.44;
+  NEAR = Math.max(22, Math.min(260, CAM_H * F / Math.max(40, H - horizonY) * 0.85));
+  depth = [];
+  const r = Math.pow(FAR / NEAR, 1 / NBANDS);
+  let z = NEAR;
+  for (let i = 0; i <= NBANDS; i++) { depth.push(z); z *= r; }
+}
+
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width  = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+  computeProjection();
+  sunBtn.style.left = Math.round(W * 0.74 - 29) + "px";
+  sunBtn.style.top  = Math.round(horizonY - H * 0.21 - 29) + "px";
+}
+addEventListener("resize", resize);
+
+/* ============================================================
+   Time of day
+   ============================================================ */
+const MODES = ["dawn", "day", "dusk", "night"];
+let modeIdx = 1;
+const mode = () => MODES[modeIdx];
+
+const SKY = {
+  dawn:  ["#4a4380", "#ffb87e"],
+  day:   ["#3f96dd", "#c6ecff"],
+  dusk:  ["#2f2a5e", "#f08a6c"],
+  night: ["#050d24", "#1e2f57"]
+};
+const HAZE = {
+  dawn:  [255, 184, 126],
+  day:   [198, 236, 255],
+  dusk:  [240, 138, 108],
+  night: [30, 47, 87]
+};
+const TINT = {
+  dawn:  "rgba(255,168,110,0.14)",
+  day:   null,
+  dusk:  "rgba(255,110,60,0.22)",
+  night: "rgba(6,12,34,0.60)"
+};
+
+function applyMode() {
+  sunBtn.className = "sun " + mode();
+}
+sunBtn.addEventListener("click", () => {
+  modeIdx = (modeIdx + 1) % MODES.length;
+  applyMode();
+});
+applyMode();
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+const clamp  = (v,a,b) => v < a ? a : v > b ? b : v;
+const smooth = t => t * t * (3 - 2 * t);
+const randInt = n => Math.floor(Math.random() * n);
+const pick = a => a[randInt(a.length)];
+
+function hash2(x, y) {
+  let h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/* ============================================================
+   Place-name generator
+   ============================================================ */
+function makePlace() {
+  const a = pick(["S","Ch","Sh","N","G","K","Cr"]);
+  const b = pick(["i","e","o","a","y"]);
+  const c = pick(["s","sk","ch","v","n","k","f","pp"]);
+  const d = pick(["i","e","o","a","ya"]);
+  const e = pick(["c","n","ng","w"]);
+  const f = pick(["ford","heath","church","ton","don","bridge","street","mouth"]);
+  const type = pick(["Forest","City","Town","Bay"]);
+  const raw = a + b + c + d + e + f;
+  return {
+    name: raw.charAt(0).toUpperCase() + raw.slice(1) + " " + type,
+    biome: type.toLowerCase()
+  };
+}
+function makeNumber(exclude) {
+  let n; do { n = 100 + randInt(900); } while (n === exclude);
+  return String(n);
+}
+function makeDest(excludeNum) {
+  const p = makePlace();
+  return { num: makeNumber(excludeNum), name: p.name, biome: p.biome };
+}
+
+/* ============================================================
+   Road constants
+   ============================================================ */
+const RH          = 192;    // half width of the carriageway pair
+const FORK_LEN    = 2400;
+const FORK_OFF    = 430;
+const GANTRY_OFF  = 900;    // gantry sits this far south of the fork start
+const SIGN_TRIG   = 1900;   // sign "appears" at this distance from the gantry
+const COMMIT_MS   = 2000;   // delay between sign appearing and barrier
+const BARRIER_H   = 17;
+const CAR_LEN = 92, CAR_W = 46, CAR_H = 28;
+
+const ASPHALT = "#3d4045";
+const VERGE   = "#546346";
+const GROUND_COL = {
+  forest: "#2e4d2b",
+  city:   "#545860",
+  town:   "#688c5e",
+  bay:    "#688c5e"
+};
+const SAND = "#e4d5a6";
+const SEA  = "#25639e";
+
+/* ============================================================
+   Fork geometry
+   ============================================================ */
+const NOTCH_S = RH / FORK_OFF;
+const NOTCH_T = (() => {
+  if (NOTCH_S >= 1) return 1;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 24; i++) {
+    const m = (lo + hi) / 2;
+    if (smooth(m) < NOTCH_S) lo = m; else hi = m;
+  }
+  return (lo + hi) / 2;
+})();
+
+function forkS(l, y) {
+  if (y >= l.yStart) return 0;
+  if (y <= l.yEnd)   return 1;
+  return smooth((l.yStart - y) / (l.yStart - l.yEnd));
+}
+function forkArmCx(l, side, y) {
+  return l.cx0 + (side === "left" ? -FORK_OFF : FORK_OFF) * forkS(l, y);
+}
+
+/* ============================================================
+   Links
+   ============================================================ */
+const links = [];
+
+function newLeg(yStart, cx, dest) {
+  return {
+    kind: "leg",
+    yStart,
+    yEnd: yStart - (3800 + Math.random() * 2800),
+    cx, biome: dest.biome, name: dest.name, num: dest.num
+  };
+}
+function newFork(yStart, cx0, biome) {
+  const left  = makeDest(null);
+  const right = makeDest(left.num);
+  return {
+    kind: "fork",
+    yStart,
+    yEnd: yStart - FORK_LEN,
+    cx0, biome,
+    left, right,
+    signShownAt: 0,
+    committed: false,
+    commitTime: 0,
+    side: null,
+    ghostCx: cx0,
+    ghostBiome: biome,
+    gantryY: yStart + GANTRY_OFF,
+    barrierAt: 0,
+    barrierEnd: 0
+  };
+}
+
+/* Player's reference centreline */
+function roadCentreAt(y) {
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (y > l.yStart || y < l.yEnd) continue;
+    if (l.kind === "leg") return l.cx;
+    if (!l.committed) return l.cx0;
+    return forkArmCx(l, l.side, y);
+  }
+  for (let i = links.length - 1; i >= 0; i--) {
+    const l = links[i];
+    if (l.kind === "leg") return l.cx;
+    if (l.committed) return l.cx0 + (l.side === "left" ? -FORK_OFF : FORK_OFF);
+    return l.cx0;
+  }
+  return 0;
+}
+
+function findLink(y) {
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (y <= l.yStart && y >= l.yEnd) return l;
+  }
+  return null;
+}
+
+/* ============================================================
+   Player
+   ============================================================ */
+const player = { u: 96, y: 0, x: 96, speed: 0 };
+let lockSide = null;
+let lockUntilY = 0;
+
+/* ============================================================
+   AI traffic
+   ============================================================ */
+const CAR_COLORS = ["#d94f4f","#3f7fd9","#e0b13c","#46b57a","#b06fd0",
+                    "#e07b3c","#5bc8d9","#cfcfcf","#8a5cd6"];
+const LANES_A = [32, 96, 160];      // same direction
+const LANES_B = [-32, -96, -160];   // oncoming
+const cars = [];
+
+function placeCar(c) {
+  c.dir = Math.random() < 0.58 ? -1 : 1;
+  c.u = pick(c.dir === -1 ? LANES_A : LANES_B);
+  c.y = player.y - (500 + Math.random() * 1800);
+  c.baseSpeed = c.dir === -1
+    ? 400 * (0.62 + Math.random() * 0.26)
+    : 400 * (0.95 + Math.random() * 0.25);
+  c.speed = c.baseSpeed;
+  c.color = pick(CAR_COLORS);
+  c.x = roadCentreAt(c.y) + c.u;
+}
+
+function updateCars(dt) {
+  for (const c of cars) {
+    let brake = Infinity;
+    if (Math.abs(player.u - c.u) < 46) {
+      const d = c.dir * (player.y - c.y);
+      if (d > 0) brake = d;
+    }
+    for (const o of cars) {
+      if (o === c || o.dir !== c.dir) continue;
+      if (Math.abs(o.u - c.u) > 46) continue;
+      const d = c.dir * (o.y - c.y);
+      if (d > 0 && d < brake) brake = d;
+    }
+    let target = c.baseSpeed;
+    if (brake < 130) target = 0;
+    else if (brake < 380) target = c.baseSpeed * (brake - 130) / 250;
+    c.speed += (target - c.speed) * Math.min(1, 3 * dt);
+    if (c.speed < 0) c.speed = 0;
+    c.y += c.dir * c.speed * dt;
+    c.x = roadCentreAt(c.y) + c.u;
+    const rel = (c.y - player.y) * c.dir;
+    if (rel < -2200 || rel > 2600) placeCar(c);
+  }
+}
+
+/* ============================================================
+   Input
+   ============================================================ */
+const keys = new Set();
+let activeId = null, pointerActive = false;
+const touch = { x: 0, y: 0 };
+
+canvas.addEventListener("pointerdown", e => {
+  if (activeId !== null) return;
+  activeId = e.pointerId; pointerActive = true;
+  touch.x = e.clientX; touch.y = e.clientY;
+  if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+canvas.addEventListener("pointermove", e => {
+  if (e.pointerId !== activeId) return;
+  touch.x = e.clientX; touch.y = e.clientY;
+  e.preventDefault();
+});
+function endPointer(e) {
+  if (e.pointerId !== activeId) return;
+  activeId = null; pointerActive = false;
+}
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("lostpointercapture", endPointer);
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+addEventListener("keydown", e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(k)) e.preventDefault();
+  keys.add(k);
+});
+addEventListener("keyup", e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  keys.delete(k);
+});
+addEventListener("blur", () => { keys.clear(); activeId = null; pointerActive = false; });
+
+/* ============================================================
+   Path management
+   ============================================================ */
+function extendPath() {
+  let guard = 0;
+  while (guard++ < 20) {
+    const last = links[links.length - 1];
+    if (!last) { links.push(newLeg(1200, 0, makeDest(null))); continue; }
+    if (last.yEnd < player.y - 18000) break;
+
+    if (last.kind === "leg") {
+      links.push(newFork(last.yEnd, last.cx, last.biome));
+    } else {
+      if (!last.committed) break;
+      const off  = last.side === "left" ? -FORK_OFF : FORK_OFF;
+      const dest = last.side === "left" ? last.left : last.right;
+      links.push(newLeg(last.yEnd, last.cx0 + off, dest));
+    }
+  }
+}
+
+function commitForks(now) {
+  for (const l of links) {
+    if (l.kind !== "fork" || l.committed) continue;
+    if (!l.signShownAt) continue;
+    if (player.y < l.yEnd) continue;
+
+    const elapsed = now - l.signShownAt;
+    const forced  = player.y - l.yStart < 700;
+    if (elapsed < COMMIT_MS && !forced) continue;
+
+    l.committed  = true;
+    l.commitTime = now;
+    l.side = player.u < 0 ? "left" : "right";
+
+    const other = l.side === "left" ? "right" : "left";
+    l.ghostCx    = l.cx0 + (other === "left" ? -FORK_OFF : FORK_OFF);
+    l.ghostBiome = (other === "left" ? l.left : l.right).biome;
+
+    l.barrierAt  = player.y + 500;
+    l.barrierEnd = l.yEnd - 500;
+
+    lockSide   = l.side;
+    lockUntilY = l.yEnd;
+    extendPath();
+  }
+}
+
+function pruneLinks() {
+  while (links.length > 3 && links[0].yEnd > player.y + 5000) links.shift();
+}
+
+/* ============================================================
+   Update
+   ============================================================ */
+function update(now, dt) {
+  if (lockSide && player.y < lockUntilY) lockSide = null;
+
+  let steer = 0;
+  if (keys.has("a") || keys.has("ArrowLeft"))  steer -= 1;
+  if (keys.has("d") || keys.has("ArrowRight")) steer += 1;
+  if (pointerActive) {
+    const dx = (touch.x - W / 2) / (W * 0.30);
+    const m = Math.abs(dx);
+    if (m > 0.06) steer += Math.sign(dx) * Math.min(1, (m - 0.06) / 0.50);
+  }
+  steer = clamp(steer, -1, 1);
+
+  player.u = clamp(player.u + steer * 320 * dt, -184, 184);
+  if (lockSide === "right") player.u = Math.max(player.u, 12);
+  else if (lockSide === "left") player.u = Math.min(player.u, -12);
+
+  player.speed += (400 - player.speed) * Math.min(1, 1.6 * dt);
+  player.y -= player.speed * dt;
+
+  /* --- sign trigger --- */
+  for (const l of links) {
+    if (l.kind !== "fork" || l.signShownAt) continue;
+    if (player.y < l.yEnd) continue;
+    if (player.y - l.gantryY < SIGN_TRIG) l.signShownAt = now;
+  }
+
+  commitForks(now);
+  extendPath();
+  pruneLinks();
+
+  player.x = roadCentreAt(player.y) + player.u;
+  camX = player.x;
+  camY = player.y;
+
+  updateCars(dt);
+}
+
+/* ============================================================
+   Sky
+   ============================================================ */
+const stars = [];
+(function () {
+  for (let i = 0; i < 110; i++) {
+    stars.push([hash2(i, 1), hash2(i, 2), 0.4 + hash2(i, 3) * 1.2, hash2(i, 4) * 6.28]);
+  }
+})();
+
+function drawSky(time) {
+  const [top, bot] = SKY[mode()];
+  const g = ctx.createLinearGradient(0, 0, 0, horizonY + 2);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bot);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, horizonY + 2);
+
+  if (mode() === "night") {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const x = s[0] * W;
+      const y = s[1] * horizonY;
+      const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(time * 0.0016 + s[3]));
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, s[2] * tw, 0, 6.283);
+    }
+    ctx.fill();
+  }
+}
+
+/* ============================================================
+   Road surface + markings
+   ============================================================ */
+const quadsRoad = [];   // flat arrays
+const quadsVerge = [];
+const quadsMark = [];
+const quadsNotch = [];
+
+function pushQuad(arr, cxN, cxF, zN, zF, off, halfW) {
+  const yT = groundY(zF), yB = groundY(zN);
+  const xlT = sx(cxF + off - halfW, zF);
+  const xrT = sx(cxF + off + halfW, zF);
+  const xlB = sx(cxN + off - halfW, zN);
+  const xrB = sx(cxN + off + halfW, zN);
+  arr.push(xlT, yT, xrT, yT, xrB, yB, xlB, yB);
+}
+
+function armsAt(y, lf) {
+  if (lf.kind === "leg") return [lf.cx];
+  return [forkArmCx(lf, "left", y), forkArmCx(lf, "right", y)];
+}
+
+function buildRoadGeometry() {
+  quadsRoad.length = 0;
+  quadsVerge.length = 0;
+  quadsMark.length = 0;
+  quadsNotch.length = 0;
+
+  for (let i = 0; i < NBANDS; i++) {
+    const zN = depth[i], zF = depth[i + 1];
+    const yN = camY - zN, yF = camY - zF;
+    if (zF > 6500) continue;
+    const lf = findLink(yF) || findLink(yN);
+    if (!lf) continue;
+
+    const armsN = armsAt(yN, lf);
+    const armsF = armsAt(yF, lf);
+
+    for (let k = 0; k < armsN.length; k++) {
+      const cxN = armsN[k], cxF = armsF[k];
+      pushQuad(quadsVerge, cxN, cxF, zN, zF, 0, RH + 24);
+      pushQuad(quadsRoad,  cxN, cxF, zN, zF, 0, RH);
+      // solid edge lines
+      pushQuad(quadsMark, cxN, cxF, zN, zF, -RH + 7, 3);
+      pushQuad(quadsMark, cxN, cxF, zN, zF,  RH - 7, 3);
+    }
+
+    // notch (grass wedge) between the two arms
+    if (lf.kind === "fork" && armsN.length === 2) {
+      const gapN = (armsN[1] - RH) - (armsN[0] + RH);
+      const gapF = (armsF[1] - RH) - (armsF[0] + RH);
+      const gN = Math.max(0, gapN), gF = Math.max(0, gapF);
+      if (gN > 0 || gF > 0) {
+        const yT = groundY(zF), yB = groundY(zN);
+        const xlT = sx(armsF[0] + RH, zF);
+        const xrT = sx(armsF[1] - RH, zF);
+        const xlB = sx(armsN[0] + RH, zN);
+        const xrB = sx(armsN[1] - RH, zN);
+        const clT = gF > 0 ? xlT : (xlT + xrT) * 0.5;
+        const crT = gF > 0 ? xrT : (xlT + xrT) * 0.5;
+        const clB = gN > 0 ? xlB : (xlB + xrB) * 0.5;
+        const crB = gN > 0 ? xrB : (xlB + xrB) * 0.5;
+        quadsNotch.push(clT, yT, crT, yT, crB, yB, clB, yB);
+      }
+    }
+  }
+}
+
+function fillQuads(arr, color) {
+  if (!arr.length) return;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < arr.length; i += 8) {
+    ctx.moveTo(arr[i],   arr[i+1]);
+    ctx.lineTo(arr[i+2], arr[i+3]);
+    ctx.lineTo(arr[i+4], arr[i+5]);
+    ctx.lineTo(arr[i+6], arr[i+7]);
+    ctx.closePath();
+  }
+  ctx.fill();
+}
+
+/* World-space dashes on the player's road */
+function buildDashes() {
+  const PERIOD = 150, LEN = 74, HW = 3.2;
+  const zMin = NEAR * 0.4, zMax = 2400;
+  const yA = camY - zMax, yB = camY - zMin;
+
+  const offs = [-128, -64, 64, 128];
+  ctx.beginPath();
+  let any = false;
+
+  for (let oi = 0; oi < offs.length; oi++) {
+    const off = offs[oi];
+    let y0 = Math.ceil(yA / PERIOD) * PERIOD;
+    for (let y = y0; y < yB; y += PERIOD) {
+      const yn = y, yf = y - LEN;
+      const zn = camY - yn, zf = camY - yf;
+      if (zn < zMin) continue;
+      const cn = roadCentreAt(yn), cf = roadCentreAt(yf);
+      const yT = groundY(zf), yB2 = groundY(zn);
+      const xlT = sx(cf + off - HW, zf), xrT = sx(cf + off + HW, zf);
+      const xlB = sx(cn + off - HW, zn), xrB = sx(cn + off + HW, zn);
+      if (xrT - xlT < 0.35 && xrB - xlB < 0.35) continue;
+      ctx.moveTo(xlT, yT); ctx.lineTo(xrT, yT);
+      ctx.lineTo(xrB, yB2); ctx.lineTo(xlB, yB2);
+      ctx.closePath();
+      any = true;
+    }
+  }
+  if (any) { ctx.fillStyle = "#dde3ea"; ctx.fill(); }
+}
+
+/* ============================================================
+   Barrier
+   ============================================================ */
+function drawBarriers(now) {
+  for (const l of links) {
+    if (l.kind !== "fork" || !l.committed) continue;
+
+    const grow = clamp((now - l.commitTime) / 650, 0, 1);
+    if (grow <= 0.01) continue;
+
+    const yNear = l.barrierAt;
+    const yFar  = l.barrierAt + (l.barrierEnd - l.barrierAt) * grow;
+
+    const N = 36;
+    let started = false;
+
+    const topPts = [], botPts = [];
+    for (let i = 0; i <= N; i++) {
+      const y = yFar + (yNear - yFar) * (i / N);
+      const z = camY - y;
+      if (z < NEAR * 0.5) continue;
+      const cx = roadCentreAt(y);
+      const px = sx(cx, z);
+      topPts.push(px, sy(BARRIER_H, z));
+      botPts.push(px, sy(0, z));
+    }
+    if (topPts.length < 4) continue;
+
+    ctx.save();
+    ctx.globalAlpha = grow;
+
+    ctx.beginPath();
+    ctx.moveTo(topPts[0], topPts[1]);
+    for (let i = 2; i < topPts.length; i += 2) ctx.lineTo(topPts[i], topPts[i+1]);
+    for (let i = botPts.length - 2; i >= 0; i -= 2) ctx.lineTo(botPts[i], botPts[i+1]);
+    ctx.closePath();
+    ctx.fillStyle = "#9ea4ac";
+    ctx.fill();
+
+    // top highlight
+    ctx.beginPath();
+    ctx.moveTo(topPts[0], topPts[1]);
+    for (let i = 2; i < topPts.length; i += 2) ctx.lineTo(topPts[i], topPts[i+1]);
+    ctx.strokeStyle = "#d6dbe2";
+    ctx.lineWidth = Math.max(1, 4 * F / 1200);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+/* ============================================================
+   Scenery
+   ============================================================ */
+const sprites = [];
+
+function collectSprites() {
+  sprites.length = 0;
+  const maxZ = 2600;
+  const yFar = camY - maxZ;
+  const yNear = camY - NEAR;
+  const halfW = (W * 0.5) * maxZ / F + 240;
+
+  for (let li = 0; li < links.length; li++) {
+    const l = links[li];
+    const y0 = Math.max(l.yEnd, yFar);
+    const y1 = Math.min(l.yStart, yNear);
+    if (y1 <= y0) continue;
+
+    const gy0 = Math.floor(y0 / SC) - 1;
+    const gy1 = Math.ceil(y1 / SC) + 1;
+    const gx0 = Math.floor((camX - halfW) / SC) - 1;
+    const gx1 = Math.ceil((camX + halfW) / SC) + 1;
+    const biome = l.biome;
+
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const r1 = hash2(gx, gy);
+        const bx = gx * SC + r1 * SC;
+        const by = gy * SC + hash2(gx + 91, gy + 17) * SC;
+        if (by < y0 || by > y1) continue;
+
+        /* --- keep clear of the road --- */
+        if (l.kind === "leg") {
+          if (Math.abs(bx - l.cx) < RH + 30) continue;
+        } else {
+          const cL = forkArmCx(l, "left", by);
+          const cR = forkArmCx(l, "right", by);
+          if (Math.abs(bx - cL) < RH + 30) continue;
+          if (Math.abs(bx - cR) < RH + 30) continue;
+        }
+
+        const r = hash2(gx * 7, gy * 11);
+        const z = camY - by;
+        if (z < NEAR * 0.6) continue;
+
+        if (biome === "bay") {
+          const cx = l.kind === "leg" ? l.cx : l.cx0;
+          if (bx > cx + 200) continue;    // sea
+          if (bx > cx + 180) continue;    // beach
+        }
+
+        if (biome === "forest") {
+          sprites.push({ t: "tree", x: bx, y: by, z, r: 19 + r * 16 });
+          if (r > 0.5) {
+            sprites.push({
+              t: "tree",
+              x: bx + SC * 0.5, y: by + SC * 0.42, z: camY - (by + SC * 0.42),
+              r: 14 + r * 12
+            });
+          }
+        } else if (biome === "city") {
+          sprites.push({
+            t: "bldg", x: bx, y: by, z,
+            w: 76 + r * 66, h: 130 + hash2(gx + 5, gy + 3) * 170,
+            c: r < 0.4 ? "#79808b" : r < 0.72 ? "#6b727d" : "#858d99"
+          });
+        } else {
+          if (r < 0.15) {
+            sprites.push({ t: "park", x: bx, y: by, z, r: 42 + r * 28 });
+          } else if (r < 0.44) {
+            sprites.push({
+              t: "bldg", x: bx, y: by, z,
+              w: 90 + r * 50, h: 74 + hash2(gx + 2, gy + 8) * 46,
+              c: r < 0.28 ? "#b3ada0" : "#a9a396"
+            });
+          } else {
+            sprites.push({
+              t: "house", x: bx, y: by, z,
+              w: 72 + r * 32, h: 58 + hash2(gx + 3, gy + 9) * 30,
+              c: r < 0.36 ? "#c3b49b" : r < 0.68 ? "#b8a78e" : "#ccbda6"
+            });
+          }
+        }
+        if (sprites.length > 420) return;
+      }
+    }
+  }
+
+  /* --- cars --- */
+  for (const c of cars) {
+    const z = camY - c.y;
+    if (z < NEAR * 0.8 || z > 3000) continue;
+    sprites.push({ t: "car", x: c.x, y: c.y, z, color: c.color, dir: c.dir });
+  }
+
+  /* --- gantries --- */
+  for (const l of links) {
+    if (l.kind !== "fork") continue;
+    const z = camY - l.gantryY;
+    if (z < NEAR || z > 3200) continue;
+    sprites.push({ t: "gantry", x: l.cx0, y: l.gantryY, z, fork: l });
+  }
+
+  sprites.sort((a, b) => b.z - a.z);
+}
+
+function drawSprite(s) {
+  const z = s.z;
+  const sc = F / z;
+  const px = sx(s.x, z);
+  const gy = groundY(z);
+
+  switch (s.t) {
+    case "tree": {
+      const r = s.r * sc;
+      if (r < 0.5) return;
+      if (px < -r - 40 || px > W + r + 40) return;
+      const cy = sy(s.r, z);
+      ctx.fillStyle = "#274d24";
+      ctx.beginPath(); ctx.arc(px, cy, r, 0, 6.283); ctx.fill();
+      ctx.fillStyle = "#3b7034";
+      ctx.beginPath(); ctx.arc(px - r * 0.26, cy - r * 0.26, r * 0.62, 0, 6.283); ctx.fill();
+      return;
+    }
+    case "bldg":
+    case "house": {
+      const w = s.w * sc, h = s.h * sc;
+      if (w < 1) return;
+      if (px < -w || px > W + w) return;
+      const yb = gy;
+      ctx.fillStyle = s.c;
+      ctx.fillRect(px - w / 2, yb - h, w, h);
+      ctx.fillStyle = "rgba(20,26,40,0.35)";
+      const fh = h * (s.t === "bldg" ? 0.16 : 0.30);
+      ctx.fillRect(px - w / 2, yb - h, w, fh);
+      if (s.t === "bldg" && w > 26) {
+        ctx.fillStyle = "rgba(255,255,255,0.10)";
+        ctx.fillRect(px - w / 2 + w * 0.14, yb - h * 0.72, w * 0.18, h * 0.5);
+      }
+      return;
+    }
+    case "park": {
+      const r = s.r * sc;
+      if (r < 1) return;
+      if (px < -r || px > W + r) return;
+      ctx.fillStyle = "#4a7742";
+      ctx.beginPath(); ctx.ellipse(px, gy, r, r * 0.42, 0, 0, 6.283); ctx.fill();
+      return;
+    }
+    case "car": {
+      const w = CAR_W * sc;
+      const h = CAR_H * sc;
+      if (w < 1.5) return;
+      if (px < -w * 2 || px > W + w * 2) return;
+      const yb = gy;
+      // shadow
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.beginPath();
+      ctx.ellipse(px, yb, w * 0.62, w * 0.19, 0, 0, 6.283);
+      ctx.fill();
+      // body
+      ctx.fillStyle = s.color;
+      ctx.fillRect(px - w / 2, yb - h, w, h);
+      // roof / cabin
+      ctx.fillStyle = "rgba(18,24,38,0.75)";
+      ctx.fillRect(px - w * 0.40, yb - h * 0.95, w * 0.80, h * 0.48);
+      // bumper
+      ctx.fillStyle = "rgba(0,0,0,0.30)";
+      ctx.fillRect(px - w / 2, yb - h * 0.16, w, h * 0.16);
+      // lights
+      if (s.dir === -1) {
+        ctx.fillStyle = "#ff5a4a";
+        ctx.fillRect(px - w * 0.42, yb - h * 0.34, w * 0.14, h * 0.13);
+        ctx.fillRect(px + w * 0.28, yb - h * 0.34, w * 0.14, h * 0.13);
+      } else {
+        ctx.fillStyle = "#fff6d8";
+        ctx.fillRect(px - w * 0.42, yb - h * 0.34, w * 0.14, h * 0.13);
+        ctx.fillRect(px + w * 0.28, yb - h * 0.34, w * 0.14, h * 0.13);
+      }
+      return;
+    }
+    case "gantry": return drawGantry(s);
+  }
+}
+
+/* ============================================================
+   Overhead gantry
+   ============================================================ */
+function drawGantry(s) {
+  const z = s.z;
+  const l = s.fork;
+  const sc = F / z;
+  const cx = l.cx0;
+
+  const beamH0 = 108, beamH1 = 122;
+  const postW  = 16;
+  const span   = RH + 44;
+
+  /* posts */
+  const postXs = [cx - span, cx + span];
+  for (const pxx of postXs) {
+    const x0 = sx(pxx - postW / 2, z);
+    const x1 = sx(pxx + postW / 2, z);
+    const yTop = sy(beamH0, z);
+    const yBot = groundY(z);
+    ctx.fillStyle = "#7b818a";
+    ctx.fillRect(x0, yTop, Math.max(1.4, x1 - x0), yBot - yTop);
+  }
+
+  /* beam */
+  const bx0 = sx(cx - span - 10, z);
+  const bx1 = sx(cx + span + 10, z);
+  const byT = sy(beamH1, z);
+  const byB = sy(beamH0, z);
+  ctx.fillStyle = "#8f959d";
+  ctx.fillRect(bx0, byT, bx1 - bx0, byB - byT);
+
+  /* panels */
+  const panelW = 182, panelH = 66;
+  const panelTop = beamH0 - 4;
+
+  const panels = [
+    { x: cx - 100, dest: l.left },
+    { x: cx + 100, dest: l.right }
+  ];
+
+  for (const p of panels) {
+    const x0 = sx(p.x - panelW / 2, z);
+    const x1 = sx(p.x + panelW / 2, z);
+    const yT = sy(panelTop, z);
+    const yB = sy(panelTop - panelH, z);
+    const pw = x1 - x0, ph = yB - yT;
+    if (pw < 2 || ph < 2) continue;
+
+    ctx.fillStyle = "#0d6138";
+    ctx.fillRect(x0, yT, pw, ph);
+    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.lineWidth = Math.max(0.8, pw * 0.012);
+    ctx.strokeRect(x0, yT, pw, ph);
+
+    if (ph > 13 && pw > 40) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, yT, pw, ph);
+      ctx.clip();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+
+      const nfs = ph * 0.38;
+      ctx.font = "700 " + nfs.toFixed(1) + "px system-ui, sans-serif";
+      ctx.fillText(p.dest.num, x0 + pw / 2, yT + ph * 0.31);
+
+      const sfs = ph * 0.27;
+      ctx.font = sfs.toFixed(1) + "px system-ui, sans-serif";
+      let label = p.dest.name;
+      if (label.length * sfs * 0.52 > pw * 0.94) {
+        label = label.slice(0, Math.floor(pw * 0.94 / (sfs * 0.52))) + "…";
+      }
+      ctx.fillText(label, x0 + pw / 2, yT + ph * 0.72);
+      ctx.restore();
+    }
+  }
+}
+
+/* ============================================================
+   Cockpit
+   ============================================================ */
+function drawCockpit() {
+  const dh = H * 0.155;
+  ctx.fillStyle = "#101317";
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, H - dh);
+  ctx.quadraticCurveTo(W * 0.5, H - dh * 1.42, W, H - dh);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  /* dashboard sheen */
+  const g = ctx.createLinearGradient(0, H - dh * 1.1, 0, H - dh * 0.55);
+  g.addColorStop(0, "rgba(255,255,255,0.10)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, H - dh);
+  ctx.quadraticCurveTo(W * 0.5, H - dh * 1.42, W, H - dh);
+  ctx.lineTo(W, H - dh * 0.86);
+  ctx.quadraticCurveTo(W * 0.5, H - dh * 1.26, 0, H - dh * 0.86);
+  ctx.closePath();
+  ctx.fill();
+
+  /* steering wheel */
+  const wr = Math.min(W, H) * 0.115;
+  const wcy = H + wr * 0.62;
+  ctx.strokeStyle = "#22262d";
+  ctx.lineWidth = Math.max(7, W * 0.014);
+  ctx.beginPath();
+  ctx.arc(W * 0.5, wcy, wr, Math.PI * 1.10, Math.PI * 1.90);
+  ctx.stroke();
+
+  /* A-pillars */
+  ctx.fillStyle = "#101317";
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(W * 0.055, 0);
+  ctx.lineTo(W * 0.012, H * 0.86); ctx.lineTo(0, H * 0.86);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(W, 0); ctx.lineTo(W * 0.945, 0);
+  ctx.lineTo(W * 0.988, H * 0.86); ctx.lineTo(W, H * 0.86);
+  ctx.closePath(); ctx.fill();
+
+  /* rear-view mirror */
+  const mw = W * 0.14, mh = Math.min(38, H * 0.048);
+  ctx.fillStyle = "#171a20";
+  ctx.fillRect(W * 0.5 - mw / 2 - 4, -2, mw + 8, mh + 6);
+  const mg = ctx.createLinearGradient(0, 0, 0, mh);
+  mg.addColorStop(0, "#3a4759");
+  mg.addColorStop(1, "#232b38");
+  ctx.fillStyle = mg;
+  ctx.fillRect(W * 0.5 - mw / 2, 1, mw, mh);
+}
+
+/* ============================================================
+   Terrain
+   ============================================================ */
+function drawTerrain() {
+  let curCol = null, stripTop = 0, stripBot = 0;
+
+  const flush = () => {
+    if (curCol === null) return;
+    ctx.fillStyle = curCol;
+    ctx.fillRect(0, stripTop, W, stripBot - stripTop);
+    curCol = null;
+  };
+
+  for (let i = NBANDS - 1; i >= 0; i--) {
+    const zN = depth[i], zF = depth[i + 1];
+    const yMid = camY - (zN + zF) * 0.5;
+    const yT = groundY(zF), yB = groundY(zN);
+    if (yB - yT < 0.05) continue;
+
+    const l = findLink(yMid);
+    const biome = l ? l.biome : "forest";
+
+    if (biome === "bay") {
+      flush();
+      ctx.fillStyle = GROUND_COL.bay;
+      ctx.fillRect(0, yT, W, yB - yT);
+
+      const cx = roadCentreAt(yMid);
+      /* beach */
+      const sxlT = sx(cx + 186, zF), sxrT = sx(cx + 340, zF);
+      const sxlB = sx(cx + 186, zN), sxrB = sx(cx + 340, zN);
+      ctx.fillStyle = SAND;
+      ctx.beginPath();
+      ctx.moveTo(sxlT, yT); ctx.lineTo(sxrT, yT);
+      ctx.lineTo(sxrB, yB); ctx.lineTo(sxlB, yB);
+      ctx.closePath(); ctx.fill();
+      /* sea */
+      ctx.fillStyle = SEA;
+      ctx.beginPath();
+      ctx.moveTo(sxrT, yT); ctx.lineTo(W, yT);
+      ctx.lineTo(W, yB); ctx.lineTo(sxrB, yB);
+      ctx.closePath(); ctx.fill();
+    } else {
+      const col = GROUND_COL[biome] || "#2e4d2b";
+      if (col !== curCol) {
+        flush();
+        curCol = col; stripTop = yT; stripBot = yB;
+      } else {
+        stripBot = yB;
+      }
+    }
+  }
+  flush();
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+function render(time) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  /* --- sky --- */
+  drawSky(time);
+
+  /* --- terrain --- */
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, horizonY, W, H - horizonY);
+  ctx.clip();
+  drawTerrain();
+  ctx.restore();
+
+  /* --- road geometry --- */
+  buildRoadGeometry();
+  fillQuads(quadsVerge, VERGE);
+  fillQuads(quadsRoad, ASPHALT);
+  fillQuads(quadsNotch, GROUND_COL[
+    (findLink(camY - (NEAR + 400)) || { biome: "forest" }).biome
+  ] || "#2e4d2b");
+  fillQuads(quadsMark, "#e6ebf1");
+  buildDashes();
+
+  /* --- barrier --- */
+  drawBarriers(time);
+
+  /* --- scenery / traffic / gantries, depth sorted --- */
+  collectSprites();
+  for (let i = 0; i < sprites.length; i++) drawSprite(sprites[i]);
+
+  /* --- night headlight cones --- */
+  if (mode() === "night") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const c of cars) {
+      const z = camY - c.y;
+      if (z < 40 || z > 2200) continue;
+      const px = sx(c.x, z);
+      const r = 260 * F / z;
+      if (r < 6) continue;
+      const gy = groundY(z);
+      const g = ctx.createRadialGradient(px, gy, 0, px, gy, r);
+      g.addColorStop(0, "rgba(255,242,200,0.24)");
+      g.addColorStop(1, "rgba(255,242,200,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(px, gy, r, r * 0.5, 0, 0, 6.283);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* --- horizon haze --- */
+  const hz = HAZE[mode()];
+  const hg = ctx.createLinearGradient(0, horizonY, 0, horizonY + (H - horizonY) * 0.42);
+  hg.addColorStop(0, "rgba(" + hz[0] + "," + hz[1] + "," + hz[2] + ",0.92)");
+  hg.addColorStop(0.55, "rgba(" + hz[0] + "," + hz[1] + "," + hz[2] + ",0.35)");
+  hg.addColorStop(1, "rgba(" + hz[0] + "," + hz[1] + "," + hz[2] + ",0)");
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, horizonY, W, H - horizonY);
+
+  /* --- time-of-day tint --- */
+  const tint = TINT[mode()];
+  if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
+
+  /* --- cockpit --- */
+  drawCockpit();
+
+  requestAnimationFrame(render);
+}
+
+/* ============================================================
+   Loop
+   ============================================================ */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  update(now, dt);
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+resize();
+links.push(newLeg(1200, 0, makeDest(null)));
+extendPath();
+player.x = roadCentreAt(0) + player.u;
+camX = player.x; camY = player.y;
+
+for (let i = 0; i < 3; i++) {
+  const c = {};
+  placeCar(c);
+  c.y = player.y - (400 + i * 800 + Math.random() * 400);
+  c.x = roadCentreAt(c.y) + c.u;
+  cars.push(c);
+}
+
+requestAnimationFrame(render);
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

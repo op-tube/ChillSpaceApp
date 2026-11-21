@@ -4,6 +4,494 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ChillSpace — Shop &amp; Vinyl</title>
+    <script>
+    /* ─── ChillSpace i18n — EN / KO / JA / ES / PT / RU (browser detection) ─── */
+    (function () {
+      'use strict';
+
+      var STRINGS = {
+        en: {
+          title: 'ChillSpace — Shop & Vinyl',
+          tabShop: '🛍️ Shop',
+          tabVinyl: '💿 Vinyl',
+          cartTitle: 'Your cart',
+          cartOpen: 'Open cart',
+          cartClose: 'Close cart',
+          remove: 'Remove',
+          shopTitle: 'ChillSpace Shop',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN Price Match™ — We match & beat every price*',
+          pmActive: 'ACTIVE',
+          catAll: '🛒 All',
+          catClothes: '👕 Clothes',
+          catAccessories: '💍 Accessories',
+          totalSaved: '💰 Total Saved Today',
+          dopamineHits: '🧠 Dopamine Hits',
+          vinylFrom: 'from',
+          vinylSlogan: '✨ Love for Music. Music for Dopamine.',
+          gridTitleHtml: '🎵 New Vinyl Drops <span>·</span> Pop &amp; K-Pop',
+          gridSub: '🌈 Every vinyl is a unique colour — just like your music taste.',
+          cartHeader: '🛒 Your Cart',
+          cartTotal: 'Total',
+          cartSavings: 'Price Match savings',
+          buyNow: '💳 Buy Now',
+          cartEmpty: 'Your cart is empty.<br />Go grab something!',
+          addToCart: '🛒 ADD TO CART',
+          added: '✅ ADDED',
+          vinylAdd: '➕ Add to Cart',
+          vinylAdded: '✅ Added!',
+          sheinMatch: 'SHEIN MATCH',
+          saveAmt: 'Save {n}',
+          saveParen: '(Save {n})',
+          pmLabel: 'SHEIN Price Match™',
+          adDesc: 'Dopamine for your ears. Rare vinyl, curated drops.',
+          adCta: 'Shop Vinyl →',
+          orderPlaced: 'Order placed!',
+          sub0: 'Your order is on its way...',
+          delivering: 'Your order is being delivered',
+          sub1: 'Tracking your order...',
+          arrivedItems: 'Your items have arrived!',
+          arrivedTapVinyl: 'Tap the parcel to reveal your vinyl 🎵',
+          arrivedTapUnbox: 'Tap the parcel to unbox your order',
+          arrivedVinyl: 'Your vinyl has arrived!',
+          spinIt: 'Time to spin it! 🎶',
+          vinylSpinning: '🎵 Your vinyl is spinning!',
+          keepShopping: '🔄 Keep Shopping',
+          unboxStart: '📦 Unbox your items ({n})',
+          packageOf: 'Package {n} of {m}',
+          tapOpen: 'Tap the parcel to open it',
+          skipUnbox: 'Skip unboxing →',
+          finishUnbox: '🎉 Finish Unboxing',
+          nextPackage: '📦 Next Package',
+          allUnboxed: 'All unboxed!',
+          unboxDone: 'Everything is yours. Enjoy! 💖',
+          secretAlert: '🌟 SECRET UNLOCKED: You just saved an EXTRA $1,000 by not buying anything!\n\nChillSpace — the gift that keeps on giving. 😎',
+          track1: '📦 Order Confirmed · Warehouse',
+          track2: '🏭 Packed &amp; Sorted',
+          track3: '✈️ In Transit · Air Hub',
+          track4: '🌍 Customs Cleared',
+          track5: '🚚 On the Road',
+          track6: '📬 Local Depot',
+          track7: '🚴 Out for Delivery',
+          track8: '🏠 Arrived at Your Doorstep!',
+          items: { dress: 'Dress', trousers: 'Trousers', tshirt: 'T-Shirt', socks: 'Socks', hat: 'Beanie', slippers: 'Slippers', keyring: 'Keyring', bracelet: 'Bracelet', badgeCircle: 'Enamel Pin', badgeHeart: 'Heart Pin', phonecase: 'Phone Case' },
+          patternWords: { stripes: 'Striped', polkadot: 'Polka-Dot', checkered: 'Checkered', plaid: 'Plaid', stars: 'Star', hearts: 'Heart', kawaii: 'Kawaii' },
+          styleWords: ['Vintage', 'Oversized', 'Cozy', 'Retro', 'Premium', 'Essential', 'Everyday', 'Statement', 'Soft-Touch', 'Classic', 'Bold', 'Minimal', 'Cropped', 'Relaxed', 'Limited', 'Studio'],
+          compose: function (style, pattern, item) { return pattern ? (style + ' ' + pattern + ' ' + item) : (style + ' ' + item); }
+        },
+        ko: {
+          title: 'ChillSpace — 샵 & 바이닐',
+          tabShop: '🛍️ 샵',
+          tabVinyl: '💿 바이닐',
+          cartTitle: '장바구니',
+          cartOpen: '장바구니 열기',
+          cartClose: '장바구니 닫기',
+          remove: '제거',
+          shopTitle: 'ChillSpace 샵',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN 가격 맞춤™ — 모든 가격을 맞추고 이겨드려요*',
+          pmActive: '활성',
+          catAll: '🛒 전체',
+          catClothes: '👕 의류',
+          catAccessories: '💍 액세서리',
+          totalSaved: '💰 오늘 아낀 총액',
+          dopamineHits: '🧠 도파민 히트',
+          vinylFrom: '출처:',
+          vinylSlogan: '✨ 음악을 향한 사랑. 도파민을 위한 음악.',
+          gridTitleHtml: '🎵 새 바이닐 발매 <span>·</span> 팝 &amp; K-팝',
+          gridSub: '🌈 모든 바이닐은 하나뿐인 색 — 마치 당신의 음악 취향처럼.',
+          cartHeader: '🛒 장바구니',
+          cartTotal: '합계',
+          cartSavings: '가격 맞춤 절약',
+          buyNow: '💳 지금 구매',
+          cartEmpty: '장바구니가 비어 있어요.<br />뭐라도 담아보세요!',
+          addToCart: '🛒 장바구니에 담기',
+          added: '✅ 담았어요!',
+          vinylAdd: '➕ 장바구니에 담기',
+          vinylAdded: '✅ 담았어요!',
+          sheinMatch: 'SHEIN 맞춤',
+          saveAmt: '{n} 절약',
+          saveParen: '({n} 절약)',
+          pmLabel: 'SHEIN 가격 맞춤™',
+          adDesc: '귀를 위한 도파민. 희귀 바이닐, 엄선된 발매.',
+          adCta: '바이닐 쇼핑 →',
+          orderPlaced: '주문 완료!',
+          sub0: '주문이 배송을 향해 이동 중입니다...',
+          delivering: '주문 배송 중',
+          sub1: '주문을 추적하는 중...',
+          arrivedItems: '물품이 도착했습니다!',
+          arrivedTapVinyl: '택배를 탭하여 바이닐을 공개하세요 🎵',
+          arrivedTapUnbox: '택배를 탭하여 주문을 열어보세요',
+          arrivedVinyl: '바이닐이 도착했습니다!',
+          spinIt: '돌려볼 시간! 🎶',
+          vinylSpinning: '🎵 바이닐이 돌아가는 중!',
+          keepShopping: '🔄 쇼핑 계속하기',
+          unboxStart: '📦 주문 열기 ({n})',
+          packageOf: '패키지 {n} / {m}',
+          tapOpen: '택배를 탭하여 열기',
+          skipUnbox: '언박싱 건너뛰기 →',
+          finishUnbox: '🎉 언박싱 마치기',
+          nextPackage: '📦 다음 패키지',
+          allUnboxed: '모두 열었어요!',
+          unboxDone: '모두 당신 거예요. 즐기세요! 💖',
+          secretAlert: '🌟 비밀 해금: 아무것도 사지 않아 $1,000을 추가로 아끼셨습니다!\n\nChillSpace — 계속 선물을 주는 서비스죠. 😎',
+          track1: '📦 주문 확인 · 창고',
+          track2: '🏭 포장 &amp; 분류',
+          track3: '✈️ 운송 중 · 항공 허브',
+          track4: '🌍 통관 완료',
+          track5: '🚚 배송 차량 이동 중',
+          track6: '📬 지역 물류센터',
+          track7: '🚴 배송 출발',
+          track8: '🏠 문 앞 도착!',
+          items: { dress: '드레스', trousers: '바지', tshirt: '티셔츠', socks: '양말', hat: '비니', slippers: '슬리퍼', keyring: '키링', bracelet: '팔찌', badgeCircle: '에나멜 핀', badgeHeart: '하트 핀', phonecase: '폰케이스' },
+          patternWords: { stripes: '스트라이프', polkadot: '도트무늬', checkered: '체크', plaid: '격자', stars: '별', hearts: '하트', kawaii: '카와이' },
+          styleWords: ['빈티지', '오버사이즈', '아늑한', '레트로', '프리미엄', '베이직', '데일리', '스테이트먼트', '소프트터치', '클래식', '볼드', '미니멀', '크롭', '릴렉스', '한정판', '스튜디오'],
+          compose: function (style, pattern, item) { return pattern ? (style + ' ' + pattern + ' ' + item) : (style + ' ' + item); }
+        },
+        ja: {
+          title: 'ChillSpace — ショップ & レコード',
+          tabShop: '🛍️ ショップ',
+          tabVinyl: '💿 レコード',
+          cartTitle: 'カート',
+          cartOpen: 'カートを開く',
+          cartClose: 'カートを閉じる',
+          remove: '削除',
+          shopTitle: 'ChillSpace ショップ',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN価格マッチ™ — どんな価格も合わせて上回ります*',
+          pmActive: '稼働中',
+          catAll: '🛒 すべて',
+          catClothes: '👕 服',
+          catAccessories: '💍 アクセサリー',
+          totalSaved: '💰 今日の節約合計',
+          dopamineHits: '🧠 ドーパミンヒット',
+          vinylFrom: '提供:',
+          vinylSlogan: '✨ 音楽への愛。ドーパミンのための音楽。',
+          gridTitleHtml: '🎵 新着レコード <span>·</span> ポップ &amp; K-ポップ',
+          gridSub: '🌈 どのレコードも唯一無二の色 — あなたの音楽の好みのように。',
+          cartHeader: '🛒 カート',
+          cartTotal: '合計',
+          cartSavings: '価格マッチ節約',
+          buyNow: '💳 今すぐ購入',
+          cartEmpty: 'カートは空です。<br />何か入れてみよう!',
+          addToCart: '🛒 カートに入れる',
+          added: '✅ 追加しました!',
+          vinylAdd: '➕ カートに追加',
+          vinylAdded: '✅ 追加しました!',
+          sheinMatch: 'SHEINマッチ',
+          saveAmt: '{n} お得',
+          saveParen: '({n} お得)',
+          pmLabel: 'SHEIN価格マッチ™',
+          adDesc: '耳のためのドーパミン。レアレコードと厳選ドロップ。',
+          adCta: 'レコードを見る →',
+          orderPlaced: '注文完了!',
+          sub0: '注文は発送に向かっています...',
+          delivering: '注文配達中',
+          sub1: '注文を追跡中...',
+          arrivedItems: '商品が到着しました!',
+          arrivedTapVinyl: '荷物をタップしてレコードを出そう 🎵',
+          arrivedTapUnbox: '荷物をタップして注文を開けよう',
+          arrivedVinyl: 'レコードが到着!',
+          spinIt: '回す時間だ! 🎶',
+          vinylSpinning: '🎵 レコードが回っている!',
+          keepShopping: '🔄 買い物を続ける',
+          unboxStart: '📦 荷物を開ける ({n})',
+          packageOf: 'パッケージ {n} / {m}',
+          tapOpen: '荷物をタップして開ける',
+          skipUnbox: '開封をスキップ →',
+          finishUnbox: '🎉 開封完了',
+          nextPackage: '📦 次のパッケージ',
+          allUnboxed: '全部開けた!',
+          unboxDone: '全部あなたのもの。楽しんでね! 💖',
+          secretAlert: '🌟 シークレット解除: 何も買わなかったので$1,000余計に節約しました!\n\nChillSpace — 与え続ける贈り物。 😎',
+          track1: '📦 注文確認 · 倉庫',
+          track2: '🏭 梱包 &amp; 仕分け',
+          track3: '✈️ 輸送中 · 航空ハブ',
+          track4: '🌍 通関済み',
+          track5: '🚚 配送トラック走行中',
+          track6: '📬 地域デポ',
+          track7: '🚴 配達に出ました',
+          track8: '🏠 玄関に到着!',
+          items: { dress: 'ドレス', trousers: 'ズボン', tshirt: 'Tシャツ', socks: 'ソックス', hat: 'ビーニー', slippers: 'ルームシューズ', keyring: 'キーホルダー', bracelet: 'ブレスレット', badgeCircle: 'エナメルピン', badgeHeart: 'ハートピン', phonecase: 'スマホケース' },
+          patternWords: { stripes: 'ストライプ', polkadot: '水玉', checkered: 'チェック', plaid: 'タータン', stars: 'スター', hearts: 'ハート', kawaii: 'かわいい' },
+          styleWords: ['ヴィンテージ', 'オーバーサイズ', 'あったか', 'レトロ', 'プレミアム', 'ベーシック', '毎日', 'ステートメント', 'ソフトタッチ', 'クラシック', 'ボールド', 'ミニマル', 'クロップド', 'リラックス', '限定', 'スタジオ'],
+          compose: function (style, pattern, item) { return pattern ? (style + ' ' + pattern + ' ' + item) : (style + ' ' + item); }
+        },
+        es: {
+          title: 'ChillSpace — Tienda y vinilos',
+          tabShop: '🛍️ Tienda',
+          tabVinyl: '💿 Vinilos',
+          cartTitle: 'Tu carrito',
+          cartOpen: 'Abrir carrito',
+          cartClose: 'Cerrar carrito',
+          remove: 'Quitar',
+          shopTitle: 'Tienda ChillSpace',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN Price Match™ — Igualamos y superamos cada precio*',
+          pmActive: 'ACTIVO',
+          catAll: '🛒 Todo',
+          catClothes: '👕 Ropa',
+          catAccessories: '💍 Accesorios',
+          totalSaved: '💰 Total ahorrado hoy',
+          dopamineHits: '🧠 Subidones de dopamina',
+          vinylFrom: 'de',
+          vinylSlogan: '✨ Amor por la música. Música para la dopamina.',
+          gridTitleHtml: '🎵 Nuevos lanzamientos de vinilos <span>·</span> Pop &amp; K-Pop',
+          gridSub: '🌈 Cada vinilo tiene un color único — igual que tu gusto musical.',
+          cartHeader: '🛒 Tu carrito',
+          cartTotal: 'Total',
+          cartSavings: 'Ahorro por Price Match',
+          buyNow: '💳 Comprar ahora',
+          cartEmpty: 'Tu carrito está vacío.<br />¡Ve a por algo!',
+          addToCart: '🛒 AÑADIR AL CARRITO',
+          added: '✅ AÑADIDO',
+          vinylAdd: '➕ Añadir al carrito',
+          vinylAdded: '✅ ¡Añadido!',
+          sheinMatch: 'SHEIN MATCH',
+          saveAmt: 'Ahorra {n}',
+          saveParen: '(Ahorra {n})',
+          pmLabel: 'SHEIN Price Match™',
+          adDesc: 'Dopamina para tus oídos. Vinilos exclusivos, lanzamientos seleccionados.',
+          adCta: 'Comprar vinilos →',
+          orderPlaced: '¡Pedido realizado!',
+          sub0: 'Tu pedido está en camino...',
+          delivering: 'Tu pedido está siendo entregado',
+          sub1: 'Siguiendo tu pedido...',
+          arrivedItems: '¡Tus cosas han llegado!',
+          arrivedTapVinyl: 'Toca el paquete para revelar tu vinilo 🎵',
+          arrivedTapUnbox: 'Toca el paquete para abrir tu pedido',
+          arrivedVinyl: '¡Tu vinilo ha llegado!',
+          spinIt: '¡Hora de girarlo! 🎶',
+          vinylSpinning: '🎵 ¡Tu vinilo está girando!',
+          keepShopping: '🔄 Seguir comprando',
+          unboxStart: '📦 Abrir la entrega ({n})',
+          packageOf: 'Paquete {n} de {m}',
+          tapOpen: 'Toca el paquete para abrirlo',
+          skipUnbox: 'Saltar desembalaje →',
+          finishUnbox: '🎉 Terminar desembalaje',
+          nextPackage: '📦 Siguiente paquete',
+          allUnboxed: '¡Todo desembalado!',
+          unboxDone: 'Todo es tuyo. ¡Disfrútalo! 💖',
+          secretAlert: '🌟 SECRETO DESBLOQUEADO: ¡acabas de ahorrar $1,000 EXTRA por no comprar nada!\n\nChillSpace — el regalo que nunca deja de dar. 😎',
+          track1: '📦 Pedido confirmado · Almacén',
+          track2: '🏭 Embalado &amp; clasificado',
+          track3: '✈️ En tránsito · Hub aéreo',
+          track4: '🌍 Aduanas superadas',
+          track5: '🚚 En camino',
+          track6: '📬 Depósito local',
+          track7: '🚴 En reparto',
+          track8: '🏠 ¡Llegó a tu puerta!',
+          items: { dress: 'Vestido', trousers: 'Pantalones', tshirt: 'Camiseta', socks: 'Calcetines', hat: 'Gorro', slippers: 'Zapatillas de casa', keyring: 'Llavero', bracelet: 'Pulsera', badgeCircle: 'Pin esmaltado', badgeHeart: 'Pin de corazón', phonecase: 'Funda de móvil' },
+          patternWords: { stripes: 'a rayas', polkadot: 'de lunares', checkered: 'de cuadros', plaid: 'tartán', stars: 'de estrellas', hearts: 'de corazones', kawaii: 'kawaii' },
+          styleWords: ['vintage', 'oversize', 'cozy', 'retro', 'premium', 'esencial', 'casual', 'statement', 'soft', 'atemporal', 'audaz', 'minimal', 'cropped', 'zen', 'limited', 'studio'],
+          compose: function (style, pattern, item) { return pattern ? (item + ' ' + style + ' ' + pattern) : (item + ' ' + style); }
+        },
+        pt: {
+          title: 'ChillSpace — Loja e vinis',
+          tabShop: '🛍️ Loja',
+          tabVinyl: '💿 Vinis',
+          cartTitle: 'Seu carrinho',
+          cartOpen: 'Abrir carrinho',
+          cartClose: 'Fechar carrinho',
+          remove: 'Remover',
+          shopTitle: 'Loja ChillSpace',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN Price Match™ — Igualamos e vencemos qualquer preço*',
+          pmActive: 'ATIVO',
+          catAll: '🛒 Tudo',
+          catClothes: '👕 Roupas',
+          catAccessories: '💍 Acessórios',
+          totalSaved: '💰 Total economizado hoje',
+          dopamineHits: '🧠 Doses de dopamina',
+          vinylFrom: 'de',
+          vinylSlogan: '✨ Amor pela música. Música para a dopamina.',
+          gridTitleHtml: '🎵 Novos lançamentos de vinis <span>·</span> Pop &amp; K-Pop',
+          gridSub: '🌈 Cada vinil tem uma cor única — assim como seu gosto musical.',
+          cartHeader: '🛒 Seu carrinho',
+          cartTotal: 'Total',
+          cartSavings: 'Economia do Price Match',
+          buyNow: '💳 Comprar agora',
+          cartEmpty: 'Seu carrinho está vazio.<br />Vai pegar alguma coisa!',
+          addToCart: '🛒 ADICIONAR AO CARRINHO',
+          added: '✅ ADICIONADO',
+          vinylAdd: '➕ Adicionar ao carrinho',
+          vinylAdded: '✅ Adicionado!',
+          sheinMatch: 'SHEIN MATCH',
+          saveAmt: 'Economize {n}',
+          saveParen: '(Economize {n})',
+          pmLabel: 'SHEIN Price Match™',
+          adDesc: 'Dopamina para os seus ouvidos. Vinis raros, lançamentos selecionados.',
+          adCta: 'Comprar vinis →',
+          orderPlaced: 'Pedido feito!',
+          sub0: 'Seu pedido está a caminho...',
+          delivering: 'Seu pedido está sendo entregue',
+          sub1: 'Rastreando seu pedido...',
+          arrivedItems: 'Suas coisas chegaram!',
+          arrivedTapVinyl: 'Toque no pacote para revelar seu vinil 🎵',
+          arrivedTapUnbox: 'Toque no pacote para abrir seu pedido',
+          arrivedVinyl: 'Seu vinil chegou!',
+          spinIt: 'Hora de girar! 🎶',
+          vinylSpinning: '🎵 Seu vinil está girando!',
+          keepShopping: '🔄 Continuar comprando',
+          unboxStart: '📦 Abrir a entrega ({n})',
+          packageOf: 'Pacote {n} de {m}',
+          tapOpen: 'Toque no pacote para abri-lo',
+          skipUnbox: 'Pular desembalagem →',
+          finishUnbox: '🎉 Concluir desembalagem',
+          nextPackage: '📦 Próximo pacote',
+          allUnboxed: 'Tudo desembalado!',
+          unboxDone: 'Tudo é seu. Aproveite! 💖',
+          secretAlert: '🌟 SEGREDO DESBLOQUEADO: você acabou de economizar $1,000 EXTRA por não comprar nada!\n\nChillSpace — o presente que nunca para de dar. 😎',
+          track1: '📦 Pedido confirmado · Armazém',
+          track2: '🏭 Embalado &amp; separado',
+          track3: '✈️ Em trânsito · Hub aéreo',
+          track4: '🌍 Aduana liberada',
+          track5: '🚚 Na estrada',
+          track6: '📬 Depósito local',
+          track7: '🚴 Saiu para entrega',
+          track8: '🏠 Chegou na sua porta!',
+          items: { dress: 'Vestido', trousers: 'Calça', tshirt: 'Camiseta', socks: 'Meias', hat: 'Gorro', slippers: 'Pantufas', keyring: 'Chaveiro', bracelet: 'Pulseira', badgeCircle: 'Pin de esmalte', badgeHeart: 'Pin de coração', phonecase: 'Capa de celular' },
+          patternWords: { stripes: 'a listras', polkadot: 'de bolinhas', checkered: 'em xadrez', plaid: 'em tartã', stars: 'de estrelas', hearts: 'de corações', kawaii: 'kawaii' },
+          styleWords: ['vintage', 'oversize', 'cozy', 'retro', 'premium', 'essencial', 'casual', 'statement', 'soft', 'atemporal', 'audaz', 'minimal', 'cropped', 'zen', 'limited', 'studio'],
+          compose: function (style, pattern, item) { return pattern ? (item + ' ' + style + ' ' + pattern) : (item + ' ' + style); }
+        },
+        ru: {
+          title: 'ChillSpace — магазин и винил',
+          tabShop: '🛍️ Магазин',
+          tabVinyl: '💿 Винил',
+          cartTitle: 'Ваша корзина',
+          cartOpen: 'Открыть корзину',
+          cartClose: 'Закрыть корзину',
+          remove: 'Убрать',
+          shopTitle: 'Магазин ChillSpace',
+          shopSubtitle: 'by chillspace.ai',
+          pmBanner: 'SHEIN Price Match™ — Мы сравняемся и побьём любую цену*',
+          pmActive: 'АКТИВНО',
+          catAll: '🛒 Всё',
+          catClothes: '👕 Одежда',
+          catAccessories: '💍 Аксессуары',
+          totalSaved: '💰 Всего сэкономлено сегодня',
+          dopamineHits: '🧠 Приливы дофамина',
+          vinylFrom: 'от',
+          vinylSlogan: '✨ Любовь к музыке. Музыка ради дофамина.',
+          gridTitleHtml: '🎵 Новинки винила <span>·</span> Поп и K-поп',
+          gridSub: '🌈 Каждый винил уникального цвета — как и ваш музыкальный вкус.',
+          cartHeader: '🛒 Ваша корзина',
+          cartTotal: 'Итого',
+          cartSavings: 'Экономия по Price Match',
+          buyNow: '💳 Купить сейчас',
+          cartEmpty: 'Ваша корзина пуста.<br />Загляните за покупками!',
+          addToCart: '🛒 В КОРЗИНУ',
+          added: '✅ ДОБАВЛЕНО',
+          vinylAdd: '➕ В корзину',
+          vinylAdded: '✅ Добавлено!',
+          sheinMatch: 'SHEIN MATCH',
+          saveAmt: 'Скидка {n}',
+          saveParen: '(скидка {n})',
+          pmLabel: 'SHEIN Price Match™',
+          adDesc: 'Дофамин для ваших ушей. Редкий винил, отобранные релизы.',
+          adCta: 'Купить винил →',
+          orderPlaced: 'Заказ оформлен!',
+          sub0: 'Ваш заказ уже в пути...',
+          delivering: 'Ваш заказ доставляется',
+          sub1: 'Отслеживаем ваш заказ...',
+          arrivedItems: 'Ваши товары прибыли!',
+          arrivedTapVinyl: 'Нажмите на посылку, чтобы открыть винил 🎵',
+          arrivedTapUnbox: 'Нажмите на посылку, чтобы вскрыть заказ',
+          arrivedVinyl: 'Винил прибыл!',
+          spinIt: 'Пора раскрутить его! 🎶',
+          vinylSpinning: '🎵 Ваш винил крутится!',
+          keepShopping: '🔄 Продолжить покупки',
+          unboxStart: '📦 Вскрыть посылку ({n})',
+          packageOf: 'Посылка {n} из {m}',
+          tapOpen: 'Нажмите на посылку, чтобы открыть её',
+          skipUnbox: 'Пропустить вскрытие →',
+          finishUnbox: '🎉 Завершить вскрытие',
+          nextPackage: '📦 Следующая посылка',
+          allUnboxed: 'Всё вскрыто!',
+          unboxDone: 'Всё это ваше. Наслаждайтесь! 💖',
+          secretAlert: '🌟 СЕКРЕТ РАЗБЛОКИРОВАН: вы только что сэкономили ЕЩЁ $1,000, ничего не купив!\n\nChillSpace — подарок, который не перестаёт дарить. 😎',
+          track1: '📦 Заказ подтверждён · Склад',
+          track2: '🏭 Упаковано &amp; отсортировано',
+          track3: '✈️ В пути · Авиахаб',
+          track4: '🌍 Прошло таможню',
+          track5: '🚚 В дороге',
+          track6: '📬 Местный склад',
+          track7: '🚴 Доставляется',
+          track8: '🏠 Прибыло к вашей двери!',
+          items: { dress: 'Платье', trousers: 'Брюки', tshirt: 'Футболка', socks: 'Носки', hat: 'Бини', slippers: 'Тапочки', keyring: 'Брелок', bracelet: 'Браслет', badgeCircle: 'Эмалевый значок', badgeHeart: 'Значок-сердце', phonecase: 'Чехол для телефона' },
+          patternWords: { stripes: 'в полоску', polkadot: 'в горошек', checkered: 'в клетку', plaid: 'тартан', stars: 'со звёздочками', hearts: 'с сердечками', kawaii: 'кавай' },
+          styleWords: ['винтаж', 'оверсайз', 'уют', 'ретро', 'премиум', 'база', 'дейли', 'акцент', 'софт-тач', 'классика', 'хайп', 'минимал', 'кроп', 'релакс', 'лимит', 'студио'],
+          compose: function (style, pattern, item) { return pattern ? (item + ' ' + style + ' ' + pattern) : (item + ' ' + style); }
+        }
+      };
+
+      function detectLang() {
+        var list = [];
+        if (navigator.languages) list = list.concat(navigator.languages);
+        if (navigator.language) list.push(navigator.language);
+        list.push('en');
+        for (var i = 0; i < list.length; i++) {
+          var l = String(list[i] || '').toLowerCase();
+          if (l.indexOf('ko') === 0) return 'ko';
+          if (l.indexOf('ja') === 0) return 'ja';
+          if (l.indexOf('es') === 0) return 'es';
+          if (l.indexOf('pt') === 0) return 'pt';
+          if (l.indexOf('ru') === 0) return 'ru';
+          if (l.indexOf('en') === 0) return 'en';
+        }
+        return 'en';
+      }
+
+      var lang = detectLang();
+      STRINGS[lang] = STRINGS[lang] || STRINGS.en;
+      document.documentElement.lang = lang;
+
+      function t(key, vars) {
+        var v = STRINGS[lang][key];
+        if (v === undefined) v = STRINGS.en[key];
+        var s = (v === undefined) ? key : v;
+        if (vars) {
+          for (var k in vars) s = s.split('{' + k + '}').join(String(vars[k]));
+        }
+        return s;
+      }
+      window.csT = t;
+      document.title = t('title');
+
+      var tbl = STRINGS[lang] || STRINGS.en;
+      window.csShopWords = {
+        items: tbl.items || STRINGS.en.items,
+        patterns: tbl.patternWords || STRINGS.en.patternWords,
+        styles: tbl.styleWords || STRINGS.en.styleWords,
+        compose: tbl.compose || STRINGS.en.compose
+      };
+
+      function applyI18n() {
+        var els = document.querySelectorAll('[data-i18n]');
+        for (var i = 0; i < els.length; i++) {
+          els[i].textContent = t(els[i].getAttribute('data-i18n'));
+        }
+        var htmlEls = document.querySelectorAll('[data-i18n-html]');
+        for (var i = 0; i < htmlEls.length; i++) {
+          htmlEls[i].innerHTML = t(htmlEls[i].getAttribute('data-i18n-html'));
+        }
+        var attrEls = document.querySelectorAll('[data-i18n-attr]');
+        for (var i = 0; i < attrEls.length; i++) {
+          var pairs = attrEls[i].getAttribute('data-i18n-attr').split(',');
+          for (var j = 0; j < pairs.length; j++) {
+            var kv = pairs[j].split(':');
+            if (kv.length === 2) attrEls[i].setAttribute(kv[0], t(kv[1]));
+          }
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyI18n);
+      } else {
+        applyI18n();
+      }
+    })();
+    </script>
     <meta name="description" content="ChillSpace — Shop procedurally generated fashion with Price Match™ and grab vibrant vinyl. Fake checkout, real dopamine." />
     <style>
         /* ================================================================
@@ -318,36 +806,7 @@
           grid-template-columns: 1fr 1fr;
           gap: 12px;
         }
-        .pull-refresh-indicator {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          height: 0;
-          overflow: hidden;
-          opacity: 0;
-          color: var(--text-secondary);
-          font-size: 0.8rem;
-          font-weight: 600;
-          transition: height 0.15s ease, opacity 0.15s ease;
-          transform-origin: top center;
-        }
-        .pull-refresh-indicator.visible { opacity: 1; }
-        .pull-refresh-spinner {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          color: var(--accent);
-          font-size: 0.85rem;
-          transition: transform 0.2s ease;
-        }
-        .pull-refresh-spinner.ready { transform: rotate(180deg); }
-        .pull-refresh-spinner.spinning { animation: pullSpin 0.7s linear infinite; }
+        /* Pull-to-refresh was removed. The load-more spinner below still uses pullSpin. */
         @keyframes pullSpin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -1341,9 +1800,9 @@
      GLOBAL TAB BAR (Shop / Vinyl / shared Cart)
      ================================================================ -->
 <nav class="global-tabs">
-    <button class="global-tab active" data-view="shop">🛍️ Shop</button>
-    <button class="global-tab" data-view="vinyl">💿 Vinyl</button>
-    <button class="global-cart-btn js-open-cart" title="Your cart" aria-label="Open cart">
+    <button class="global-tab active" data-view="shop" data-i18n="tabShop">🛍️ Shop</button>
+    <button class="global-tab" data-view="vinyl" data-i18n="tabVinyl">💿 Vinyl</button>
+    <button class="global-cart-btn js-open-cart" title="Your cart" aria-label="Open cart" data-i18n-attr="title:cartTitle,aria-label:cartOpen">
         🛒
         <span class="cart-badge js-cart-badge" style="display:none;">0</span>
     </button>
@@ -1359,29 +1818,25 @@
             <div class="header-brand">
                 <div class="header-logo" id="shopLogo">🛍️</div>
                 <div>
-                    <div class="header-title">ChillSpace Shop</div>
-                    <div class="header-subtitle">by chillspace.ai</div>
+                    <div class="header-title" data-i18n="shopTitle">ChillSpace Shop</div>
+                    <div class="header-subtitle" data-i18n="shopSubtitle">by chillspace.ai</div>
                 </div>
             </div>
         </header>
 
         <div class="price-match-banner">
             <span class="icon">💸</span>
-            <span>SHEIN Price Match™ — We match &amp; beat every price*</span>
-            <span class="badge-tag">ACTIVE</span>
+            <span data-i18n="pmBanner">SHEIN Price Match™ — We match &amp; beat every price*</span>
+            <span class="badge-tag" data-i18n="pmActive">ACTIVE</span>
         </div>
 
         <div class="category-tabs" id="categoryTabs">
-            <button class="cat-tab active" data-cat="all">🛒 All</button>
-            <button class="cat-tab" data-cat="clothes">👕 Clothes</button>
-            <button class="cat-tab" data-cat="accessories">💍 Accessories</button>
+            <button class="cat-tab active" data-cat="all" data-i18n="catAll">🛒 All</button>
+            <button class="cat-tab" data-cat="clothes" data-i18n="catClothes">👕 Clothes</button>
+            <button class="cat-tab" data-cat="accessories" data-i18n="catAccessories">💍 Accessories</button>
         </div>
 
         <div class="products-scroll" id="productsScroll">
-            <div class="pull-refresh-indicator" id="pullRefreshIndicator">
-                <div class="pull-refresh-spinner" id="pullRefreshSpinner">↓</div>
-                <span id="pullRefreshLabel">Pull to shuffle</span>
-            </div>
             <div class="products-grid" id="productsGrid"></div>
             <div class="load-more-sentinel" id="loadMoreSentinel">
                 <div class="load-more-spinner"></div>
@@ -1390,11 +1845,11 @@
 
         <div class="savings-footer">
             <div>
-                <div class="label">💰 Total Saved Today</div>
+                <div class="label" data-i18n="totalSaved">💰 Total Saved Today</div>
                 <div class="total-saved" id="totalSaved">$0.00</div>
             </div>
             <div style="text-align:right;">
-                <div class="label">🧠 Dopamine Hits</div>
+                <div class="label" data-i18n="dopamineHits">🧠 Dopamine Hits</div>
                 <div style="font-weight:700;color:var(--purple);font-size:1rem;" id="dopamineCount">0</div>
             </div>
         </div>
@@ -1409,17 +1864,17 @@
     <header class="header">
         <div class="brand">
             <h1>💿 BuyVinyl</h1>
-            <div class="sub">from <a href="https://chillspace.ai/" target="_blank" rel="noopener">ChillSpace</a></div>
-            <div class="slogan">✨ Love for Music. Music for Dopamine.</div>
+            <div class="sub"><span data-i18n="vinylFrom">from</span> <a href="feed.html" target="_blank" rel="noopener">ChillSpace</a></div>
+            <div class="slogan" data-i18n="vinylSlogan">✨ Love for Music. Music for Dopamine.</div>
         </div>
         <div class="header-actions">
-            <a href="https://chillspace.ai/" target="_blank" rel="noopener" class="backlink">🏠 ChillSpace</a>
+            <a href="feed.html" target="_blank" rel="noopener" class="backlink">🏠 ChillSpace</a>
         </div>
     </header>
 
     <main class="grid-container">
-        <div class="grid-title">🎵 New Vinyl Drops <span>·</span> Pop &amp; K-Pop</div>
-        <div class="grid-sub">🌈 Every vinyl is a unique colour — just like your music taste.</div>
+        <div class="grid-title" data-i18n-html="gridTitleHtml">🎵 New Vinyl Drops <span>·</span> Pop &amp; K-Pop</div>
+        <div class="grid-sub" data-i18n="gridSub">🌈 Every vinyl is a unique colour — just like your music taste.</div>
         <div class="vinyl-grid" id="vinylGrid"></div>
     </main>
 </div>
@@ -1430,20 +1885,20 @@
 <div class="cart-overlay" id="cartOverlay">
     <div class="cart-sidebar" id="cartSidebar">
         <div class="cart-header">
-            <h2>🛒 Your Cart</h2>
-            <button class="cart-close" id="cartClose" aria-label="Close cart">✕</button>
+            <h2 data-i18n="cartHeader">🛒 Your Cart</h2>
+            <button class="cart-close" id="cartClose" aria-label="Close cart" data-i18n-attr="aria-label:cartClose">✕</button>
         </div>
         <div class="cart-items" id="cartItems"></div>
         <div class="cart-footer">
             <div class="cart-total">
-                <span>Total</span>
+                <span data-i18n="cartTotal">Total</span>
                 <span class="total-price" id="cartTotal">$0.00</span>
             </div>
             <div class="cart-savings-line" id="cartSavingsLine" style="display:none;">
-                <span>Price Match savings</span>
+                <span data-i18n="cartSavings">Price Match savings</span>
                 <span id="cartSavings">$0.00</span>
             </div>
-            <button class="buy-now-btn" id="buyNowBtn">💳 Buy Now</button>
+            <button class="buy-now-btn" id="buyNowBtn" data-i18n="buyNow">💳 Buy Now</button>
         </div>
     </div>
 </div>
@@ -2214,20 +2669,9 @@
       ];
 
       const PATTERNS = ['stripes', 'polkadot', 'checkered', 'plaid', 'stars', 'hearts', 'kawaii'];
-      const PATTERN_WORDS = {
-        stripes:   'Striped',
-        polkadot:  'Polka-Dot',
-        checkered: 'Checkered',
-        plaid:     'Plaid',
-        stars:     'Star',
-        hearts:    'Heart',
-        kawaii:    'Kawaii'
-      };
-      const STYLE_WORDS = [
-        'Vintage', 'Oversized', 'Cozy', 'Retro', 'Premium', 'Essential',
-        'Everyday', 'Statement', 'Soft-Touch', 'Classic', 'Bold', 'Minimal',
-        'Cropped', 'Relaxed', 'Limited', 'Studio'
-      ];
+      /* Product names are localized via window.csShopWords (see the i18n
+         script in <head>): per-language item names, pattern words, style
+         words and word order (compose). */
 
       const PLAIN_CHANCE = 0.10; // ~1 in 10 items is plain
 
@@ -2624,9 +3068,13 @@
         const cols = makeColourPair();
         const svg = buildProductSVG(item.key, pattern, cols, isPlain);
 
-        const name = isPlain
-          ? pick(STYLE_WORDS) + ' ' + item.name
-          : pick(STYLE_WORDS) + ' ' + PATTERN_WORDS[pattern] + ' ' + item.name;
+        /* Localized name: "Style Pattern Item" (or "Style Item" when plain).
+           es/pt/ru compose as "Item style pattern" for natural word order. */
+        const W = window.csShopWords;
+        const itemName = W.items[item.key] || item.name;
+        const styleWord = W.styles[Math.floor(Math.random() * W.styles.length)];
+        const patternWord = isPlain ? null : (W.patterns[pattern] || pattern);
+        const name = W.compose(styleWord, patternWord, itemName);
 
         const base = 9.99 + Math.random() * 62;
         const originalPrice = Math.round(base) + 0.99;
@@ -2765,9 +3213,6 @@
       const productsGrid       = document.getElementById('productsGrid');
       const categoryTabs       = document.getElementById('categoryTabs');
       const productsScroll     = document.getElementById('productsScroll');
-      const pullRefreshIndicator = document.getElementById('pullRefreshIndicator');
-      const pullRefreshSpinner = document.getElementById('pullRefreshSpinner');
-      const pullRefreshLabel   = document.getElementById('pullRefreshLabel');
       const loadMoreSentinel   = document.getElementById('loadMoreSentinel');
       const totalSavedEl       = document.getElementById('totalSaved');
       const dopamineCountEl    = document.getElementById('dopamineCount');
@@ -2888,7 +3333,7 @@
           cartItemsEl.innerHTML =
             '<div class="cart-empty">' +
             '<span class="big-emoji">🧺</span>' +
-            'Your cart is empty.<br />Go grab something!' +
+            window.csT('cartEmpty') +
             '</div>';
           buyNowBtn.disabled = true;
           cartTotalEl.textContent = '$0.00';
@@ -2910,14 +3355,14 @@
               '<div class="mini-svg">' + thumbSvg + '</div>' +
               '<div class="info">' +
                 '<div class="artist">' + escapeHtml(item.name) + '</div>' +
-                '<div class="album">SHEIN Price Match™</div>' +
+                '<div class="album">' + window.csT('pmLabel') + '</div>' +
                 '<div class="price">' +
                   '<span class="strike">$' + item.originalPrice.toFixed(2) + '</span>' +
                   '$' + item.price.toFixed(2) +
-                  (saveAmt > 0 ? '<span class="save">Save $' + saveAmt.toFixed(2) + '</span>' : '') +
+                  (saveAmt > 0 ? '<span class="save">' + window.csT('saveAmt', { n: '$' + saveAmt.toFixed(2) }) + '</span>' : '') +
                 '</div>' +
               '</div>' +
-              '<button class="remove-btn" data-type="shop" data-id="' + item.id + '" aria-label="Remove">✕</button>' +
+              '<button class="remove-btn" data-type="shop" data-id="' + item.id + '" aria-label="' + window.csT('remove') + '">✕</button>' +
             '</div>';
         });
 
@@ -2938,7 +3383,7 @@
                 '<span class="qty-num">' + qty + '</span>' +
                 '<button class="qty-inc" data-id="' + id + '">+</button>' +
               '</div>' +
-              '<button class="remove-btn" data-type="vinyl" data-id="' + id + '" aria-label="Remove">✕</button>' +
+              '<button class="remove-btn" data-type="vinyl" data-id="' + id + '" aria-label="' + window.csT('remove') + '">✕</button>' +
             '</div>';
         }
 
@@ -2993,8 +3438,8 @@
           '<div class="ad-card">' +
             '<span class="ad-emoji">🎧</span>' +
             '<div class="ad-title">BuyVinyl</div>' +
-            '<div class="ad-desc">Dopamine for your ears. Rare vinyl, curated drops.</div>' +
-            '<a href="https://chillspace.ai/buyvinyl/" target="_blank" rel="noopener" class="ad-cta">Shop Vinyl →</a>' +
+            '<div class="ad-desc">' + window.csT('adDesc') + '</div>' +
+            '<a href="#" target="_blank" rel="noopener" class="ad-cta">' + window.csT('adCta') + '</a>' +
           '</div>';
       }
 
@@ -3012,7 +3457,7 @@
           adHtml +
           '<div class="product-card" data-id="' + p.id + '">' +
             '<div class="product-image">' +
-              '<span class="shein-tag">SHEIN MATCH</span>' +
+              '<span class="shein-tag">' + window.csT('sheinMatch') + '</span>' +
               '<div class="product-svg-wrap">' + p.svg + '</div>' +
             '</div>' +
             '<div class="product-info">' +
@@ -3022,7 +3467,7 @@
                 '<span class="current-price">$' + p.price.toFixed(2) + '</span>' +
                 (hasDiscount ? '<span class="savings-badge">-' + savingsPercent + '%</span>' : '') +
               '</div>' +
-              '<button class="add-to-cart-btn" data-id="' + p.id + '">🛒 ADD TO CART</button>' +
+              '<button class="add-to-cart-btn" data-id="' + p.id + '">' + window.csT('addToCart') + '</button>' +
             '</div>' +
           '</div>';
       }
@@ -3034,10 +3479,10 @@
           btn.addEventListener('click', function (e) {
             e.stopPropagation();
             addShopToCart(parseInt(btn.dataset.id, 10));
-            btn.textContent = '✅ ADDED';
+            btn.textContent = window.csT('added');
             btn.style.background = 'linear-gradient(135deg, #6bcb77, #2ecc71)';
             setTimeout(function () {
-              btn.textContent = '🛒 ADD TO CART';
+              btn.textContent = window.csT('addToCart');
               btn.style.background = '';
             }, 800);
           });
@@ -3111,72 +3556,7 @@
       }, { passive: true });
 
       /* ==============================================================
-         8. PULL TO REFRESH (SHOP) — regenerates a fresh product set
-         ============================================================== */
-      (function setupPullToRefresh() {
-        const THRESHOLD = 70;
-        const MAX_PULL = 110;
-        let startY = 0;
-        let pulling = false;
-        let refreshing = false;
-
-        productsScroll.addEventListener('touchstart', function (e) {
-          if (productsScroll.scrollTop <= 0 && !refreshing) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-          }
-        }, { passive: true });
-
-        productsScroll.addEventListener('touchmove', function (e) {
-          if (!pulling || refreshing) return;
-          const delta = e.touches[0].clientY - startY;
-          if (delta <= 0) return;
-          const pull = Math.min(delta, MAX_PULL);
-          pullRefreshIndicator.style.height = pull + 'px';
-          pullRefreshIndicator.classList.add('visible');
-          if (pull >= THRESHOLD) {
-            pullRefreshSpinner.classList.add('ready');
-            pullRefreshLabel.textContent = 'Release to shuffle';
-          } else {
-            pullRefreshSpinner.classList.remove('ready');
-            pullRefreshLabel.textContent = 'Pull to shuffle';
-          }
-        }, { passive: true });
-
-        productsScroll.addEventListener('touchend', function () {
-          if (!pulling || refreshing) return;
-          pulling = false;
-          const pulledEnough = pullRefreshIndicator.classList.contains('visible') &&
-            pullRefreshSpinner.classList.contains('ready');
-          if (pulledEnough) doRefresh();
-          else resetPullIndicator();
-        });
-
-        function resetPullIndicator() {
-          pullRefreshIndicator.style.height = '0px';
-          pullRefreshIndicator.classList.remove('visible');
-          pullRefreshSpinner.classList.remove('ready', 'spinning');
-          pullRefreshLabel.textContent = 'Pull to shuffle';
-        }
-
-        function doRefresh() {
-          refreshing = true;
-          pullRefreshIndicator.style.height = '56px';
-          pullRefreshSpinner.classList.add('spinning');
-          pullRefreshLabel.textContent = 'Shuffling…';
-          if (navigator.vibrate) navigator.vibrate(12);
-          setTimeout(function () {
-            shopProducts = generateShopProducts(INITIAL_COUNT);
-            renderProducts();
-            productsScroll.scrollTop = 0;
-            refreshing = false;
-            resetPullIndicator();
-          }, 500);
-        }
-      })();
-
-      /* ==============================================================
-         9. VINYL GRID RENDERING
+         8. VINYL GRID RENDERING
          ============================================================== */
       function renderVinylGrid() {
         vinylGrid.innerHTML = '';
@@ -3189,15 +3569,15 @@
             '<div class="artist">' + escapeHtml(p.artist) + '</div>' +
             '<div class="album">' + escapeHtml(p.album) + '</div>' +
             '<div class="price">$' + p.price.toFixed(2) + '</div>' +
-            '<button class="add-btn" data-id="' + p.id + '">➕ Add to Cart</button>';
+            '<button class="add-btn" data-id="' + p.id + '">' + window.csT('vinylAdd') + '</button>';
           const btn = card.querySelector('.add-btn');
           btn.addEventListener('click', function (e) {
             e.stopPropagation();
             addVinylToCart(p.id);
-            btn.textContent = '✅ Added!';
+            btn.textContent = window.csT('vinylAdded');
             btn.classList.add('added');
             setTimeout(function () {
-              btn.textContent = '➕ Add to Cart';
+              btn.textContent = window.csT('vinylAdd');
               btn.classList.remove('added');
             }, 800);
           });
@@ -3243,14 +3623,14 @@
          11. CHECKOUT / DELIVERY FLOW
          ============================================================== */
       const TRACKING_LOCATIONS = [
-        '📦 Order Confirmed · Warehouse',
-        '🏭 Packed &amp; Sorted',
-        '✈️ In Transit · Air Hub',
-        '🌍 Customs Cleared',
-        '🚚 On the Road',
-        '📬 Local Depot',
-        '🚴 Out for Delivery',
-        '🏠 Arrived at Your Doorstep!'
+        window.csT('track1'),
+        window.csT('track2'),
+        window.csT('track3'),
+        window.csT('track4'),
+        window.csT('track5'),
+        window.csT('track6'),
+        window.csT('track7'),
+        window.csT('track8')
       ];
 
       const checkoutState = {
@@ -3290,8 +3670,8 @@
         if (step === 0) {
           checkoutContent.innerHTML =
             '<span class="step-icon">📦</span>' +
-            '<h2>Order placed!</h2>' +
-            '<p class="sub-text">Your order is on its way...</p>' +
+            '<h2>' + window.csT('orderPlaced') + '</h2>' +
+            '<p class="sub-text">' + window.csT('sub0') + '</p>' +
             '<div class="spinner"></div>';
           playDopamineSound();
           checkoutState.stepTimeout = setTimeout(function () {
@@ -3310,8 +3690,8 @@
           });
           checkoutContent.innerHTML =
             '<span class="step-icon">🚚</span>' +
-            '<h2>Your order is being delivered</h2>' +
-            '<p class="sub-text">Tracking your order...</p>' +
+            '<h2>' + window.csT('delivering') + '</h2>' +
+            '<p class="sub-text">' + window.csT('sub1') + '</p>' +
             '<div class="tracking-container">' +
               '<div class="tracking-steps" id="trackingSteps">' + stepsHtml + '</div>' +
             '</div>';
@@ -3366,10 +3746,10 @@
         if (hasVinyl && hasShop) {
           checkoutContent.innerHTML =
             '<span class="step-icon">🏠</span>' +
-            '<h2>Your items have arrived!</h2>' +
-            '<p class="sub-text">Tap the parcel to reveal your vinyl 🎵</p>' +
+            '<h2>' + window.csT('arrivedItems') + '</h2>' +
+            '<p class="sub-text">' + window.csT('arrivedTapVinyl') + '</p>' +
             '<div class="parcel-emoji" id="parcelEmoji">📦</div>' +
-            '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+            '<button class="close-checkout" id="closeCheckoutBtn">' + window.csT('keepShopping') + '</button>';
           document.getElementById('parcelEmoji').addEventListener('click', renderVinylArrived);
           document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
 
@@ -3380,11 +3760,10 @@
           const n = cart.shop.length;
           checkoutContent.innerHTML =
             '<span class="step-icon">🏠</span>' +
-            '<h2>Your items have arrived!</h2>' +
-            '<p class="sub-text">Tap the parcel to unbox your ' +
-              n + ' item' + (n === 1 ? '' : 's') + '</p>' +
+            '<h2>' + window.csT('arrivedItems') + '</h2>' +
+            '<p class="sub-text">' + window.csT('arrivedTapUnbox') + '</p>' +
             '<div class="parcel-emoji" id="parcelEmoji">📦</div>' +
-            '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+            '<button class="close-checkout" id="closeCheckoutBtn">' + window.csT('keepShopping') + '</button>';
           document.getElementById('parcelEmoji').addEventListener('click', startUnboxing);
           document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
           playDopamineSound();
@@ -3401,18 +3780,17 @@
 
         const shopCount = cart.shop.length;
         const unboxBtn = shopCount > 0
-          ? '<button class="unbox-start-btn" id="unboxStartBtn">📦 Unbox your items (' +
-              shopCount + ')</button>'
+          ? '<button class="unbox-start-btn" id="unboxStartBtn">' + window.csT('unboxStart', { n: shopCount }) + '</button>'
           : '';
 
         checkoutContent.innerHTML =
           '<span class="step-icon">🏠</span>' +
-          '<h2>Your vinyl has arrived!</h2>' +
-          '<p class="sub-text">Time to spin it! 🎶</p>' +
+          '<h2>' + window.csT('arrivedVinyl') + '</h2>' +
+          '<p class="sub-text">' + window.csT('spinIt') + '</p>' +
           '<div class="arrived-vinyl">' + vinylSVG(color, 200) + '</div>' +
-          '<p style="color:#6c68a0; font-size:0.95rem; margin-top:4px;">🎵 Your vinyl is spinning!</p>' +
+          '<p style="color:#6c68a0; font-size:0.95rem; margin-top:4px;">' + window.csT('vinylSpinning') + '</p>' +
           unboxBtn +
-          '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+          '<button class="close-checkout" id="closeCheckoutBtn">' + window.csT('keepShopping') + '</button>';
 
         document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
         const ub = document.getElementById('unboxStartBtn');
@@ -3440,12 +3818,12 @@
 
         checkoutContent.innerHTML =
           '<span class="step-icon">📦</span>' +
-          '<h2>Package ' + n + ' of ' + total + '</h2>' +
-          '<p class="sub-text">Tap the parcel to open it</p>' +
+          '<h2>' + window.csT('packageOf', { n: n, m: total }) + '</h2>' +
+          '<p class="sub-text">' + window.csT('tapOpen') + '</p>' +
           '<div class="parcel-emoji" id="unboxParcel">📦</div>' +
           '<div class="unbox-bar"><div class="unbox-bar-fill" style="width:' + pct + '%"></div></div>' +
           '<div class="unbox-counter">' + n + ' / ' + total + '</div>' +
-          '<button class="unbox-skip" id="unboxSkipBtn">Skip unboxing →</button>';
+          '<button class="unbox-skip" id="unboxSkipBtn">' + window.csT('skipUnbox') + '</button>';
 
         document.getElementById('unboxParcel').addEventListener('click', renderUnboxReveal);
         document.getElementById('unboxSkipBtn').addEventListener('click', function () {
@@ -3464,7 +3842,7 @@
           ? '<span style="text-decoration:line-through;color:#bbb;">$' +
               item.originalPrice.toFixed(2) + '</span> ' +
             '<strong style="color:#2e7d32;">$' + item.price.toFixed(2) + '</strong>' +
-            ' <span style="color:#2e7d32;font-weight:700;">(Save $' + saveAmt.toFixed(2) + ')</span>'
+            ' <span style="color:#2e7d32;font-weight:700;">' + window.csT('saveParen', { n: '$' + saveAmt.toFixed(2) }) + '</span>'
           : '<strong>$' + item.price.toFixed(2) + '</strong>';
 
         /* Regenerate the SVG from stored params with fresh IDs —
@@ -3480,7 +3858,7 @@
             Math.round(((unboxState.index + 1) / total) * 100) + '%"></div></div>' +
           '<div class="unbox-counter">' + (unboxState.index + 1) + ' / ' + total + '</div>' +
           '<button class="unbox-next-btn" id="unboxNextBtn">' +
-            (isLast ? '🎉 Finish Unboxing' : '📦 Next Package') +
+            (isLast ? window.csT('finishUnbox') : window.csT('nextPackage')) +
           '</button>';
 
         document.getElementById('unboxNextBtn').addEventListener('click', function () {
@@ -3495,9 +3873,9 @@
       function renderUnboxDone() {
         checkoutContent.innerHTML =
           '<span class="step-icon">🎉</span>' +
-          '<h2>All unboxed!</h2>' +
-          '<p class="sub-text">Everything is yours. Enjoy! 💖</p>' +
-          '<button class="close-checkout" id="closeCheckoutBtn">🔄 Keep Shopping</button>';
+          '<h2>' + window.csT('allUnboxed') + '</h2>' +
+          '<p class="sub-text">' + window.csT('unboxDone') + '</p>' +
+          '<button class="close-checkout" id="closeCheckoutBtn">' + window.csT('keepShopping') + '</button>';
         document.getElementById('closeCheckoutBtn').addEventListener('click', closeCheckout);
         spawnConfetti();
       }
@@ -3655,7 +4033,7 @@
             dopamineHits += 10;
             updateFooterStats();
             spawnConfetti();
-            alert('🌟 SECRET UNLOCKED: You just saved an EXTRA $1,000 by not buying anything!\n\nChillSpace — the gift that keeps on giving. 😎');
+            alert(window.csT('secretAlert'));
           }
           setTimeout(function () { logoClicks = 0; }, 2000);
         });

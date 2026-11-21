@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='utf-8'?>
+<stories version="1">
+  <language code="es" name="Español">
+    <topics>
+      <item>el café</item>
+      <item>el pan recién hecho</item>
+      <item>los gatos</item>
+      <item>las plantas de interior</item>
+      <item>los juegos de mesa</item>
+      <item>las películas antiguas</item>
+      <item>la música de los años 2000</item>
+      <item>las recetas familiares</item>
+      <item>los paseos sin rumbo</item>
+      <item>la fotografía</item>
+      <item>el té</item>
+      <item>los rompecabezas</item>
+      <item>los calcetines desaparecidos</item>
+      <item>los pingüinos</item>
+      <item>la lluvia</item>
+      <item>las librerías</item>
+      <item>los helados</item>
+      <item>los dibujos animados</item>
+      <item>los huertos caseros</item>
+      <item>los trenes</item>
+    </topics>
+    <relationships>
+      <item>una amiga</item>
+      <item>un amigo</item>
+      <item>una prima</item>
+      <item>un primo</item>
+      <item>una compañera de trabajo</item>
+      <item>un compañero de trabajo</item>
+      <item>una vecina</item>
+      <item>un vecino</item>
+      <item>una tía</item>
+      <item>un tío</item>
+    </relationships>
+    <templates>
+      <item>OP empezó a hablar con ${rel} sobre ${topic} solo para llenar un silencio. Cuando se dieron cuenta, llevaban dos horas intercambiando historias y riéndose. Desde entonces, basta mencionar el tema para que la conversación vuelva a empezar.</item>
+      <item>OP pensaba que nadie tendría paciencia para escuchar sus curiosidades sobre ${topic}. Pero, en una conversación con ${rel}, descubrió que había alguien con aún más historias que contar. Terminaron haciendo una lista de cosas que querían investigar juntos.</item>
+      <item>Un mensaje sobre ${topic} acabó convirtiéndose en una larga llamada con ${rel}. OP solo pensaba responder una pregunta, pero terminó olvidando el té en la cocina. El té se enfrió; la conversación seguía animada.</item>
+      <item>OP estaba teniendo un mal día cuando recibió de ${rel} un mensaje sobre ${topic}. Era una observación absurda, pero consiguió hacerle reír. OP guardó el mensaje para volver a leerlo en los días difíciles.</item>
+      <item>Durante un apagón, OP se puso a conversar con ${rel} sobre ${topic}. Sin pantallas de por medio, descubrieron que tenían mucho más en común de lo que imaginaban. Volvió la luz, pero ninguno quiso dar por terminada la charla.</item>
+      <item>OP hizo una broma sobre ${topic} mientras hablaba con ${rel}. No era especialmente buena, pero les hizo tanta gracia que se convirtió en una tradición. Ahora la repiten cada vez que necesitan animarse.</item>
+      <item>OP decidió aprender un poco más sobre ${topic} después de conversar con ${rel}. La idea era leer una página, pero pronto había muchas pestañas abiertas en el navegador. Al día siguiente, OP ya estaba recomendando lecturas.</item>
+      <item>OP llegó a una reunión familiar sin muchas ganas de hablar. Entonces empezó a conversar con ${rel} sobre ${topic}, y el tiempo pasó sin que se dieran cuenta. De vuelta a casa, OP pensó que aquella charla había sido lo mejor del día.</item>
+      <item>OP apuntó en un cuaderno una idea sobre ${topic} que surgió en una conversación con ${rel}. Meses después, encontró la nota por casualidad y sonrió. Una sola frase había conservado el recuerdo de toda una tarde.</item>
+      <item>OP y ${rel} nunca están de acuerdo en todo cuando hablan sobre ${topic}. Aun así, cada charla termina con risas y una pregunta nueva. Para ellos, discrepar también puede ser una forma de conocerse mejor.</item>
+    </templates>
+  </language>
+</stories>

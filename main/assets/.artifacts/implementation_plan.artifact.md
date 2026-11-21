@@ -1,28 +1,35 @@
-# Implementation Plan — Auto-Delete Story Media & Prevent Profile Video Resets
+# Implementation Plan — Remove Notifications, Add Profile Header Icon & Explore Tab
 
-Automatically delete media for ephemeral Story posts in `feed.html` and `feedko.html`, and prevent `profile.html` from randomly re-rendering/refreshing while a user is watching a video.
-
----
-
-## Proposed Changes
-
-### 1. Feed Components (`feed.html` & `feedko.html`)
-#### [MODIFY] [feed.html](file:///C:/Users/ollie/AndroidStudioProjects/ChillSpace/app/src/main/assets/feed.html)
-#### [MODIFY] [feedko.html](file:///C:/Users/ollie/AndroidStudioProjects/ChillSpace/app/src/main/assets/feedko.html)
-
-* In `postBtn` click listener:
-  * When `postType === 'story'`, invoke `window.AndroidUtils.deleteLastCapturedFile()` to automatically purge temporary media files from device storage (`Pictures`/`Movies`).
-* In media remove buttons (`imageRemoveBtn` / `videoRemoveBtn`): Invoke `window.AndroidUtils.deleteLastCapturedFile()` when clearing preview selections.
+Remove the notification system from `feed.html`, replace the notification bell with a profile button (person SVG + "Your Profile"), replace the bottom navigation Profile tab with an Explore tab (`nav_explore`), and create `explore.html` linking to `exploresky.html`, `exploreroad.html`, and `exploreocean.html`.
 
 ---
 
-### 2. Profile Page (`profile.html`)
-#### [MODIFY] [profile.html](file:///C:/Users/ollie/AndroidStudioProjects/ChillSpace/app/src/main/assets/profile.html)
+## Technical Details
 
-* **Prevent Video Interruption & Random Refreshing**:
-  * In `visibilitychange` listener: Do NOT call `render()` if any video element is currently playing (`document.querySelector('video:not(:paused)')`).
-  * In `storage` event listener: Compare new storage content with current posts; only call `render()` if data actually changed.
-  * In `render()`: Avoid redundant full DOM rebuilds if posts haven't changed.
+### 1. Remove Notifications & Add Profile Button (`feed.html`)
+* **Remove Notification System**:
+  - Remove `#bellBtn`, `#bell-badge`, `#notif-panel`, `setupBell()`, and notification item click/render logic from `feed.html`.
+* **Add Profile Icon Button**:
+  - In `#bell-wrap` (header), replace the bell button with a profile button (`#profileHeaderBtn`):
+    ```html
+    <button id="profileHeaderBtn" class="header-btn profile-btn" onclick="location.href='profile.html'" aria-label="Your Profile" style="display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; cursor:pointer; padding:4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#65676b;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span style="font-size:10px; font-weight:600; color:#65676b; line-height:1;">Your Profile</span>
+    </button>
+    ```
+
+### 2. Create Explore Hub Page (`explore.html`)
+* **New Asset File (`explore.html`)**:
+  - Styled matching `gaming.html` (dark theme, glassmorphism cards).
+  - Provides direct entry buttons/cards for:
+    - **Explore Sky** (`exploresky.html`) ☁️
+    - **Explore Road** (`exploreroad.html`) 🛣️
+    - **Explore Ocean** (`exploreocean.html`) 🌊
+
+### 3. Bottom Navigation & MainActivity Updates
+* **`bottom_nav_menu.xml`**: Replace `nav_profile` with `nav_explore` (Title: "Explore", Icon: compass or explore drawable).
+* **`activity_main.xml`**: Replace `webViewProfile` with `webViewExplore` loading `file:///android_asset/explore.html`.
+* **`MainActivity.kt`**: Replace `webViewProfile` logic with `webViewExplore`, handling `R.id.nav_explore` in `bottomNav`.
 
 ---
 
@@ -32,5 +39,5 @@ Automatically delete media for ephemeral Story posts in `feed.html` and `feedko.
 - Run `gradle_build("app:assembleDebug")` to verify compilation.
 
 ### Manual Verification
-1. Post a video as a **Story** -> Check device storage (`Pictures`/`Movies`) to confirm the file was deleted.
-2. Open **Profile** (`profile.html`), start playing a video post, switch tabs or trigger visibility change -> Confirm video continues playing smoothly without resetting or refreshing.
+1. Open Feed (`feed.html`) -> Verify notification bell is gone and replaced by the Profile person SVG icon with "Your Profile" underneath, linking to `profile.html`.
+2. Tap Bottom Nav "Explore" tab -> Verify `explore.html` opens and displays cards/buttons for Sky, Road, and Ocean explore modes.

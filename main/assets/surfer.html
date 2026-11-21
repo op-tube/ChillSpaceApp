@@ -4,6 +4,109 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>ChillSpace Surfers</title>
+    <script>
+    /* ─── ChillSpace i18n — EN / KO / JA / ES / PT / RU (browser detection) ─── */
+    (function () {
+        'use strict';
+        var STRINGS = {
+            en: {
+                title: 'ChillSpace Surfers',
+                hint: '← → move \u00a0·\u00a0 ↑ / SPACE jump \u00a0·\u00a0 ↓ slide',
+                autoplay: '▶ AUTOPLAY',
+                gameover: '💥 GAME OVER',
+                niceTry: 'Nice try, surfer!',
+                scoreLabel: 'score',
+                playAgain: '🔄 Play Again'
+            },
+            ko: {
+                title: 'ChillSpace 서퍼',
+                hint: '← → 이동 \u00a0·\u00a0 ↑ / 스페이스 점프 \u00a0·\u00a0 ↓ 슬라이드',
+                autoplay: '▶ 자동 재생',
+                gameover: '💥 게임 오버',
+                niceTry: '잘했어요, 서퍼!',
+                scoreLabel: '점수',
+                playAgain: '🔄 다시 플레이'
+            },
+            ja: {
+                title: 'ChillSpace サーファーズ',
+                hint: '← → 移動 \u00a0·\u00a0 ↑ / スペース ジャンプ \u00a0·\u00a0 ↓ スライド',
+                autoplay: '▶ 自動プレイ',
+                gameover: '💥 ゲームオーバー',
+                niceTry: 'いいチャレンジだったね、サーファー!',
+                scoreLabel: 'スコア',
+                playAgain: '🔄 もう一度プレイ'
+            },
+            es: {
+                title: 'Surfers de ChillSpace',
+                hint: '← → moverse \u00a0·\u00a0 ↑ / ESPACIO saltar \u00a0·\u00a0 ↓ deslizarse',
+                autoplay: '▶ AUTOJUEGO',
+                gameover: '💥 FIN DEL JUEGO',
+                niceTry: '¡Buen intento, surfeador!',
+                scoreLabel: 'puntos',
+                playAgain: '🔄 Jugar otra vez'
+            },
+            pt: {
+                title: 'Surfistas do ChillSpace',
+                hint: '← → mover \u00a0·\u00a0 ↑ / ESPAÇO pular \u00a0·\u00a0 ↓ deslizar',
+                autoplay: '▶ AUTOPLAY',
+                gameover: '💥 FIM DE JOGO',
+                niceTry: 'Boa tentativa, surfista!',
+                scoreLabel: 'pontuação',
+                playAgain: '🔄 Jogar de novo'
+            },
+            ru: {
+                title: 'Сёрферы ChillSpace',
+                hint: '← → движение \u00a0·\u00a0 ↑ / ПРОБЕЛ прыжок \u00a0·\u00a0 ↓ подкат',
+                autoplay: '▶ АВТОИГРА',
+                gameover: '💥 ИГРА ОКОНЧЕНА',
+                niceTry: 'Неплохо, сёрфер!',
+                scoreLabel: 'счёт',
+                playAgain: '🔄 Играть снова'
+            }
+        };
+
+        function detectLang() {
+            var list = [];
+            if (navigator.languages) list = list.concat(navigator.languages);
+            if (navigator.language) list.push(navigator.language);
+            list.push('en');
+            for (var i = 0; i < list.length; i++) {
+                var l = String(list[i] || '').toLowerCase();
+                if (l.indexOf('ko') === 0) return 'ko';
+                if (l.indexOf('ja') === 0) return 'ja';
+                if (l.indexOf('es') === 0) return 'es';
+                if (l.indexOf('pt') === 0) return 'pt';
+                if (l.indexOf('ru') === 0) return 'ru';
+                if (l.indexOf('en') === 0) return 'en';
+            }
+            return 'en';
+        }
+
+        var lang = detectLang();
+        STRINGS[lang] = STRINGS[lang] || STRINGS.en;
+        document.documentElement.lang = lang;
+
+        function t(key) {
+            var v = STRINGS[lang][key];
+            if (v === undefined) v = STRINGS.en[key];
+            return (v === undefined) ? key : v;
+        }
+        window.csT = t;
+        if (document.title) document.title = t('title');
+
+        function applyI18n() {
+            var els = document.querySelectorAll('[data-i18n]');
+            for (var i = 0; i < els.length; i++) {
+                els[i].textContent = t(els[i].getAttribute('data-i18n'));
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyI18n);
+        } else {
+            applyI18n();
+        }
+    })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -16,7 +119,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #0b1a2f;
+            background: #7ed0f5; /* bright daytime sky */
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             touch-action: none;
         }
@@ -24,18 +127,18 @@
             display: block;
             width: 100%;
             height: 100%;
-            background: #0b1a2f;
+            background: #7ed0f5;
         }
 
         #ui {
             position: absolute;
             top: 16px;
             left: 16px;
-            color: #fff;
+            color: #0c2d4d;
             font-size: 22px;
             font-weight: 700;
             z-index: 10;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+            text-shadow: 0 1px 6px rgba(255, 255, 255, 0.65);
             letter-spacing: 0.5px;
             display: flex;
             gap: 24px;
@@ -49,23 +152,24 @@
             font-size: 16px;
         }
         #ui #score {
-            color: #f7e05e;
+            color: #b45309;
         }
         #ui #highscore {
-            color: #8cf0ff;
+            color: #0e7490;
         }
         #ui .badge {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(6px);
             padding: 4px 14px;
             border-radius: 30px;
             font-size: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #0c2d4d;
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
         #ui .badge.autoplay-badge {
-            background: rgba(100, 200, 255, 0.2);
-            border-color: rgba(100, 200, 255, 0.25);
-            color: #8cf0ff;
+            background: rgba(255, 255, 255, 0.62);
+            border-color: rgba(14, 116, 144, 0.35);
+            color: #0e7490;
             animation: pulse-badge 1.8s ease-in-out infinite;
         }
 
@@ -84,21 +188,21 @@
             bottom: 20px;
             width: 100%;
             text-align: center;
-            color: rgba(255, 255, 255, 0.55);
+            color: rgba(12, 45, 77, 0.85);
             z-index: 10;
             font-size: 14px;
             font-weight: 500;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            text-shadow: 0 1px 4px rgba(255, 255, 255, 0.7);
             pointer-events: none;
             letter-spacing: 0.3px;
         }
         #hint span {
             display: inline-block;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.55);
             backdrop-filter: blur(4px);
             padding: 6px 18px;
             border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(12, 45, 77, 0.12);
         }
 
         #gameover {
@@ -222,18 +326,18 @@
     <div id="ui">
         <span><span class="score-label">🏄</span> <span id="score">0</span></span>
         <span><span class="score-label">⭐</span> <span id="highscore">0</span></span>
-        <span id="autoplayBadge" class="badge autoplay-badge hidden">▶ AUTOPLAY</span>
+        <span id="autoplayBadge" class="badge autoplay-badge hidden" data-i18n="autoplay">▶ AUTOPLAY</span>
     </div>
 
-    <div id="hint"><span>← → move &nbsp;·&nbsp; ↑ / SPACE jump &nbsp;·&nbsp; ↓ slide</span></div>
+    <div id="hint"><span data-i18n="hint">← → move &nbsp;·&nbsp; ↑ / SPACE jump &nbsp;·&nbsp; ↓ slide</span></div>
 
     <div id="gameover">
         <div class="box">
-            <h2>💥 GAME OVER</h2>
-            <div class="sub">Nice try, surfer!</div>
-            <div class="final-label">score</div>
+            <h2 data-i18n="gameover">💥 GAME OVER</h2>
+            <div class="sub" data-i18n="niceTry">Nice try, surfer!</div>
+            <div class="final-label" data-i18n="scoreLabel">score</div>
             <div class="final-score" id="finalScore">0</div>
-            <button class="restart-btn" id="restartBtn">🔄 Play Again</button>
+            <button class="restart-btn" id="restartBtn" data-i18n="playAgain">🔄 Play Again</button>
         </div>
     </div>
 
@@ -339,11 +443,11 @@
 
         // ─── Gradients ─────────────────────────────────────────────────
         const GRADIENTS = [
-            ['#0b1a2f', '#1a3a4a'],
-            ['#1a3a4a', '#2d4a5a'],
-            ['#2d4a5a', '#1a3a3a'],
-            ['#1a3a3a', '#0b2a3a'],
-            ['#0b2a3a', '#1a2a4a'],
+            ['#8ee3ff', '#e6f7ff'],
+            ['#7fd6ff', '#cdeeff'],
+            ['#a5e8ff', '#eafaff'],
+            ['#8ad9ff', '#d8f2ff'],
+            ['#74c9ff', '#c2e9ff'],
         ];
         let gradIdx = 0;
         let nextGradIdx = 1;
@@ -444,6 +548,8 @@
             const style = getBlockStyle();
             obstacles.push({
                 lane,
+                laneF: lane,          // smooth track position (float lane)
+                laneTarget: lane,     // the track this subway train is heading for
                 y: -OBSTACLE_HEIGHT - rand(0, 40),
                 width: OBSTACLE_WIDTH,
                 height: OBSTACLE_HEIGHT,
@@ -453,6 +559,55 @@
                 wobble: rand(0, Math.PI * 2),
                 wobbleSpeed: rand(0.02, 0.06),
             });
+        }
+
+        // X position for a (possibly mid-track-change) subway train
+        function obstacleLaneX(laneF) {
+            return laneX[0] + laneF * (laneX[1] - laneX[0]);
+        }
+
+        /* ─── Subway train track AI ─────────────────────────────────
+           The trains weave between tracks like real Subway Surfers —
+           and, unbeknownst to the player, they intentionally steer
+           out of the surfer's way, so losing is very unlikely. ─── */
+        function updateTrainLanes() {
+            const playerLane = player.lane;
+            for (const o of obstacles) {
+                if (o.stomped) continue;
+
+                const distToPlayer = player.y - (o.y + o.height);
+
+                // lazy track drift high above the player, just for show
+                if (distToPlayer > 320 && Math.random() < 0.02) {
+                    const drift = o.laneTarget + (Math.random() < 0.5 ? -1 : 1);
+                    if (drift >= 0 && drift <= 2 && drift !== playerLane) o.laneTarget = drift;
+                }
+
+                // secretly dodge: if this train is aimed at the player's track, move away
+                if (distToPlayer < 460 && Math.abs(o.laneF - playerLane) < 0.85) {
+                    let best = -1, bestScore = -Infinity;
+                    for (let L = 0; L < 3; L++) {
+                        if (L === playerLane) continue;
+                        let score = Math.abs(L - playerLane) * 10 - Math.abs(o.laneF - L) * 3;
+                        for (const other of obstacles) {
+                            if (other === o || other.stomped) continue;
+                            if (Math.round(other.laneF) === L || Math.round(other.laneTarget) === L) {
+                                if (Math.abs(other.y - o.y) < 170) score -= 9;
+                            }
+                        }
+                        if (score > bestScore) { bestScore = score; best = L; }
+                    }
+                    if (best >= 0) o.laneTarget = best;
+                }
+
+                // ease toward the target track — faster when it urgently needs to get out of the way
+                let ease = 0.05;
+                if (distToPlayer < 280) ease = 0.14;
+                if (distToPlayer < 140) ease = 0.28;
+                o.laneF += (o.laneTarget - o.laneF) * ease;
+                if (o.laneF < 0) o.laneF = 0;
+                if (o.laneF > 2) o.laneF = 2;
+            }
         }
 
         function spawnCoin() {
@@ -505,7 +660,7 @@
                 if (o.stomped) continue;
                 const dist = o.y - playerY;
                 if (dist > 0 && dist < lookAhead) {
-                    const l = o.lane;
+                    const l = Math.round(o.laneF);
                     if (dist < closestObstacleDist[l]) {
                         closestObstacleDist[l] = dist;
                         closestObstacleY[l] = o.y;
@@ -675,6 +830,9 @@
                     o.y += speed * 0.3;
                 }
             }
+
+            // ── Subway trains switch tracks (and secretly dodge the player) ──
+            updateTrainLanes();
             for (const c of coins) {
                 c.y += speed;
                 c.sparkle += 0.08;
@@ -696,7 +854,7 @@
 
             for (const o of obstacles) {
                 if (o.stomped) continue;
-                const ox = laneX[o.lane] + o.width / 2;
+                const ox = obstacleLaneX(o.laneF) + o.width / 2;
                 const oTop = o.y;
                 const oBottom = o.y + o.height;
 
@@ -1156,22 +1314,31 @@
             ctx.fillStyle = getBgGradient();
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Stars (subtle)
-            ctx.fillStyle = 'rgba(255,255,255,0.06)';
-            const seed = 12345;
-            for (let i = 0; i < 60; i++) {
-                const sx = ((i * 137 + 33) % canvas.width);
-                const sy = ((i * 251 + 17) % (canvas.height * 0.7));
-                const ss = 0.5 + ((i * 37) % 3);
+            // Fluffy clouds drifting past (bright daytime sky)
+            for (let i = 0; i < 14; i++) {
+                const span = canvas.width + 240;
+                let sx = ((i * 137 + 33) % span);
+                const sy = (i * 251 + 17) % Math.max(150, canvas.height * 0.55);
+                const sc = 0.7 + ((i * 37) % 5) * 0.18;
+                sx -= (zigzagOffset * 0.35) % span;
+                if (sx < -120) sx += span;
+                ctx.save();
+                ctx.translate(sx, sy);
+                ctx.scale(sc, sc);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.beginPath();
-                ctx.arc(sx, sy, ss, 0, Math.PI * 2);
+                ctx.ellipse(-26, 4, 26, 13, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -6, 24, 18, 0, 0, Math.PI * 2);
+                ctx.ellipse(24, 5, 26, 14, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 9, 44, 11, 0, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             }
 
             // Zigzag pattern
             ctx.save();
-            ctx.globalAlpha = 0.07;
-            ctx.strokeStyle = '#fff';
+            ctx.globalAlpha = 0.10;
+            ctx.strokeStyle = '#15406e';
             ctx.lineWidth = 2;
             const spacing = 50;
             for (let y = -spacing; y < canvas.height + spacing; y += spacing) {
@@ -1190,7 +1357,7 @@
             // Lane dividers
             ctx.save();
             ctx.setLineDash([16, 24]);
-            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.strokeStyle = 'rgba(21,64,110,0.22)';
             ctx.lineWidth = 2;
             for (let i = 1; i < 3; i++) {
                 const lx = laneX[i] - 2;
@@ -1199,13 +1366,13 @@
                 ctx.lineTo(lx, canvas.height);
                 ctx.stroke();
                 // glow
-                ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                ctx.strokeStyle = 'rgba(21,64,110,0.08)';
                 ctx.lineWidth = 12;
                 ctx.beginPath();
                 ctx.moveTo(lx, 0);
                 ctx.lineTo(lx, canvas.height);
                 ctx.stroke();
-                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.strokeStyle = 'rgba(21,64,110,0.22)';
                 ctx.lineWidth = 2;
             }
             ctx.restore();
@@ -1265,9 +1432,9 @@
                 ctx.restore();
             }
 
-            // ── Draw obstacles ──
+            // ── Draw subway trains ──
             for (const o of obstacles) {
-                const ox = laneX[o.lane];
+                const ox = obstacleLaneX(o.laneF);
                 const oy = o.y;
                 const w = o.width;
                 const h = o.height;
@@ -1297,14 +1464,37 @@
 
                 // Wobble accent
                 const wobX = Math.sin(o.wobble) * 1.5;
-                ctx.fillStyle = 'rgba(255,255,255,0.04)';
+                ctx.fillStyle = 'rgba(255,255,255,0.25)';
                 ctx.fillRect(ox + 4 + wobX, oy + 4, w - 8, 4);
 
                 // Small highlight dot
-                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
                 ctx.beginPath();
                 ctx.arc(ox + w * 0.3, oy + h * 0.25, 4, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Subway face: windshield + headlights at the end facing the surfer
+                ctx.fillStyle = 'rgba(12,30,55,0.55)';
+                ctx.fillRect(ox + 5, oy + h - 18, w - 10, 11);
+                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.beginPath();
+                ctx.arc(ox + 8, oy + h - 4, 2.6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(ox + w - 8, oy + h - 4, 2.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Speed streaks trailing behind the train (it's really moving)
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(ox + w * 0.3, oy - 6);
+                ctx.lineTo(ox + w * 0.3, oy - 16);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(ox + w * 0.7, oy - 9);
+                ctx.lineTo(ox + w * 0.7, oy - 23);
+                ctx.stroke();
             }
 
             // ── Draw particles ──
@@ -1327,8 +1517,8 @@
             // Ground glow
             const grd = ctx.createRadialGradient(canvas.width / 2, canvas.height - 20, 10, canvas.width / 2, canvas.height - 20,
                 300);
-            grd.addColorStop(0, 'rgba(255,255,255,0.03)');
-            grd.addColorStop(1, 'rgba(255,255,255,0)');
+            grd.addColorStop(0, 'rgba(21,64,110,0.07)');
+            grd.addColorStop(1, 'rgba(21,64,110,0)');
             ctx.fillStyle = grd;
             ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
 

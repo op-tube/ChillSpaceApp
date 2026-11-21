@@ -17,7 +17,7 @@
         android:icon="@android:drawable/ic_menu_compass"
         android:title="Game" />
     <item
-        android:id="@+id/nav_profile"
-        android:icon="@android:drawable/ic_menu_myplaces"
-        android:title="Profile" />
+        android:id="@+id/nav_explore"
+        android:icon="@android:drawable/ic_menu_mapmode"
+        android:title="Explore" />
 </menu>

@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sky Explorer</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+      background: #5399d6;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    .bottom-text {
+      position: fixed;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: min(92vw, 560px);
+      padding: 0 10px;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.4;
+      letter-spacing: .01em;
+      opacity: .9;
+      text-shadow: 0 1px 10px #10253bcc, 0 0 3px #10253b99;
+      pointer-events: none;
+      z-index: 4;
+    }
+    @media (max-width: 420px) {
+      .bottom-text { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+
+<div class="bottom-text">drag to fly. Tap the sun/moon to change the time of day</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("sky");
+  const ctx = canvas.getContext("2d");
+
+  let w = 0, h = 0, dpr = 1;
+  const camera = { x: 0, y: 0 };
+  let zoom = 1;
+  const keys = new Set();
+
+  // --- Time of day -------------------------------------------------
+  // Tapping the sun/moon advances: dawn → day → dusk → night → dawn
+  const MODE_CYCLE = ["dawn", "day", "dusk", "night"];
+  let modeIndex = 1;                 // start on "day"
+  let mode = MODE_CYCLE[modeIndex];
+  let sunPulse = 0;                  // brief flash after a tap
+
+  const palettes = {
+    day:   { top: "#4b9fe0", bottom: "#c1e8ff", sun: "#fff1a8", stars: 0, cloud: "#ffffff" },
+    dawn:  { top: "#554d87", bottom: "#ffb57e", sun: "#ffe1a2", stars: .12, cloud: "#ffe1cf" },
+    dusk:  { top: "#342f68", bottom: "#ef856e", sun: "#ffc28c", stars: .28, cloud: "#e7c5db" },
+    night: { top: "#08142f", bottom: "#263d6b", sun: "#e3eaff", stars: 1, cloud: "#aebbd4" }
+  };
+
+  function cycleMode() {
+    modeIndex = (modeIndex + 1) % MODE_CYCLE.length;
+    mode = MODE_CYCLE[modeIndex];
+    sunPulse = 1;
+  }
+
+  // --- Heading (so the glider points where it flies) ---------------
+  let heading = 0;
+  let headingTarget = 0;
+
+  // --- Touch / drag steering ---------------------------------------
+  // The glider sits at the centre of the screen, so "fly toward your
+  // finger" just means moving in the direction of the touch point
+  // relative to screen centre, with speed scaled by distance.
+  let activePointerId = null;
+  let pointerActive = false;
+  const touchPoint = { x: 0, y: 0 };
+  let touchAlpha = 0;
+
+  // A press that begins on the sun/moon is a tap, not a drag.
+  let sunPointerId = null;
+  const sunDown = { x: 0, y: 0 };
+
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    w = innerWidth;
+    h = innerHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  function hash(n) {
+    const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  // --- Sun / moon hit area (screen space, unaffected by zoom) ------
+  function sunGeometry() {
+    return {
+      x: w * .78,
+      y: h * .22,
+      radius: mode === "night" ? 24 : 32
+    };
+  }
+
+  function hitSun(px, py) {
+    const s = sunGeometry();
+    // Generous padding so a fingertip can hit it comfortably.
+    return Math.hypot(px - s.x, py - s.y) <= s.radius + 26;
+  }
+
+  function worldClouds(left, right, top, bottom, palette, time) {
+    const size = 320;
+    const x0 = Math.floor(left / size) - 1;
+    const x1 = Math.ceil(right / size) + 1;
+    const y0 = Math.floor(top / size) - 1;
+    const y1 = Math.ceil(bottom / size) + 1;
+
+    for (let gx = x0; gx <= x1; gx++) {
+      for (let gy = y0; gy <= y1; gy++) {
+        const seed = gx * 79 + gy * 131;
+        if (hash(seed) < .24) continue;
+
+        const drift = time * (.009 + hash(seed + 2) * .012);
+        const wx = gx * size + hash(seed + 3) * size + drift;
+        const wy = gy * size + hash(seed + 4) * size;
+        const scale = .5 + hash(seed + 5) * .8;
+
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = palette.cloud;
+        ctx.globalAlpha = mode === "night" ? .62 : .82;
+        ctx.beginPath();
+        ctx.ellipse(-34, 5, 39, 20, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -8, 34, 28, 0, 0, Math.PI * 2);
+        ctx.ellipse(32, 4, 40, 21, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 11, 65, 17, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawBirds(left, right, top, bottom, time) {
+    const span = 470;
+    const x0 = Math.floor(left / span) - 1;
+    const x1 = Math.ceil(right / span) + 1;
+    const y0 = Math.floor(top / span) - 1;
+    const y1 = Math.ceil(bottom / span) + 1;
+
+    ctx.strokeStyle = mode === "night" ? "#d5def7" : "#31435b";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+
+    for (let gx = x0; gx <= x1; gx++) {
+      for (let gy = y0; gy <= y1; gy++) {
+        const seed = gx * 173 + gy * 97;
+        if (hash(seed) < .53) continue;
+
+        const wx = gx * span + hash(seed + 1) * span + time * (.018 + hash(seed + 2) * .018);
+        const wy = gy * span + hash(seed + 3) * span + Math.sin(time * .001 + seed) * 9;
+        const size = 5 + hash(seed + 4) * 6;
+
+        ctx.beginPath();
+        ctx.moveTo(wx - size, wy);
+        ctx.quadraticCurveTo(wx - size * .45, wy - size * .7, wx, wy);
+        ctx.quadraticCurveTo(wx + size * .45, wy - size * .7, wx + size, wy);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawStars(palette, time) {
+    if (!palette.stars) return;
+    ctx.save();
+    ctx.globalAlpha = palette.stars;
+    for (let i = 0; i < 150; i++) {
+      const x = hash(i + 901) * w;
+      const y = hash(i + 902) * h;
+      const twinkle = .55 + .45 * Math.sin(time * .002 + i);
+      ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
+      ctx.beginPath();
+      ctx.arc(x, y, .6 + hash(i + 903) * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawCelestialBody(palette, time) {
+    const { x, y, radius } = sunGeometry();
+
+    // Soft pulsing ring — a quiet hint that this is tappable.
+    const pulse = .5 + .5 * Math.sin(time * .0016);
+    ctx.save();
+    ctx.globalAlpha = .08 + .10 * pulse + .38 * sunPulse;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 10 + pulse * 4 + sunPulse * 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.shadowColor = palette.sun;
+    ctx.shadowBlur = (mode === "night" ? 10 : 38) + sunPulse * 44;
+    ctx.fillStyle = palette.sun;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (mode === "night") {
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = palette.top;
+      ctx.beginPath();
+      ctx.arc(x + 10, y - 8, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* On-screen guide: a ring where the finger is, plus a dashed line
+     back to the glider so the direction of travel is obvious. */
+  function drawTouchGuide(time) {
+    if (touchAlpha < .01) return;
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const vx = touchPoint.x - cx;
+    const vy = touchPoint.y - cy;
+    const dist = Math.hypot(vx, vy);
+
+    ctx.save();
+    ctx.globalAlpha = touchAlpha;
+
+    if (dist > 30) {
+      ctx.strokeStyle = "#ffffff5c";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([9, 11]);
+      ctx.lineDashOffset = -time * .03;
+      ctx.beginPath();
+      ctx.moveTo(cx + (vx / dist) * 30, cy + (vy / dist) * 30);
+      ctx.lineTo(touchPoint.x, touchPoint.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const pulse = 1 + Math.sin(time * .006) * .06;
+    ctx.strokeStyle = "#ffffffcc";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(touchPoint.x, touchPoint.y, 21 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffffb0";
+    ctx.beginPath();
+    ctx.arc(touchPoint.x, touchPoint.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function render(time) {
+    const palette = palettes[mode];
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, palette.top);
+    gradient.addColorStop(1, palette.bottom);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+
+    drawStars(palette, time);
+    drawCelestialBody(palette, time);
+
+    const viewW = w / zoom;
+    const viewH = h / zoom;
+    const left = camera.x - viewW / 2;
+    const top = camera.y - viewH / 2;
+
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-camera.x, -camera.y);
+
+    worldClouds(left, left + viewW, top, top + viewH, palette, time);
+    drawBirds(left, left + viewW, top, top + viewH, time);
+
+    // A small glider marks the player's position, pointing where it flies.
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
+    ctx.rotate(heading);
+    ctx.fillStyle = mode === "night" ? "#fff4c6" : "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(17, 0);
+    ctx.lineTo(-12, -7);
+    ctx.lineTo(-6, 0);
+    ctx.lineTo(-12, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
+    // Screen-space overlay
+    touchAlpha += ((pointerActive ? 1 : 0) - touchAlpha) * .16;
+    drawTouchGuide(time);
+
+    requestAnimationFrame(render);
+  }
+
+  let previous = performance.now();
+  function update(now) {
+    const dt = Math.min((now - previous) / 16.67, 3);
+    previous = now;
+
+    sunPulse *= Math.pow(0.88, dt);
+    if (sunPulse < .001) sunPulse = 0;
+
+    const speed = 4.2 / zoom;
+
+    let dx = 0, dy = 0;
+
+    // Keyboard
+    if (keys.has("ArrowLeft") || keys.has("a")) dx -= 1;
+    if (keys.has("ArrowRight") || keys.has("d")) dx += 1;
+    if (keys.has("ArrowUp") || keys.has("w")) dy -= 1;
+    if (keys.has("ArrowDown") || keys.has("s")) dy += 1;
+
+    // Touch / drag: head toward the finger, faster the further away it is.
+    if (pointerActive) {
+      const vx = touchPoint.x - w / 2;
+      const vy = touchPoint.y - h / 2;
+      const dist = Math.hypot(vx, vy);
+      const deadZone = 24;
+      const fullSpeedDist = Math.max(90, Math.min(w, h) * .32);
+
+      if (dist > deadZone) {
+        const strength = Math.min(1, (dist - deadZone) / (fullSpeedDist - deadZone));
+        dx += (vx / dist) * strength;
+        dy += (vy / dist) * strength;
+      }
+    }
+
+    const mag = Math.hypot(dx, dy);
+    if (mag > 1) { dx /= mag; dy /= mag; }
+
+    if (dx || dy) {
+      camera.x += dx * speed * dt;
+      camera.y += dy * speed * dt;
+      headingTarget = Math.atan2(dy, dx);
+    }
+
+    // Ease the glider around to face its new heading by the shortest arc.
+    const twoPi = Math.PI * 2;
+    const diff = ((headingTarget - heading + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
+    heading += diff * Math.min(1, .18 * dt);
+
+    requestAnimationFrame(update);
+  }
+
+  /* ---------------- Pointer (touch, pen, mouse) ---------------- */
+
+  canvas.addEventListener("pointerdown", e => {
+    // Tapping the sun/moon changes the time of day instead of flying.
+    if (sunPointerId === null && activePointerId === null && hitSun(e.clientX, e.clientY)) {
+      sunPointerId = e.pointerId;
+      sunDown.x = e.clientX;
+      sunDown.y = e.clientY;
+      if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+
+    if (activePointerId !== null) return;   // ignore extra fingers
+    activePointerId = e.pointerId;
+    pointerActive = true;
+    touchPoint.x = e.clientX;
+    touchPoint.y = e.clientY;
+    if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    if (e.pointerId === sunPointerId) {
+      // Sliding off the sun cancels the tap.
+      if (Math.hypot(e.clientX - sunDown.x, e.clientY - sunDown.y) > 14) {
+        sunPointerId = null;
+      }
+      e.preventDefault();
+      return;
+    }
+
+    if (e.pointerId !== activePointerId) return;
+    touchPoint.x = e.clientX;
+    touchPoint.y = e.clientY;
+    e.preventDefault();
+  });
+
+  canvas.addEventListener("pointerup", e => {
+    if (e.pointerId === sunPointerId) {
+      sunPointerId = null;
+      cycleMode();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    pointerActive = false;
+  });
+
+  canvas.addEventListener("pointercancel", e => {
+    if (e.pointerId === sunPointerId) { sunPointerId = null; return; }
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    pointerActive = false;
+  });
+
+  canvas.addEventListener("lostpointercapture", e => {
+    if (e.pointerId === sunPointerId) sunPointerId = null;
+    if (e.pointerId === activePointerId) {
+      activePointerId = null;
+      pointerActive = false;
+    }
+  });
+
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+  // Desktop nicety: pointer cursor over the sun/moon.
+  if (matchMedia("(pointer: fine)").matches) {
+    canvas.addEventListener("mousemove", e => {
+      canvas.style.cursor = hitSun(e.clientX, e.clientY) ? "pointer" : "default";
+    });
+    canvas.addEventListener("mouseleave", () => { canvas.style.cursor = "default"; });
+  }
+
+  addEventListener("blur", () => {
+    keys.clear();
+    activePointerId = null;
+    pointerActive = false;
+    sunPointerId = null;
+  });
+
+  /* ------------------------- Keyboard -------------------------- */
+
+  addEventListener("keydown", e => {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) e.preventDefault();
+    keys.add(key);
+    if (key === "+" || key === "=") zoom = Math.min(2, zoom * 1.15);
+    if (key === "-") zoom = Math.max(.5, zoom / 1.15);
+  });
+  addEventListener("keyup", e => {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    keys.delete(key);
+  });
+
+  requestAnimationFrame(update);
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>

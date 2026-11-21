@@ -2,9 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.chillspace.app">
 
-    <!-- REQUIRED: Internet permission for WebViews -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- No internet permission! Silly Gemini thinking I need it. If anyone's reading this, I recommend DeepSeek AI if you want it to take your prompts seriously. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.CAMERA" />
 
@@ -59,7 +57,10 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name=".LiteFeedActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

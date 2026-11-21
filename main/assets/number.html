@@ -14,7 +14,7 @@
             "description": "A fun addictive counting game with live rankings, dopamine spikes, and ChillSpace friend integration. Compete against friends and bots to reach the highest score!",
             "url": "https://chillspace.ai/numbers",
             "genre": ["Casual", "Clicker", "Multiplayer"],
-            "inLanguage": ["en", "ko", "fr", "es"],
+            "inLanguage": ["en", "ko", "ja", "es", "pt", "ru"],
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "publisher": { "@type": "Organization", "name": "ChillSpace" },
             "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "1024" }
@@ -28,7 +28,7 @@
             "description": "중독성 있는 카운팅 게임! 실시간 순위, 도파민 스파이크, ChillSpace 친구 연동 기능이 있습니다. 친구들과 봇을 상대로 최고 점수에 도전하세요!",
             "url": "https://chillspace.ai/numbers",
             "genre": ["캐주얼", "클리커", "멀티플레이어"],
-            "inLanguage": ["ko", "en", "fr", "es"],
+            "inLanguage": ["ko", "en", "ja", "es", "pt", "ru"],
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "publisher": { "@type": "Organization", "name": "ChillSpace" },
             "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "1024" }
@@ -1081,8 +1081,10 @@
     <div class="lang-selector" id="langSelector">
         <button class="lang-btn active" data-lang="en" onclick="setLanguage('en')">EN</button>
         <button class="lang-btn" data-lang="ko" onclick="setLanguage('ko')">한국어</button>
-        <button class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">FR</button>
+        <button class="lang-btn" data-lang="ja" onclick="setLanguage('ja')">日本語</button>
         <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+        <button class="lang-btn" data-lang="ru" onclick="setLanguage('ru')">RU</button>
     </div>
     <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()">🎯 Group Chat Chaos</button>
     <button class="calc-toggle-btn" id="calcToggleBtn" onclick="toggleCalculatorMode()" style="display:none;">🧮 Calculator</button>
@@ -1122,7 +1124,7 @@
 
     <div id="chatModeContainer">
         <div class="chat-header">
-            <div class="chat-title"><span>💬</span> Group Chat Chaos</div>
+            <div class="chat-title"><span>💬</span> <span id="chatTitle">Group Chat Chaos</span></div>
             <div class="chat-online" id="chatOnlineCount">● 5 online</div>
         </div>
         <div class="chat-messages" id="chatMessages">
@@ -2450,6 +2452,12 @@
             calcUndone: 'calculator points removed',
             calcNothingToUndo: 'No calculator points to undo',
             resetDone: 'All scores reset! 🔄',
+            chatOnline: 'online',
+            welcome: '🎉 Welcome! Numbers fly in real-time.',
+            chatPlaceholder: 'Type a message…',
+            botWord: 'Bot',
+            chatTitleText: 'Group Chat Chaos',
+            pageTitle: 'Number Game 2.0 – Group Chat Chaos',
         },
         ko: {
             setupTitle: '이름을 입력하세요',
@@ -2487,43 +2495,141 @@
             calcUndone: '계산기 점수 취소됨',
             calcNothingToUndo: '취소할 계산기 점수가 없습니다',
             resetDone: '모든 점수가 초기화되었습니다! 🔄',
+            chatOnline: '온라인',
+            welcome: '🎉 환영합니다! 숫자가 실시간으로 날아다닙니다.',
+            chatPlaceholder: '메시지 입력…',
+            botWord: '봇',
+            chatTitleText: '단체 채팅 혼돈',
+            pageTitle: '넘버 게임 2.0 – 단체 채팅 혼돈',
         },
-        fr: {
-            setupTitle: 'Entrez votre nom',
-            start: 'Commencer',
-            namePlaceholder: 'Votre nom',
-            total: 'Total',
-            yourTotal: 'Votre total',
-            thisGame: 'Cette partie',
-            liveRankings: 'Classement en direct',
-            playMusic: '♪ Jouer la musique',
-            pauseMusic: '⏸ Pause musique',
-            nameRequired: 'Veuillez entrer un nom pour commencer !',
-            dopamineSpike: 'Dopamine augmentée de',
-            doubleNumbers: 'Vous obtenez le double pendant 15 secondes !',
-            congrats: '🎉 Félicitations ! Vous avez atteint',
-            milestoneSuffix: 'points ! 🎉',
+        ja: {
+            setupTitle: '名前を入力してください',
+            start: 'スタート',
+            namePlaceholder: 'あなたの名前',
+            total: '合計',
+            yourTotal: 'あなたのスコア',
+            thisGame: '今回のゲーム',
+            liveRankings: 'ライブランキング',
+            playMusic: '♪ 音楽を再生',
+            pauseMusic: '⏸ 音楽を一時停止',
+            nameRequired: '開始するにはユーザー名を入力してください！',
+            dopamineSpike: 'ドーパミンが上昇',
+            doubleNumbers: '15秒間、数値が2倍になります！',
+            congrats: '🎉 おめでとう！達成しました',
+            milestoneSuffix: 'ポイント！ 🎉',
             plus1: '+1',
             plus100: '+100',
             plus200: '+200',
             plus2: '+2',
-            modeOriginal: '🎯 Mode Original',
-            modeChat: '💬 Chaos en Groupe',
-            switchToChat: '💬 Chaos en Groupe',
-            switchToOriginal: '🎯 Mode Original',
-            unlockAt: '🔒 Débloquer à 1000',
-            calculatorMode: '🧮 Calculatrice',
-            backToGame: 'Retour au jeu',
-            calcQuickPlaceholder: 'Montant rapide…',
-            calcAdd: 'Ajouter',
-            calcInvalid: 'Expression invalide',
-            calcUnbalanced: 'Parenthèses non équilibrées',
-            calcZero: 'Résultat 0 — rien ajouté',
-            calcEnterNumber: 'Entrez un nombre valide',
-            calcAdded: 'ajouté au score !',
-            calcUndone: 'points calculatrice annulés',
-            calcNothingToUndo: 'Aucun point calculatrice à annuler',
-            resetDone: 'Tous les scores réinitialisés ! 🔄',
+            modeOriginal: '🎯 オリジナルモード',
+            modeChat: '💬 グループチャット大混乱',
+            switchToChat: '💬 グループチャット大混乱',
+            switchToOriginal: '🎯 オリジナルモード',
+            unlockAt: '🔒 1000で解放',
+            calculatorMode: '🧮 電卓',
+            backToGame: 'ゲームに戻る',
+            calcQuickPlaceholder: 'クイック追加額…',
+            calcAdd: '追加',
+            calcInvalid: '無効な式です',
+            calcUnbalanced: '括弧が不一致です',
+            calcZero: '結果は0 — 何も追加されません',
+            calcEnterNumber: '有効な数値を入力してください',
+            calcAdded: 'をスコアに追加！',
+            calcUndone: '電卓ポイントを取り消しました',
+            calcNothingToUndo: '取り消す電卓ポイントがありません',
+            resetDone: 'すべてのスコアをリセットしました！ 🔄',
+            chatOnline: 'オンライン',
+            welcome: '🎉 ようこそ！数字がリアルタイムで飛び交います。',
+            chatPlaceholder: 'メッセージを入力…',
+            botWord: 'ボット',
+            chatTitleText: 'グループチャット大混乱',
+            pageTitle: 'ナンバーゲーム 2.0 – グループチャット大混乱',
+        },
+        pt: {
+            setupTitle: 'Digite seu nome',
+            start: 'Começar',
+            namePlaceholder: 'Seu nome',
+            total: 'Total',
+            yourTotal: 'Seu total',
+            thisGame: 'Esta partida',
+            liveRankings: 'Classificação ao vivo',
+            playMusic: '♪ Tocar música',
+            pauseMusic: '⏸ Pausar música',
+            nameRequired: 'Por favor, digite um nome de usuário para começar!',
+            dopamineSpike: 'Dopamina aumentada em',
+            doubleNumbers: 'Você ganha o dobro por 15 segundos!',
+            congrats: '🎉 Parabéns! Você alcançou',
+            milestoneSuffix: 'pontos! 🎉',
+            plus1: '+1',
+            plus100: '+100',
+            plus200: '+200',
+            plus2: '+2',
+            modeOriginal: '🎯 Modo Original',
+            modeChat: '💬 Caos no Grupo',
+            switchToChat: '💬 Caos no Grupo',
+            switchToOriginal: '🎯 Modo Original',
+            unlockAt: '🔒 Desbloquear em 1000',
+            calculatorMode: '🧮 Calculadora',
+            backToGame: 'Voltar ao jogo',
+            calcQuickPlaceholder: 'Quantidade rápida…',
+            calcAdd: 'Adicionar',
+            calcInvalid: 'Expressão inválida',
+            calcUnbalanced: 'Parênteses desequilibrados',
+            calcZero: 'Resultado 0 — nada adicionado',
+            calcEnterNumber: 'Digite um número válido',
+            calcAdded: 'adicionado à pontuação!',
+            calcUndone: 'pontos da calculadora removidos',
+            calcNothingToUndo: 'Não há pontos da calculadora para desfazer',
+            resetDone: 'Todas as pontuações reiniciadas! 🔄',
+            chatOnline: 'online',
+            welcome: '🎉 Boas-vindas! Os números voam em tempo real.',
+            chatPlaceholder: 'Digite uma mensagem…',
+            botWord: 'Bot',
+            chatTitleText: 'Caos no Grupo',
+            pageTitle: 'Jogo do Número 2.0 – Caos no Grupo',
+        },
+        ru: {
+            setupTitle: 'Введите имя',
+            start: 'Начать',
+            namePlaceholder: 'Ваше имя',
+            total: 'Итого',
+            yourTotal: 'Ваш счёт',
+            thisGame: 'Эта игра',
+            liveRankings: 'Рейтинг в реальном времени',
+            playMusic: '♪ Включить музыку',
+            pauseMusic: '⏸ Пауза',
+            nameRequired: 'Пожалуйста, введите имя, чтобы начать!',
+            dopamineSpike: 'Дофамин вырос на',
+            doubleNumbers: 'Числа удваиваются на 15 секунд!',
+            congrats: '🎉 Поздравляем! Вы достигли',
+            milestoneSuffix: 'очков! 🎉',
+            plus1: '+1',
+            plus100: '+100',
+            plus200: '+200',
+            plus2: '+2',
+            modeOriginal: '🎯 Оригинальный режим',
+            modeChat: '💬 Хаос в групповом чате',
+            switchToChat: '💬 Хаос в групповом чате',
+            switchToOriginal: '🎯 Оригинальный режим',
+            unlockAt: '🔒 Откроется на 1000',
+            calculatorMode: '🧮 Калькулятор',
+            backToGame: 'Вернуться к игре',
+            calcQuickPlaceholder: 'Быстрая добавка…',
+            calcAdd: 'Добавить',
+            calcInvalid: 'Некорректное выражение',
+            calcUnbalanced: 'Непарные скобки',
+            calcZero: 'Результат 0 — ничего не добавлено',
+            calcEnterNumber: 'Введите корректное число',
+            calcAdded: 'добавлено к счёту!',
+            calcUndone: 'очков калькулятора отменено',
+            calcNothingToUndo: 'Нет очков калькулятора для отмены',
+            resetDone: 'Все счёты сброшены! 🔄',
+            chatOnline: 'в сети',
+            welcome: '🎉 Добро пожаловать! Числа летают в реальном времени.',
+            chatPlaceholder: 'Введите сообщение…',
+            botWord: 'Бот',
+            chatTitleText: 'Хаос в групповом чате',
+            pageTitle: 'Игра чисел 2.0 – Хаос в групповом чате',
         },
         es: {
             setupTitle: 'Ingresa tu nombre',
@@ -2561,18 +2667,45 @@
             calcUndone: 'puntos de calculadora eliminados',
             calcNothingToUndo: 'No hay puntos de calculadora que deshacer',
             resetDone: '¡Todas las puntuaciones reiniciadas! 🔄',
+            chatOnline: 'en línea',
+            welcome: '🎉 ¡Bienvenido! Los números vuelan en tiempo real.',
+            chatPlaceholder: 'Escribe un mensaje…',
+            botWord: 'Bot',
+            chatTitleText: 'Caos en Grupo',
+            pageTitle: 'Juego de Números 2.0 – Caos en Grupo',
         }
     };
 
-    let currentLang = localStorage.getItem('numberGameLang') || 'en';
+    function detectBrowserLang() {
+        var list = [];
+        if (navigator.languages) list = list.concat(navigator.languages);
+        if (navigator.language) list.push(navigator.language);
+        list.push('en');
+        for (var i = 0; i < list.length; i++) {
+            var l = String(list[i] || '').toLowerCase();
+            if (l.indexOf('ko') === 0) return 'ko';
+            if (l.indexOf('ja') === 0) return 'ja';
+            if (l.indexOf('es') === 0) return 'es';
+            if (l.indexOf('pt') === 0) return 'pt';
+            if (l.indexOf('ru') === 0) return 'ru';
+            if (l.indexOf('en') === 0) return 'en';
+        }
+        return 'en';
+    }
+
+    let currentLang = localStorage.getItem('numberGameLang') || detectBrowserLang();
+    if (!translations[currentLang]) currentLang = detectBrowserLang();
 
     function t(key) {
-        return translations[currentLang][key] || translations.en[key] || key;
+        var tbl = translations[currentLang] || translations.en;
+        return tbl[key] || translations.en[key] || key;
     }
 
     function setLanguage(lang) {
+        if (!translations[lang]) return;
         currentLang = lang;
         localStorage.setItem('numberGameLang', lang);
+        document.documentElement.lang = lang;
         document.querySelectorAll('.lang-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.lang === lang);
         });
@@ -2597,6 +2730,15 @@
         } else {
             musicBtn.textContent = t('playMusic');
         }
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) chatInput.placeholder = t('chatPlaceholder');
+        const onlineEl = document.getElementById('chatOnlineCount');
+        if (onlineEl) onlineEl.textContent = '● 5 ' + t('chatOnline');
+        const sysMsg = document.querySelector('#chatMessages .msg-system');
+        if (sysMsg) sysMsg.textContent = t('welcome');
+        const chatTitleEl = document.getElementById('chatTitle');
+        if (chatTitleEl) chatTitleEl.textContent = t('chatTitleText');
+        document.title = t('pageTitle');
         updatePlusButtonText();
         updateLeaderboard();
         updateModeToggleButton();
@@ -2936,7 +3078,7 @@
         } else {
             const sys = document.createElement('div');
             sys.className = 'msg msg-system';
-            sys.textContent = '🎉 Welcome! Numbers fly in real-time.';
+            sys.textContent = t('welcome');
             container.appendChild(sys);
         }
         const msgs = chatMessages.slice(-50);
@@ -2952,7 +3094,7 @@
                 div.className = 'msg msg-bot';
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'msg-name';
-                nameSpan.textContent = entry.botName || entry.sender || 'Bot';
+                nameSpan.textContent = entry.botName || entry.sender || t('botWord');
                 const textSpan = document.createElement('span');
                 textSpan.className = 'msg-text';
                 textSpan.textContent = entry.number;
@@ -2975,7 +3117,7 @@
         const el = document.getElementById('chatOnlineCount');
         if (el) {
             const count = 1 + bots.length;
-            el.textContent = '● ' + count + ' online';
+            el.textContent = '● ' + count + ' ' + t('chatOnline');
         }
     }
 
@@ -3515,6 +3657,7 @@
             document.getElementById('nameInput').value = savedData.name;
         }
 
+        document.documentElement.lang = currentLang;
         document.querySelectorAll('.lang-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.lang === currentLang);
         });

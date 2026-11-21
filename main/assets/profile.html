@@ -4,6 +4,317 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Your Profile - ChillSpace</title>
+    <script>
+    /* ─── ChillSpace i18n — EN / KO / JA / ES / PT / RU (browser detection) ─── */
+    (function () {
+        'use strict';
+        var STRINGS = {
+            en: {
+                title: 'Your Profile - ChillSpace',
+                header: 'Your Profile',
+                posts: 'Posts', likes: 'Likes', reach: 'Reach',
+                you: 'You',
+                analyticsBtn: '📊 Analytics',
+                deleteTitle: 'Delete Post',
+                likesWord: 'likes', commentsWord: 'comments',
+                emptyHtml: "You haven't made any permanent posts yet.<br>Select \"Post\" in the Feed to save them here!",
+                adBtn: 'Get more likes INSTANTLY with $1,000,000 FREE in ChillSpace Ads credit!',
+                analyticsTitle: 'Post Analytics',
+                close: 'Close',
+                boost: 'Boost this post 🚀',
+                adQuestion: 'How much do you want to spend?',
+                adEstimateLabel: 'Estimated like growth',
+                adCreditNote: "💳 ChillSpace Ads credit: <b>$1,000,000 FREE</b><br>Don't worry — it never runs out. (It's a placebo platform, shhh.)",
+                cancel: 'Cancel',
+                purchase: 'Purchase Ad Space',
+                perfLabel: 'Performance:',
+                perfOf: '{n}% of your average',
+                reachLabel: 'Total Reach:',
+                reachUsers: '{n} unique users',
+                peakLabel: 'Peak Engagement:',
+                peakTime: '{h}:00 Local Time',
+                viralityLabel: 'Virality Potential:',
+                viralityHigh: 'High 🔥',
+                quote: '"This post resonated with users who enjoy {v}."',
+                toastAd: 'Ad space purchased for {spend} — +{gain} {likes}! 🎉',
+                toastDeleted: 'Post deleted',
+                confirmDelete: 'Are you sure you want to delete this post and its media?',
+                vibes: ['nostalgia', 'minimalism', 'trending topics', 'wholesome content', 'deep discussions'],
+                replies: [
+                    'This is so cool! 🔥', 'Love seeing your updates! 😊', 'Wow, amazing!',
+                    'Great post! 🙌', 'Keep it up!', 'So true!', 'I love this! ❤️',
+                    'Thanks for sharing!', 'Legendary!', 'Wholesome content only ✨'
+                ]
+            },
+            ko: {
+                title: '내 프로필 - ChillSpace',
+                header: '내 프로필',
+                posts: '게시물', likes: '좋아요', reach: '도달',
+                you: '나',
+                analyticsBtn: '📊 분석',
+                deleteTitle: '게시물 삭제',
+                likesWord: '좋아요', commentsWord: '댓글',
+                emptyHtml: '아직 영구 저장된 게시물이 없습니다.<br>Feed에서 "게시"를 선택하면 여기에 저장돼요!',
+                adBtn: '$1,000,000 FREE ChillSpace Ads 크레딧으로 즉시 좋아요를 더 받아보세요!',
+                analyticsTitle: '게시물 분석',
+                close: '닫기',
+                boost: '이 게시물 부스트하기 🚀',
+                adQuestion: '얼마를 쓰시겠어요?',
+                adEstimateLabel: '예상 좋아요 증가',
+                adCreditNote: '💳 ChillSpace Ads 크레딧: <b>$1,000,000 무료</b><br>걱정 마세요 — 절대 없어지지 않아요. (사실 가짜 플랫폼이거든요, 쉿.)',
+                cancel: '취소',
+                purchase: '광고 자리 구매',
+                perfLabel: '성과:',
+                perfOf: '평균의 {n}%',
+                reachLabel: '총 도달:',
+                reachUsers: '고유 사용자 {n}명',
+                peakLabel: '최고 참여 시간:',
+                peakTime: '{h}:00 (현지 시간)',
+                viralityLabel: '바이럴 잠재력:',
+                viralityHigh: '높음 🔥',
+                quote: '"이 게시물은 {v}(을)를 좋아하는 사용자들과 공감을 얻었습니다."',
+                toastAd: '광고 자리를 구매했습니다 ({spend}) — 좋아요 +{gain}개! 🎉',
+                toastDeleted: '게시물이 삭제되었습니다',
+                confirmDelete: '이 게시물과 미디어를 삭제하시겠습니까?',
+                vibes: ['향수', '미니멀리즘', '인기 주제', '건전한 콘텐츠', '깊은 토론'],
+                replies: [
+                    '이거 진짜 멋져! 🔥', '네 소식이 보기 좋아요! 😊', '와, 대박!',
+                    '좋은 게시물이에요! 🙌', '계속 파이팅!', '완전 맞아요!', '이거 너무 좋아! ❤️',
+                    '공유해줘서 고마워요!', '전설적!', '건전한 콘텐츠만 ✨'
+                ]
+            },
+            ja: {
+                title: 'プロフィール - ChillSpace',
+                header: 'プロフィール',
+                posts: '投稿', likes: 'いいね', reach: 'リーチ',
+                you: 'あなた',
+                analyticsBtn: '📊 分析',
+                deleteTitle: '投稿を削除',
+                likesWord: 'いいね', commentsWord: 'コメント',
+                emptyHtml: 'まだ永続的な投稿はありません。<br>Feedで「投稿」を選ぶとここに保存されます！',
+                adBtn: 'ChillSpace Adsの$1,000,000無料クレジットで、いいねを即増やしちゃおう！',
+                analyticsTitle: '投稿の分析',
+                close: '閉じる',
+                boost: 'この投稿をブースト 🚀',
+                adQuestion: 'いくら使いますか？',
+                adEstimateLabel: 'いいねの推定増加',
+                adCreditNote: '💳 ChillSpace Adsクレジット: <b>$1,000,000無料</b><br>ご安心ください — 絶対になくなりません。（プラシボプラットフォームです、しっ。）',
+                cancel: 'キャンセル',
+                purchase: '広告スペースを購入',
+                perfLabel: 'パフォーマンス:',
+                perfOf: '平均の{n}%',
+                reachLabel: '総リーチ:',
+                reachUsers: '{n}人のユーザー',
+                peakLabel: 'ピーク時間:',
+                peakTime: '{h}:00（現地時間）',
+                viralityLabel: 'バイラル潜在力:',
+                viralityHigh: '高い 🔥',
+                quote: '「この投稿は{v}が好きなユーザーと共鳴しました。」',
+                toastAd: '広告スペースを購入しました（{spend}）— いいね +{gain}件! 🎉',
+                toastDeleted: '投稿を削除しました',
+                confirmDelete: 'この投稿とメディアを削除してもよろしいですか？',
+                vibes: ['ノスタルジア', 'ミニマリズム', 'トレンド話題', 'ほっこりコンテンツ', '深い議論'],
+                replies: [
+                    'これマジすごい！ 🔥', '近況ありがとう！ 😊', 'うわ、すごい！',
+                    'いい投稿だね！ 🙌', 'その調子！', 'ほんとそれ！', 'これ大好き！ ❤️',
+                    'シェアありがとう！', '伝説級！', 'ほっこりコンテンツだけ ✨'
+                ]
+            },
+            es: {
+                title: 'Tu perfil - ChillSpace',
+                header: 'Tu perfil',
+                posts: 'Publicaciones', likes: 'Me gusta', reach: 'Alcance',
+                you: 'Tú',
+                analyticsBtn: '📊 Analíticas',
+                deleteTitle: 'Eliminar publicación',
+                likesWord: 'me gusta', commentsWord: 'comentarios',
+                emptyHtml: 'Aún no tienes publicaciones permanentes.<br>¡Selecciona \"Publicar\" en el Feed para guardarlas aquí!',
+                adBtn: '¡Consigue más me gusta AL INSTANTE con $1,000,000 GRATIS en crédito de ChillSpace Ads!',
+                analyticsTitle: 'Analíticas de la publicación',
+                close: 'Cerrar',
+                boost: 'Impulsa esta publicación 🚀',
+                adQuestion: '¿Cuánto quieres gastar?',
+                adEstimateLabel: 'Crecimiento estimado de me gusta',
+                adCreditNote: '💳 Crédito de ChillSpace Ads: <b>$1,000,000 GRATIS</b><br>Tranquilo — nunca se agota. (Es una plataforma placebo, shhh.)',
+                cancel: 'Cancelar',
+                purchase: 'Comprar espacio publicitario',
+                perfLabel: 'Rendimiento:',
+                perfOf: '{n}% de tu media',
+                reachLabel: 'Alcance total:',
+                reachUsers: '{n} usuarios únicos',
+                peakLabel: 'Participación máxima:',
+                peakTime: '{h}:00 hora local',
+                viralityLabel: 'Potencial viral:',
+                viralityHigh: 'Alto 🔥',
+                quote: '"Esta publicación resonó con usuarios que disfrutan de {v}."',
+                toastAd: 'Espacio publicitario comprado por {spend} — ¡+{gain} {likes}! 🎉',
+                toastDeleted: 'Publicación eliminada',
+                confirmDelete: '¿Seguro que quieres eliminar esta publicación y sus archivos?',
+                vibes: ['la nostalgia', 'el minimalismo', 'las tendencias', 'el contenido positivo', 'los debates profundos'],
+                replies: [
+                    '¡Qué chulo! 🔥', '¡Me encanta verte publicar! 😊', '¡Vaya, increíble!',
+                    '¡Buen post! 🙌', '¡Sigue así!', '¡Qué verdad!', '¡Me encanta! ❤️',
+                    '¡Gracias por compartir!', '¡Legendario!', '¡Solo buen rollo! ✨'
+                ]
+            },
+            pt: {
+                title: 'Seu perfil - ChillSpace',
+                header: 'Seu perfil',
+                posts: 'Publicações', likes: 'Curtidas', reach: 'Alcance',
+                you: 'Você',
+                analyticsBtn: '📊 Análises',
+                deleteTitle: 'Excluir publicação',
+                likesWord: 'curtidas', commentsWord: 'comentários',
+                emptyHtml: 'Você ainda não tem publicações permanentes.<br>Selecione \"Publicar\" no Feed para salvá-las aqui!',
+                adBtn: 'Ganhe mais curtidas NA HORA com $1,000,000 GRÁTIS em crédito do ChillSpace Ads!',
+                analyticsTitle: 'Análises da publicação',
+                close: 'Fechar',
+                boost: 'Impulsionar esta publicação 🚀',
+                adQuestion: 'Quanto você quer gastar?',
+                adEstimateLabel: 'Crescimento estimado de curtidas',
+                adCreditNote: '💳 Crédito do ChillSpace Ads: <b>$1,000,000 GRÁTIS</b><br>Fique tranquilo — nunca acaba. (É uma plataforma placebo, xiiiu.)',
+                cancel: 'Cancelar',
+                purchase: 'Comprar espaço publicitário',
+                perfLabel: 'Desempenho:',
+                perfOf: '{n}% da sua média',
+                reachLabel: 'Alcance total:',
+                reachUsers: '{n} usuários únicos',
+                peakLabel: 'Pico de engajamento:',
+                peakTime: '{h}:00 hora local',
+                viralityLabel: 'Potencial viral:',
+                viralityHigh: 'Alto 🔥',
+                quote: '"Esta publicação ressoou com usuários que gostam de {v}."',
+                toastAd: 'Espaço publicitário comprado por {spend} — +{gain} {likes}! 🎉',
+                toastDeleted: 'Publicação excluída',
+                confirmDelete: 'Tem certeza de que quer excluir esta publicação e sua mídia?',
+                vibes: ['nostalgia', 'minimalismo', 'assuntos em alta', 'conteúdo positivo', 'discussões profundas'],
+                replies: [
+                    'Que demais! 🔥', 'Adoro ver suas novidades! 😊', 'Uau, incrível!',
+                    'Ótimo post! 🙌', 'Continua assim!', 'Nossa, verdade!', 'Amei isso! ❤️',
+                    'Obrigado por compartilhar!', 'Lendário!', 'Só conteúdo positivo ✨'
+                ]
+            },
+            ru: {
+                title: 'Ваш профиль - ChillSpace',
+                header: 'Ваш профиль',
+                posts: 'Посты', likes: 'Лайки', reach: 'Охват',
+                you: 'Вы',
+                analyticsBtn: '📊 Аналитика',
+                deleteTitle: 'Удалить пост',
+                likesWord: 'лайков', commentsWord: 'комментариев',
+                emptyHtml: 'У вас пока нет постоянных постов.<br>Выберите «Опубликовать» в Ленте, чтобы сохранить их здесь!',
+                adBtn: 'Получите больше лайков МГНОВЕННО с $1,000,000 БЕСПЛАТНО на рекламный счёт ChillSpace Ads!',
+                analyticsTitle: 'Аналитика поста',
+                close: 'Закрыть',
+                boost: 'Продвинуть этот пост 🚀',
+                adQuestion: 'Сколько вы хотите потратить?',
+                adEstimateLabel: 'Примерный прирост лайков',
+                adCreditNote: '💳 Рекламный счёт ChillSpace Ads: <b>$1,000,000 БЕСПЛАТНО</b><br>Не волнуйтесь — он никогда не кончится. (Это платцебо-платформа, тссс.)',
+                cancel: 'Отмена',
+                purchase: 'Купить рекламное место',
+                perfLabel: 'Эффективность:',
+                perfOf: '{n}% от вашего среднего',
+                reachLabel: 'Общий охват:',
+                reachUsers: '{n} уникальных пользователей',
+                peakLabel: 'Пик вовлечённости:',
+                peakTime: '{h}:00 по местному времени',
+                viralityLabel: 'Потенциал виральности:',
+                viralityHigh: 'высокий 🔥',
+                quote: '«Этот пост нашёл отклик у пользователей, которым нравится {v}.»',
+                toastAd: 'Рекламное место куплено за {spend} — +{gain} {likes}! 🎉',
+                toastDeleted: 'Пост удалён',
+                confirmDelete: 'Вы уверены, что хотите удалить этот пост и его медиа?',
+                vibes: ['ностальгия', 'минимализм', 'модные темы', 'добрый контент', 'глубокие дискуссии'],
+                replies: [
+                    'Это так круто! 🔥', 'Люблю твои обновления! 😊', 'Вау, потрясающе!',
+                    'Отличный пост! 🙌', 'Так держать!', 'Полностью согласен!', 'Мне это нравится! ❤️',
+                    'Спасибо, что поделился!', 'Легендарно!', 'Только добрый контент ✨'
+                ]
+            }
+        };
+
+        function detectLang() {
+            var list = [];
+            if (navigator.languages) list = list.concat(navigator.languages);
+            if (navigator.language) list.push(navigator.language);
+            list.push('en');
+            for (var i = 0; i < list.length; i++) {
+                var l = String(list[i] || '').toLowerCase();
+                if (l.indexOf('ko') === 0) return 'ko';
+                if (l.indexOf('ja') === 0) return 'ja';
+                if (l.indexOf('es') === 0) return 'es';
+                if (l.indexOf('pt') === 0) return 'pt';
+                if (l.indexOf('ru') === 0) return 'ru';
+                if (l.indexOf('en') === 0) return 'en';
+            }
+            return 'en';
+        }
+
+        var lang = detectLang();
+        STRINGS[lang] = STRINGS[lang] || STRINGS.en;
+        document.documentElement.lang = lang;
+
+        function t(key, vars) {
+            var v = STRINGS[lang][key];
+            if (v === undefined) v = STRINGS.en[key];
+            var s = (v === undefined) ? key : v;
+            if (vars) {
+                for (var k in vars) s = s.split('{' + k + '}').join(String(vars[k]));
+            }
+            return s;
+        }
+        window.csT = t;
+        document.title = t('title');
+
+        function pluralRu(n, one, few, many) {
+            n = Math.abs(Math.round(n));
+            var n10 = n % 10, n100 = n % 100;
+            if (n10 === 1 && n100 !== 11) return one;
+            if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+            return many;
+        }
+
+        function likeWord(n) {
+            n = Math.abs(Math.round(n));
+            if (lang === 'en') return n === 1 ? 'like' : 'likes';
+            if (lang === 'pt') return n === 1 ? 'curtida' : 'curtidas';
+            if (lang === 'ru') return pluralRu(n, 'лайк', 'лайка', 'лайков');
+            return t('likesWord');
+        }
+        function commentWord(n) {
+            n = Math.abs(Math.round(n));
+            if (lang === 'en') return n === 1 ? 'comment' : 'comments';
+            if (lang === 'es') return n === 1 ? 'comentario' : 'comentarios';
+            if (lang === 'pt') return n === 1 ? 'comentário' : 'comentários';
+            if (lang === 'ru') return pluralRu(n, 'комментарий', 'комментария', 'комментариев');
+            return t('commentsWord');
+        }
+        window.csLikeWord = likeWord;
+        window.csCommentWord = commentWord;
+
+        var LOCALE_TAGS = { en: 'en', ko: 'ko', ja: 'ja', es: 'es', pt: 'pt-BR', ru: 'ru' };
+        window.csLocale = function () { return LOCALE_TAGS[lang] || 'en'; };
+
+        window.csVibes = function () { return STRINGS[lang].vibes || STRINGS.en.vibes; };
+        window.csReplies = function () { return STRINGS[lang].replies || STRINGS.en.replies; };
+
+        function applyI18n() {
+            var els = document.querySelectorAll('[data-i18n]');
+            for (var i = 0; i < els.length; i++) {
+                els[i].textContent = t(els[i].getAttribute('data-i18n'));
+            }
+            var htmlEls = document.querySelectorAll('[data-i18n-html]');
+            for (var i = 0; i < htmlEls.length; i++) {
+                htmlEls[i].innerHTML = t(htmlEls[i].getAttribute('data-i18n-html'));
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyI18n);
+        } else {
+            applyI18n();
+        }
+    })();
+    </script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -247,7 +558,7 @@
 </head>
 <body>
 <header>
-    <div class="header-title">Your Profile</div>
+    <div class="header-title" data-i18n="header">Your Profile</div>
 </header>
 
 <main id="main">
@@ -255,9 +566,9 @@
         <div class="profile-avatar" id="profileAvatar">Y</div>
         <div class="profile-name" id="profileName">You</div>
         <div class="profile-stats">
-            <div class="stat-item"><b id="postCount">0</b> Posts</div>
-            <div class="stat-item"><b id="totalLikes">0</b> Likes</div>
-            <div class="stat-item"><b id="totalReach" class="reach-label">0</b> Reach</div>
+            <div class="stat-item"><b id="postCount">0</b> <span data-i18n="posts">Posts</span></div>
+            <div class="stat-item"><b id="totalLikes">0</b> <span data-i18n="likes">Likes</span></div>
+            <div class="stat-item"><b id="totalReach" class="reach-label">0</b> <span data-i18n="reach">Reach</span></div>
         </div>
     </div>
 
@@ -269,10 +580,10 @@
 <!-- Analytics Modal -->
 <div id="analyticsOverlay" class="modal-overlay" style="display:none;">
     <div class="modal-box">
-        <div class="modal-title">Post Analytics</div>
+        <div class="modal-title" data-i18n="analyticsTitle">Post Analytics</div>
         <div id="analyticsContent"></div>
         <div class="modal-actions">
-            <button class="modal-cancel" onclick="closeAnalytics()">Close</button>
+            <button class="modal-cancel" onclick="closeAnalytics()" data-i18n="close">Close</button>
         </div>
     </div>
 </div>
@@ -280,9 +591,9 @@
 <!-- Ad Credit Modal -->
 <div id="adOverlay" class="modal-overlay" style="display:none;">
     <div class="modal-box">
-        <div class="modal-title">Boost this post 🚀</div>
+        <div class="modal-title" data-i18n="boost">Boost this post 🚀</div>
 
-        <div class="ad-question">How much do you want to spend?</div>
+        <div class="ad-question" data-i18n="adQuestion">How much do you want to spend?</div>
         <div class="ad-amount" id="adSpendAmount">$50</div>
 
         <input type="range" class="ad-slider" id="adSlider" min="1" max="1000" step="1" value="50"
@@ -290,18 +601,18 @@
         <div class="ad-slider-labels"><span>$1</span><span>$1,000</span></div>
 
         <div class="ad-estimate-box">
-            <div class="ad-estimate-label">Estimated like growth</div>
+            <div class="ad-estimate-label" data-i18n="adEstimateLabel">Estimated like growth</div>
             <div class="ad-estimate-value" id="adEstimate">+0 likes</div>
         </div>
 
-        <div class="ad-credit-note">
+        <div class="ad-credit-note" data-i18n-html="adCreditNote">
             💳 ChillSpace Ads credit: <b>$1,000,000 FREE</b><br>
             Don't worry — it never runs out. (It's a placebo platform, shhh.)
         </div>
 
         <div class="modal-actions">
-            <button class="modal-secondary" onclick="closeAdModal()">Cancel</button>
-            <button class="modal-cancel" onclick="purchaseAd()">Purchase Ad Space</button>
+            <button class="modal-secondary" onclick="closeAdModal()" data-i18n="cancel">Cancel</button>
+            <button class="modal-cancel" onclick="purchaseAd()" data-i18n="purchase">Purchase Ad Space</button>
         </div>
     </div>
 </div>
@@ -493,7 +804,7 @@
 
         const container = document.getElementById('postsContainer');
         const posts = getPosts();
-        const name = localStorage.getItem(NAME_KEY) || 'You';
+        const name = localStorage.getItem(NAME_KEY) || window.csT('you');
 
         document.getElementById('profileName').textContent = name;
         document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
@@ -502,14 +813,23 @@
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-icon">📝</span>
-                    <p>You haven't made any permanent posts yet.<br>Select "Post" in the Feed to save them here!</p>
+                    <p>${window.csT('emptyHtml')}</p>
                 </div>
             `;
             updateStats();
             return;
         }
 
-        container.innerHTML = posts.map(post => {
+        const existing = new Map(Array.from(container.querySelectorAll('article.post'),
+            article => [article.dataset.id, article]));
+        const keys = new Set(posts.map(post => String(post.id)));
+        container.querySelector('.empty-state')?.remove();
+        for (const [key, article] of existing) {
+            if (!keys.has(key)) article.remove();
+        }
+
+        let nextArticle = container.firstElementChild;
+        for (const post of posts) {
             const likes = getLiveLikes(post);
 
             let mediaHtml = '';
@@ -531,16 +851,17 @@
                 </div>
             `).join('');
 
-            const dateStr = new Date(post.timestamp).toLocaleString([], {
+            const dateStr = new Date(post.timestamp).toLocaleString(window.csLocale(), {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
             const commentCount = post.comments ? post.comments.length : 0;
             const key = String(post.id);
             const commentsOpen = expandedComments.has(key);
 
-            return `
+            const template = document.createElement('template');
+            template.innerHTML = `
                 <article class="post" data-id="${post.id}">
-                    <button class="delete-btn" onclick="deletePost('${post.id}')" title="Delete Post">✕</button>
+                    <button class="delete-btn" onclick="deletePost('${post.id}')" title="${window.csT('deleteTitle')}">✕</button>
                     <div class="post-header">
                         <div class="avatar-small" style="background:linear-gradient(135deg, #1877f2, #7c3aed);">${name.charAt(0).toUpperCase()}</div>
                         <div class="post-meta">
@@ -554,18 +875,46 @@
                         <div class="action-item"><span class="likes-count" id="likes-${post.id}">👍 ${likes.toLocaleString()}</span></div>
                         ${commentCount > 0
                             ? `<button class="comments-toggle" id="comments-toggle-${post.id}" onclick="toggleComments('${post.id}')">
-                                   💬 ${commentCount} <span class="ct-label">${commentCount === 1 ? 'comment' : 'comments'}</span><span class="chev">${commentsOpen ? '▲' : '▼'}</span>
+                                   💬 ${commentCount} <span class="ct-label">${window.csCommentWord(commentCount)}</span><span class="chev">${commentsOpen ? '▲' : '▼'}</span>
                                </button>`
-                            : `<div class="action-item">💬 0 comments</div>`}
-                        <button class="analytics-btn" onclick="openAnalytics('${post.id}')">📊 Analytics</button>
+                            : `<div class="action-item">💬 ${window.csCommentWord(0) === '' ? '' : '0 ' + window.csCommentWord(0)}</div>`}
+                        <button class="analytics-btn" onclick="openAnalytics('${post.id}')">${window.csT('analyticsBtn')}</button>
                     </div>
                     ${commentCount > 0 ? `<div class="comments-section" id="comments-${post.id}" style="display:${commentsOpen ? 'block' : 'none'};">${commentsHtml}</div>` : ''}
                     <button class="ad-btn" onclick="openAdModal('${post.id}')">
-                        Get more likes INSTANTLY with $1,000,000 FREE in ChillSpace Ads credit!
+                        ${window.csT('adBtn')}
                     </button>
                 </article>
             `;
-        }).join('');
+            const updated = template.content.firstElementChild;
+            const article = existing.get(key) || updated;
+            if (article !== updated) {
+                // Keep matching children attached, especially a playing or paused video.
+                const children = Array.from(updated.children);
+                const classes = new Set(children.map(child => child.className));
+                for (const child of Array.from(article.children)) {
+                    if (!classes.has(child.className)) child.remove();
+                }
+                let current = article.firstElementChild;
+                for (const child of children) {
+                    if (current?.className !== child.className) {
+                        article.insertBefore(child, current);
+                    } else {
+                        const previous = current;
+                        current = previous.nextElementSibling;
+                        if (!previous.isEqualNode(child)) previous.replaceWith(child);
+                    }
+                }
+            }
+            if (article !== nextArticle) {
+                if (article.parentNode === container && container.moveBefore) {
+                    container.moveBefore(article, nextArticle);
+                } else {
+                    container.insertBefore(article, nextArticle);
+                }
+            }
+            nextArticle = article.nextElementSibling;
+        }
 
         // Start ticking for each post, continuing from its live count
         posts.forEach(post => {
@@ -610,22 +959,22 @@
         const performance = 100 + (currentLikes % 50);
         const peakHour    = new Date(post.timestamp).getHours();
         const reach       = Math.round(currentLikes * 1.5) + 120;
-        const vibes       = ['nostalgia', 'minimalism', 'trending topics', 'wholesome content', 'deep discussions'][id.length % 5];
+        const vibes       = window.csVibes()[id.length % 5];
 
         const history = post.likeHistory || [currentLikes];
         const canvasId = `chart-${id}`;
 
         document.getElementById('analyticsContent').innerHTML = `
             <div style="text-align:left; font-size:14px; line-height:1.6;">
-                <p><b>Performance:</b> ${performance}% of your average</p>
-                <p><b>Total Reach:</b> ${reach.toLocaleString()} unique users</p>
+                <p><b>${window.csT('perfLabel')}</b> ${window.csT('perfOf', { n: performance })}</p>
+                <p><b>${window.csT('reachLabel')}</b> ${window.csT('reachUsers', { n: reach.toLocaleString() })}</p>
                 <div style="margin: 15px 0;">
                     <canvas id="${canvasId}" style="width:100%; height:120px; background:#f9fafb; border-radius:8px; border:1px solid #e4e6eb;"></canvas>
                 </div>
-                <p><b>Peak Engagement:</b> ${peakHour}:00 Local Time</p>
-                <p><b>Virality Potential:</b> High 🔥</p>
+                <p><b>${window.csT('peakLabel')}</b> ${window.csT('peakTime', { h: peakHour })}</p>
+                <p><b>${window.csT('viralityLabel')}</b> ${window.csT('viralityHigh')}</p>
                 <div style="margin-top:12px; padding:10px; background:#f0f7ff; border-radius:8px; border-left:4px solid #1877f2;">
-                    <i>"This post resonated with users who enjoy ${vibes}."</i>
+                    <i>${window.csT('quote', { v: vibes })}</i>
                 </div>
             </div>
         `;
@@ -718,8 +1067,9 @@
         const spend = Number(slider.value);
 
         document.getElementById('adSpendAmount').textContent = '$' + spend.toLocaleString();
+        const gainPreview = adGrowthFor(spend);
         document.getElementById('adEstimate').textContent =
-            '+' + adGrowthFor(spend).toLocaleString() + ' likes';
+            '+' + gainPreview.toLocaleString() + ' ' + window.csLikeWord(gainPreview);
 
         const pct = ((spend - 1) / 999) * 100;
         slider.style.background =
@@ -743,14 +1093,18 @@
 
         updateStats();
         closeAdModal();
-        showToast(`Ad space purchased for $${spend.toLocaleString()} — +${gain.toLocaleString()} likes! 🎉`);
+        showToast(window.csT('toastAd', {
+            spend: '$' + spend.toLocaleString(),
+            gain: gain.toLocaleString(),
+            likes: window.csLikeWord(gain)
+        }));
     }
 
     /* ---------------------------------------------------------------
        Delete
        --------------------------------------------------------------- */
     function deletePost(id) {
-        if (!confirm('Are you sure you want to delete this post and its media?')) return;
+        if (!confirm(window.csT('confirmDelete'))) return;
 
         const key = String(id);
         const posts = getPosts();
@@ -773,7 +1127,7 @@
 
         savePosts(posts.filter(p => String(p.id) !== key));
         render();
-        showToast('Post deleted');
+        showToast(window.csT('toastDeleted'));
     }
 
     /* ---------------------------------------------------------------
@@ -817,11 +1171,7 @@
     }
 
     function getRandomFriendComment() {
-        const replies = [
-            "This is so cool! 🔥", "Love seeing your updates! 😊", "Wow, amazing!",
-            "Great post! 🙌", "Keep it up!", "So true!", "I love this! ❤️",
-            "Thanks for sharing!", "Legendary!", "Wholesome content only ✨"
-        ];
+        const replies = window.csReplies();
         return replies[Math.floor(Math.random() * replies.length)];
     }
 
@@ -842,9 +1192,7 @@
        Cross-tab sync
        --------------------------------------------------------------- */
     window.addEventListener('storage', (e) => {
-        if (document.querySelector('video:not(:paused)')) return;
-        if (e.key === NAME_KEY) render();
-        if (e.key === STORAGE_KEY) { render(); updateStats(); }
+        if (e.key === NAME_KEY || e.key === STORAGE_KEY) render();
     });
 
     /* ---------------------------------------------------------------
@@ -856,9 +1204,7 @@
         if (document.visibilityState === 'hidden') {
             persistLikes();
         } else if (document.visibilityState === 'visible') {
-            if (!document.querySelector('video:not(:paused)')) {
-                render();
-            }
+            render();
         }
     });
 

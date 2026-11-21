@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ChillSpace</title>
+<script>
+/* ─── ChillSpace i18n — EN / KO / JA / ES / PT / RU (browser detection) ─── */
+(function () {
+  'use strict';
+  var STRINGS = {
+    en: {
+      subtitle: 'Pick an app',
+      tile_feed: 'Feed', tile_dm: 'DM', tile_reels: 'Reels', tile_profile: 'Profile',
+      tile_lite: 'Lite Feed', tile_nums: 'Nums', tile_flap: 'Flap', tile_jump: 'Jump',
+      tile_stack: 'Stack', tile_slide: 'Slide', tile_rhythm: 'Rhythm', tile_surfer: 'Surfer',
+      tile_runner: 'Runner', tile_sky: 'Sky', tile_road: 'Road', tile_ocean: 'Ocean',
+      tile_shop: 'Shop',
+      lite_alert: 'Lite Feed is only available in the Android app.'
+    },
+    ko: {
+      subtitle: '앱을 선택하세요',
+      tile_feed: '뉴스 피드', tile_dm: 'DM', tile_reels: '릴스페이스', tile_profile: '프로필',
+      tile_lite: 'Lite 피드', tile_nums: '넘버 게임', tile_flap: '새 게임', tile_jump: '점프 게임',
+      tile_stack: '타워 게임', tile_slide: '놀이터 게임', tile_rhythm: '리듬 게임', tile_surfer: '서퍼',
+      tile_runner: '러너', tile_sky: '하늘', tile_road: '길', tile_ocean: '바다',
+      tile_shop: '가짜 샵',
+      lite_alert: 'Lite 피드는 Android 앱에서만 사용할 수 있습니다.'
+    },
+    ja: {
+      subtitle: 'アプリを選んでね',
+      tile_feed: 'フィード', tile_dm: 'DM', tile_reels: 'リール', tile_profile: 'プロフィール',
+      tile_lite: 'ライトフィード', tile_nums: 'ナンバーゲーム', tile_flap: 'とりゲーム', tile_jump: 'ジャンプゲーム',
+      tile_stack: 'タワーゲーム', tile_slide: 'スライドゲーム', tile_rhythm: 'リズムゲーム', tile_surfer: 'サーファー',
+      tile_runner: 'ランナー', tile_sky: 'そら', tile_road: 'みち', tile_ocean: 'うみ',
+      tile_shop: 'ニセショップ',
+      lite_alert: 'ライトフィードはAndroidアプリでのみご利用いただけます。'
+    },
+    es: {
+      subtitle: 'Elige una app',
+      tile_feed: 'Feed', tile_dm: 'DM', tile_reels: 'Reels', tile_profile: 'Perfil',
+      tile_lite: 'Feed Lite', tile_nums: 'Números', tile_flap: 'Flap', tile_jump: 'Salto',
+      tile_stack: 'Torre', tile_slide: 'Tobogán', tile_rhythm: 'Ritmo', tile_surfer: 'Surfeador',
+      tile_runner: 'Corredor', tile_sky: 'Cielo', tile_road: 'Camino', tile_ocean: 'Océano',
+      tile_shop: 'Tienda',
+      lite_alert: 'Feed Lite solo está disponible en la aplicación de Android.'
+    },
+    pt: {
+      subtitle: 'Escolha um app',
+      tile_feed: 'Feed', tile_dm: 'DM', tile_reels: 'Reels', tile_profile: 'Perfil',
+      tile_lite: 'Feed Lite', tile_nums: 'Números', tile_flap: 'Flap', tile_jump: 'Pulo',
+      tile_stack: 'Torre', tile_slide: 'Escorrega', tile_rhythm: 'Ritmo', tile_surfer: 'Surfista',
+      tile_runner: 'Corredor', tile_sky: 'Céu', tile_road: 'Estrada', tile_ocean: 'Oceano',
+      tile_shop: 'Loja',
+      lite_alert: 'O Feed Lite só está disponível no aplicativo Android.'
+    },
+    ru: {
+      subtitle: 'Выберите приложение',
+      tile_feed: 'Лента', tile_dm: 'Сообщения', tile_reels: 'Рилсы', tile_profile: 'Профиль',
+      tile_lite: 'Lite-лента', tile_nums: 'Числа', tile_flap: 'Птичка', tile_jump: 'Прыжки',
+      tile_stack: 'Башня', tile_slide: 'Горка', tile_rhythm: 'Ритм', tile_surfer: 'Сёрфер',
+      tile_runner: 'Бегун', tile_sky: 'Небо', tile_road: 'Дорога', tile_ocean: 'Океан',
+      tile_shop: 'Магазин',
+      lite_alert: 'Lite-лента доступна только в приложении для Android.'
+    }
+  };
+
+  function detectLang() {
+    var list = [];
+    if (navigator.languages) list = list.concat(navigator.languages);
+    if (navigator.language) list.push(navigator.language);
+    list.push('en');
+    for (var i = 0; i < list.length; i++) {
+      var l = String(list[i] || '').toLowerCase();
+      if (l.indexOf('ko') === 0) return 'ko';
+      if (l.indexOf('ja') === 0) return 'ja';
+      if (l.indexOf('es') === 0) return 'es';
+      if (l.indexOf('pt') === 0) return 'pt';
+      if (l.indexOf('ru') === 0) return 'ru';
+      if (l.indexOf('en') === 0) return 'en';
+    }
+    return 'en';
+  }
+
+  var lang = detectLang();
+  STRINGS[lang] = STRINGS[lang] || STRINGS.en;
+  document.documentElement.lang = lang;
+
+  function t(key) {
+    var v = STRINGS[lang][key];
+    if (v === undefined) v = STRINGS.en[key];
+    return (v === undefined) ? key : v;
+  }
+  window.csT = t;
+
+  function applyI18n() {
+    var els = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < els.length; i++) {
+      els[i].textContent = t(els[i].getAttribute('data-i18n'));
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyI18n);
+  } else {
+    applyI18n();
+  }
+})();
+</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    background: linear-gradient(135deg, #0f1e6e 0%, #312e81 42%, #6b21a8 100%);
+    background-attachment: fixed;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* i18n handled by data-i18n attributes */
+
+  .header { text-align: center; margin: 8px 0 32px; }
+  .logo {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #06b6d4, #a78bfa 50%, #f0abfc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+  }
+  .subtitle { font-size: 14px; color: rgba(255,255,255,0.7); margin: 6px 0 0; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  .tile {
+    background: transparent;
+    border: none;
+    padding: 12px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    color: #fff;
+    font-family: inherit;
+    text-decoration: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .tile-icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: block;
+  }
+  .tile-icon svg { width: 100%; height: 100%; display: block; }
+
+  .tile:hover .tile-icon,
+  .tile:focus .tile-icon,
+  .tile:focus-visible .tile-icon {
+    transform: scale(1.07);
+    box-shadow: 0 0 0 4px rgba(167,139,250,0.6), 0 10px 28px rgba(0,0,0,0.5);
+  }
+
+  .tile-label {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.25;
+    max-width: 100px;
+    word-break: break-word;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; }
+    .tile-icon { width: 72px; height: 72px; border-radius: 18px; }
+    .logo { font-size: 32px; }
+    .tile-label { font-size: 12px; margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 class="logo">ChillSpace</h1>
+  <p class="subtitle" data-i18n="subtitle">Pick an app</p>
+</div>
+
+<div class="grid">
+
+  <!-- 1. Feed -->
+  <a class="tile" href="file:///android_asset/feed.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#7c3aed"/>
+        <path d="M22 14 h24 v10 h-14 v8 h12 v10 h-12 v14 h-10 z" fill="#fff"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_feed">Feed</span>
+  </a>
+
+  <!-- 2. DM -->
+  <a class="tile" href="file:///android_asset/messages.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="msgGrad" x1="15" y1="27" x2="49" y2="27" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#8b5cf6"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="#10b981"/>
+        <path d="M10 16 q0 -6 6 -6 h32 q6 0 6 6 v22 q0 6 -6 6 h-20 l-10 10 v-10 h-2 q-6 0 -6 -6 z" fill="#fff"/>
+        <g stroke="url(#msgGrad)" stroke-width="1.8" stroke-linecap="round">
+          <line x1="17" y1="27" x2="27" y2="27"/>
+          <line x1="19.5" y1="22.67" x2="24.5" y2="31.33"/>
+          <line x1="19.5" y1="31.33" x2="24.5" y2="22.67"/>
+          <line x1="27" y1="27" x2="37" y2="27"/>
+          <line x1="29.5" y1="22.67" x2="34.5" y2="31.33"/>
+          <line x1="29.5" y1="31.33" x2="34.5" y2="22.67"/>
+          <line x1="37" y1="27" x2="47" y2="27"/>
+          <line x1="39.5" y1="22.67" x2="44.5" y2="31.33"/>
+          <line x1="39.5" y1="31.33" x2="44.5" y2="22.67"/>
+        </g>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_dm">DM</span>
+  </a>
+
+  <!-- 3. Reels (rs ligature matching provided image) -->
+  <a class="tile" href="file:///android_asset/reel.html">
+    <div class="tile-icon">
+      <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden">
+        <defs>
+          <clipPath id="clip0"><rect x="0" y="0" width="64" height="64"/></clipPath>
+          <linearGradient x1="578.735" y1="391.059" x2="362.265" y2="336.941" gradientUnits="userSpaceOnUse" spreadMethod="reflect" id="fill1">
+            <stop offset="0" stop-color="#7030A0"/><stop offset="0.5" stop-color="#002060"/><stop offset="1" stop-color="#00B0F0"/>
+          </linearGradient>
+          <linearGradient x1="635.418" y1="317.37" x2="548.582" y2="83.6302" gradientUnits="userSpaceOnUse" spreadMethod="reflect" id="fill2">
+            <stop offset="0" stop-color="#7030A0"/><stop offset="0.5" stop-color="#002060"/><stop offset="1" stop-color="#00B0F0"/>
+          </linearGradient>
+          <linearGradient x1="719.891" y1="378.445" x2="690.791" y2="81.5756" gradientUnits="userSpaceOnUse" spreadMethod="reflect" id="fill3">
+            <stop offset="0" stop-color="#7030A0"/><stop offset="0.5" stop-color="#002060"/><stop offset="1" stop-color="#00B0F0"/>
+          </linearGradient>
+          <linearGradient x1="770.104" y1="644.957" x2="734.181" y2="358.094" gradientUnits="userSpaceOnUse" spreadMethod="reflect" id="fill4">
+            <stop offset="0" stop-color="#7030A0"/><stop offset="0.5" stop-color="#002060"/><stop offset="1" stop-color="#00B0F0"/>
+          </linearGradient>
+          <linearGradient x1="506.12" y1="229.259" x2="387.881" y2="129.741" gradientUnits="userSpaceOnUse" spreadMethod="reflect" id="fill5">
+            <stop offset="0" stop-color="#7030A0"/><stop offset="0.5" stop-color="#002060"/><stop offset="1" stop-color="#00B0F0"/>
+          </linearGradient>
+        </defs>
+
+        <g clip-path="url(#clip0)">
+          <rect x="0" y="0" width="64" height="64" fill="#FFFFFF"/>
+
+          <!-- Original artwork lives in a ~497 × 475 region starting at (386.8, 119.3).
+               Scale it down and center it inside the 64 × 64 viewport. -->
+          <g transform="translate(0.7 2.1) scale(0.126) translate(-386.8 -119.3)">
+            <rect x="413" y="134" width="115" height="460" fill="url(#fill1)"/>
+            <rect x="413" y="134" width="358" height="133" fill="url(#fill2)"/>
+            <path d="M609.511 389.235C559.48 314.803 580.733 213.031 656.981 161.922 732.103 111.568 832.85 129.089 883.704 201.351L747.571 296.694Z" fill="url(#fill3)" fill-rule="evenodd"/>
+            <path d="M847.842 350.901C894.174 423.469 870.31 521.631 794.539 570.153 718.769 618.675 619.785 599.182 573.452 526.614 572.912 525.768 572.38 524.916 571.857 524.059L710.647 438.758Z" fill="url(#fill4)" fill-rule="evenodd"/>
+            <path d="M396.5 179.5C396.5 146.363 419.11 119.5 447 119.5 474.89 119.5 497.5 146.363 497.5 179.5 497.5 212.637 474.89 239.5 447 239.5 419.11 239.5 396.5 212.637 396.5 179.5Z" stroke="#FFFFFF" stroke-width="19.3333" stroke-miterlimit="8" fill="url(#fill5)" fill-rule="evenodd"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_reels">Reels</span>
+  </a>
+
+  <!-- 4. Profile -->
+  <a class="tile" href="file:///android_asset/profile.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="32" cy="24" r="10" fill="#8b5cf6"/>
+        <path d="M12 56 q0 -16 20 -16 q20 0 20 16 z" fill="#8b5cf6"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_profile">Profile</span>
+  </a>
+
+  <!-- 5. Lite Feed -->
+  <button class="tile" onclick="openLiteFeed(event)">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#fff"/>
+        <path d="M22 14 h24 v10 h-14 v8 h12 v10 h-12 v14 h-10 z" fill="#7c3aed"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_lite">Lite Feed</span>
+  </button>
+
+  <!-- 6. Nums -->
+  <a class="tile" href="file:///android_asset/number.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#7c3aed"/>
+        <path d="M28 16 h8 v12 h12 v8 h-12 v12 h-8 v-12 h-12 v-8 h12 z" fill="#10b981"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_nums">Nums</span>
+  </a>
+
+  <!-- 7. Flap -->
+  <a class="tile" href="file:///android_asset/flapper.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#3b82f6"/>
+        <ellipse cx="28" cy="38" rx="14" ry="12" fill="#facc15"/>
+        <circle cx="40" cy="26" r="10" fill="#facc15"/>
+        <circle cx="43" cy="24" r="2" fill="#1c1e21"/>
+        <path d="M48 25 l7 2 l-7 3 z" fill="#f97316"/>
+        <ellipse cx="26" cy="40" rx="8" ry="5" fill="#eab308"/>
+        <path d="M28 50 l-3 6 M34 50 l3 6" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_flap">Flap</span>
+  </a>
+
+  <!-- 8. Jump -->
+  <a class="tile" href="file:///android_asset/jump.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="jumpBg" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#facc15"/>
+            <stop offset="100%" stop-color="#84cc16"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="url(#jumpBg)"/>
+        <circle cx="32" cy="32" r="20" fill="#8b5cf6"/>
+        <circle cx="25" cy="28" r="3" fill="#fff"/>
+        <circle cx="39" cy="28" r="3" fill="#fff"/>
+        <circle cx="26" cy="29" r="1.5" fill="#1c1e21"/>
+        <circle cx="40" cy="29" r="1.5" fill="#1c1e21"/>
+        <path d="M24 38 q8 8 16 0" fill="none" stroke="#1c1e21" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_jump">Jump</span>
+  </a>
+
+  <!-- 9. Stack -->
+  <a class="tile" href="file:///android_asset/stacker.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#1f2937"/>
+        <rect x="14" y="46" width="36" height="8" fill="#ef4444"/>
+        <rect x="18" y="38" width="28" height="8" fill="#f59e0b"/>
+        <rect x="16" y="30" width="32" height="8" fill="#10b981"/>
+        <rect x="20" y="22" width="24" height="8" fill="#3b82f6"/>
+        <rect x="18" y="14" width="28" height="8" fill="#8b5cf6"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_stack">Stack</span>
+  </a>
+
+  <!-- 10. Slide (top-down perspective) -->
+  <a class="tile" href="file:///android_asset/slidey.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#16a34a"/>
+        <path d="M 12 60 L 52 60 L 44 12 L 20 12 Z" fill="#ef4444"/>
+        <path d="M 12 60 L 20 12" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+        <path d="M 52 60 L 44 12" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+        <path d="M 12 60 L 52 60" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="22" cy="48" r="3.5" fill="#facc15"/>
+        <circle cx="42" cy="42" r="3" fill="#facc15"/>
+        <circle cx="26" cy="34" r="2.5" fill="#facc15"/>
+        <circle cx="38" cy="26" r="2.5" fill="#facc15"/>
+        <circle cx="32" cy="18" r="2" fill="#facc15"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_slide">Slide</span>
+  </a>
+
+  <!-- 11. Rhythm (elegant flowing note) -->
+  <a class="tile" href="file:///android_asset/rhythmgame.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#8b5cf6"/>
+        <g fill="#fff">
+          <ellipse cx="22" cy="46" rx="9" ry="7" transform="rotate(-20 22 46)"/>
+          <rect x="29" y="12" width="3.5" height="34" rx="1.5"/>
+          <path d="M 32.5 12 C 40 12 44 18 44 24 C 44 28 42 30 40 32 C 40 30 42 26 40 22 C 38 18 32.5 16 32.5 16 Z"/>
+          <path d="M 32.5 20 C 38 20 40 24 40 28 C 40 30 38 32 36 34 C 36 32 38 30 38 28 C 38 24 32.5 24 32.5 24 Z"/>
+        </g>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_rhythm">Rhythm</span>
+  </a>
+
+  <!-- 12. Surfer (dot-art S) -->
+  <a class="tile" href="file:///android_asset/surfer.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <pattern id="surfDots" width="3.2" height="3.2" patternUnits="userSpaceOnUse">
+            <circle cx="1.6" cy="1.6" r="1.35" fill="#fff"/>
+          </pattern>
+          <mask id="surfMask">
+            <path d="M 48 24 A 10 10 0 0 0 38 14 H 34 A 10 10 0 0 0 34 34 H 38 A 10 10 0 0 1 38 54 H 34 A 10 10 0 0 1 24 44" stroke="#fff" stroke-width="11" stroke-linecap="round" fill="none"/>
+          </mask>
+        </defs>
+        <rect width="64" height="64" fill="#f97316"/>
+        <rect width="64" height="64" fill="url(#surfDots)" mask="url(#surfMask)"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_surfer">Surfer</span>
+  </a>
+
+  <!-- 13. Runner (bold R) -->
+  <a class="tile" href="file:///android_asset/runner.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="runnerBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6b4d7d"/>
+            <stop offset="100%" stop-color="#3b2d5c"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="url(#runnerBg)"/>
+        <path d="M 16 12 V 52 H 26 V 36 H 30 L 38 52 H 48 L 38 34 C 46 32 48 24 48 18 C 48 12 42 12 36 12 H 16 Z M 26 20 H 36 C 40 20 40 28 36 28 H 26 Z" fill="#ef4444" fill-rule="evenodd"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_runner">Runner</span>
+  </a>
+
+  <!-- 14. Explore Sky -->
+  <a class="tile" href="file:///android_asset/exploresky.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="skyBg" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#a5b4fc"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="url(#skyBg)"/>
+        <g fill="#fff">
+          <circle cx="20" cy="40" r="7"/>
+          <circle cx="30" cy="34" r="9"/>
+          <circle cx="40" cy="38" r="8"/>
+          <circle cx="48" cy="42" r="6"/>
+          <rect x="18" y="40" width="30" height="8" rx="4"/>
+        </g>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_sky">Sky</span>
+  </a>
+
+  <!-- 15. Explore Road (bigger, white dashes) -->
+  <a class="tile" href="file:///android_asset/exploreroad.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="28" fill="#87ceeb"/>
+        <rect y="28" width="64" height="36" fill="#4ade80"/>
+        <path d="M 14 64 L 50 64 L 42 28 L 22 28 Z" fill="#3f3f46"/>
+        <line x1="32" y1="32" x2="32" y2="60" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_road">Road</span>
+  </a>
+
+  <!-- 16. Explore Ocean -->
+  <a class="tile" href="file:///android_asset/exploreocean.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="sunsetSky" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#f97316"/>
+            <stop offset="50%" stop-color="#fb7185"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+          <linearGradient id="oceanBg" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1e3a8a"/>
+            <stop offset="100%" stop-color="#0c4a6e"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="38" fill="url(#sunsetSky)"/>
+        <rect y="38" width="64" height="26" fill="url(#oceanBg)"/>
+        <circle cx="32" cy="38" r="10" fill="#fde047"/>
+        <ellipse cx="32" cy="42" rx="8" ry="2" fill="#fde047" opacity="0.5"/>
+        <ellipse cx="32" cy="48" rx="6" ry="1.5" fill="#fde047" opacity="0.4"/>
+        <ellipse cx="32" cy="54" rx="4" ry="1" fill="#fde047" opacity="0.3"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_ocean">Ocean</span>
+  </a>
+
+  <!-- 17. Shop (sleek S, at end, less prominence) -->
+  <a class="tile" href="file:///android_asset/shop.html">
+    <div class="tile-icon">
+      <svg viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="#000"/>
+        <path d="M 48 24 A 10 10 0 0 0 38 14 H 34 A 10 10 0 0 0 34 34 H 38 A 10 10 0 0 1 38 54 H 34 A 10 10 0 0 1 24 44" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <span class="tile-label" data-i18n="tile_shop">Shop</span>
+  </a>
+
+</div>
+
+<script>
+(function() {
+  setTimeout(function() {
+    var first = document.querySelector('.tile');
+    if (first) first.focus();
+  }, 60);
+})();
+
+function openLiteFeed(e) {
+  if (e) e.preventDefault();
+  if (window.AndroidUtils && typeof window.AndroidUtils.openLiteFeed === 'function') {
+    window.AndroidUtils.openLiteFeed();
+  } else {
+    alert(window.csT ? window.csT('lite_alert') : 'Lite Feed is only available in the Android app.');
+  }
+}
+</script>
+</body>
+</html>

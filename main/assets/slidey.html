@@ -4,6 +4,227 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Slide Coin Rush - Infinite Slides</title>
+    <script>
+    /* ─── ChillSpace i18n — EN / KO / JA / ES / PT / RU (browser detection) ─── */
+    (function () {
+        'use strict';
+        var STRINGS = {
+            en: {
+                title: 'Slide Coin Rush — Infinite Slides',
+                h1: 'Slide Coin Collector',
+                bank: 'Bank:', entry: 'Entry:', collected: 'Collected:',
+                slideTier: 'Slide Tier:',
+                paySlide: 'Pay & Slide!',
+                reset: 'Reset',
+                tiltEnable: '📱 Enable Tilt Steering',
+                tiltOn: '📱 Tilt Steering: ON',
+                tiltStatus0: 'Tilt steering is best on a phone in portrait.',
+                tiltOff: 'Tilt off — drag or use arrow keys instead.',
+                tiltUnsupported: 'Tilt is not supported on this device.',
+                tiltDenied: 'Tilt permission denied.',
+                tiltError: 'Could not enable tilt on this device.',
+                tiltCalibrate: 'Hold your phone level at the start of a slide to calibrate.',
+                steerWord: 'Steer:',
+                steerLine: 'tilt your phone, drag, or use ⬅️ ➡️ / A D.',
+                magnetA: 'Coins are collected on contact — hold',
+                magnetB: '(or your finger on the slide) for a bigger magnet.',
+                popupTitle: '🎉 NEW SLIDE UNLOCKED',
+                tapContinue: 'tap to continue',
+                slideN: 'Slide {n}',
+                perCoin: '{n} 🪙 per coin',
+                entryCost: 'Entry cost: {n} 🪙',
+                nextUnlock: 'Next unlock: Slide {n} at {c} 🪙',
+                optionTier: 'Slide {n} · {v}x · entry {c}',
+                canvasLabel: 'SLIDE {n}  ·  {v}x'
+            },
+            ko: {
+                title: '슬라이드 코인 러시 — 무한 슬라이드',
+                h1: '슬라이드 코인 수집가',
+                bank: '보유:', entry: '입장료:', collected: '수집:',
+                slideTier: '슬라이드 등급:',
+                paySlide: '지불하고 슬라이드!',
+                reset: '초기화',
+                tiltEnable: '📱 기울기 조종 켜기',
+                tiltOn: '📱 기울기 조종: 켜짐',
+                tiltStatus0: '기울기 조종은 세로 모드의 휴대폰에서 가장 잘 작동합니다.',
+                tiltOff: '기울기 꺼짐 — 대신 드래그하거나 방향키를 사용하세요.',
+                tiltUnsupported: '이 기기에서는 기울기를 지원하지 않습니다.',
+                tiltDenied: '기울기 권한이 거부되었습니다.',
+                tiltError: '이 기기에서 기울기를 켜지 못했습니다.',
+                tiltCalibrate: '슬라이드 시작 시 휴대폰을 수평으로 들고 보정하세요.',
+                steerWord: '조종:',
+                steerLine: '휴대폰을 기울이거나, 드래그하거나 ⬅️ ➡️ / A D를 사용하세요.',
+                magnetA: '코인은 닿으면 수집됩니다 — 더 큰 자석을 위해',
+                magnetB: '(또는 슬라이드 위 손가락)을 길게 누르세요.',
+                popupTitle: '🎉 새 슬라이드 해금!',
+                tapContinue: '계속하려면 탭',
+                slideN: '슬라이드 {n}',
+                perCoin: '코인당 {n} 🪙',
+                entryCost: '입장료: {n} 🪙',
+                nextUnlock: '다음 해금: {c} 🪙에 슬라이드 {n}',
+                optionTier: '슬라이드 {n} · {v}배 · 입장 {c}',
+                canvasLabel: '슬라이드 {n}  ·  {v}배'
+            },
+            ja: {
+                title: 'スライド・コインラッシュ — 無限スライド',
+                h1: 'スライドコインコレクター',
+                bank: '所持:', entry: '参加費:', collected: '獲得:',
+                slideTier: 'スライドランク:',
+                paySlide: '払って滑る!',
+                reset: 'リセット',
+                tiltEnable: '📱 傾き操縦をオンにする',
+                tiltOn: '📱 傾き操縦: オン',
+                tiltStatus0: '傾き操縦は縦持ちのスマホに最適です。',
+                tiltOff: '傾きオフ — 代わりにドラッグか矢印キーを使ってください。',
+                tiltUnsupported: 'この端末は傾きセンサーに対応していません。',
+                tiltDenied: '傾きセンサーの権限が拒否されました。',
+                tiltError: 'この端末で傾き操縦を有効にできませんでした。',
+                tiltCalibrate: 'スライドの開始時にスマホを水平に持って調整してください。',
+                steerWord: '操作:',
+                steerLine: 'スマホを傾ける、ドラッグ、または ⬅️ ➡️ / A D キー。',
+                magnetA: 'コインは触れると獲得できます —',
+                magnetB: '(またはスライド上の指)を長押しすると磁石が大きくなります。',
+                popupTitle: '🎉 新しいスライド解放!',
+                tapContinue: 'タップで続ける',
+                slideN: 'スライド {n}',
+                perCoin: 'コイン1枚あたり {n} 🪙',
+                entryCost: '参加費: {n} 🪙',
+                nextUnlock: '次の解放: {c} 🪙でスライド {n}',
+                optionTier: 'スライド {n} · {v}倍 · 参加 {c}',
+                canvasLabel: 'スライド {n}  ·  {v}倍'
+            },
+            es: {
+                title: 'Slide Coin Rush — Toboganes infinitos',
+                h1: 'Coleccionista de monedas del tobogán',
+                bank: 'Banco:', entry: 'Entrada:', collected: 'Recolectadas:',
+                slideTier: 'Nivel de tobogán:',
+                paySlide: '¡Paga y deslízate!',
+                reset: 'Reiniciar',
+                tiltEnable: '📱 Activar control por inclinación',
+                tiltOn: '📱 Control por inclinación: ACTIVADO',
+                tiltStatus0: 'El control por inclinación funciona mejor con el teléfono en vertical.',
+                tiltOff: 'Inclinación desactivada — arrastra o usa las flechas.',
+                tiltUnsupported: 'La inclinación no está disponible en este dispositivo.',
+                tiltDenied: 'Permiso de inclinación denegado.',
+                tiltError: 'No se pudo activar la inclinación en este dispositivo.',
+                tiltCalibrate: 'Mantén el teléfono nivelado al empezar un tobogán para calibrar.',
+                steerWord: 'Manejo:',
+                steerLine: 'inclina el teléfono, arrastra o usa ⬅️ ➡️ / A D.',
+                magnetA: 'Las monedas se recogen al tocarlas — mantén',
+                magnetB: '(o el dedo en el tobogán) para un imán más grande.',
+                popupTitle: '🎉 NUEVO TOBOGÁN DESBLOQUEADO',
+                tapContinue: 'toca para continuar',
+                slideN: 'Tobogán {n}',
+                perCoin: '{n} 🪙 por moneda',
+                entryCost: 'Coste de entrada: {n} 🪙',
+                nextUnlock: 'Próximo desbloqueo: Tobogán {n} con {c} 🪙',
+                optionTier: 'Tobogán {n} · {v}x · entrada {c}',
+                canvasLabel: 'TOBOGÁN {n}  ·  {v}x'
+            },
+            pt: {
+                title: 'Slide Coin Rush — Tobogãs infinitos',
+                h1: 'Colecionador de moedas do tobogã',
+                bank: 'Saldo:', entry: 'Entrada:', collected: 'Coletadas:',
+                slideTier: 'Nível do tobogã:',
+                paySlide: 'Pagar e deslizar!',
+                reset: 'Reiniciar',
+                tiltEnable: '📱 Ativar controle por inclinação',
+                tiltOn: '📱 Controle por inclinação: LIGADO',
+                tiltStatus0: 'O controle por inclinação funciona melhor com o celular na vertical.',
+                tiltOff: 'Inclinação desligada — arraste ou use as setas.',
+                tiltUnsupported: 'A inclinação não é suportada neste dispositivo.',
+                tiltDenied: 'Permissão de inclinação negada.',
+                tiltError: 'Não foi possível ativar a inclinação neste dispositivo.',
+                tiltCalibrate: 'Segure o celular nivelado no início do tobogã para calibrar.',
+                steerWord: 'Direção:',
+                steerLine: 'incline o celular, arraste ou use ⬅️ ➡️ / A D.',
+                magnetA: 'As moedas são coletadas no contato — segure',
+                magnetB: '(ou o dedo no tobogã) para um ímã maior.',
+                popupTitle: '🎉 NOVO TOBOGÃ DESBLOQUEADO',
+                tapContinue: 'toque para continuar',
+                slideN: 'Tobogã {n}',
+                perCoin: '{n} 🪙 por moeda',
+                entryCost: 'Custo de entrada: {n} 🪙',
+                nextUnlock: 'Próximo desbloqueio: Tobogã {n} com {c} 🪙',
+                optionTier: 'Tobogã {n} · {v}x · entrada {c}',
+                canvasLabel: 'TOBOGÃ {n}  ·  {v}x'
+            },
+            ru: {
+                title: 'Slide Coin Rush — бесконечные горки',
+                h1: 'Сборщик монет с горки',
+                bank: 'Банк:', entry: 'Вход:', collected: 'Собрано:',
+                slideTier: 'Уровень горки:',
+                paySlide: 'Заплатить и скатиться!',
+                reset: 'Сброс',
+                tiltEnable: '📱 Включить управление наклоном',
+                tiltOn: '📱 Управление наклоном: ВКЛ',
+                tiltStatus0: 'Управление наклоном лучше всего работает на телефоне в вертикальном положении.',
+                tiltOff: 'Наклон выключен — перетаскивайте или используйте стрелки.',
+                tiltUnsupported: 'Наклон не поддерживается на этом устройстве.',
+                tiltDenied: 'Разрешение на наклон отклонено.',
+                tiltError: 'Не удалось включить наклон на этом устройстве.',
+                tiltCalibrate: 'Держите телефон ровно в начале горки для калибровки.',
+                steerWord: 'Управление:',
+                steerLine: 'наклоняйте телефон, тяните пальцем или используйте ⬅️ ➡️ / A D.',
+                magnetA: 'Монеты собираются при касании — удерживайте',
+                magnetB: '(или палец на горке), чтобы получить магнит побольше.',
+                popupTitle: '🎉 НОВАЯ ГОРКА ОТКРЫТА',
+                tapContinue: 'нажмите, чтобы продолжить',
+                slideN: 'Горка {n}',
+                perCoin: '{n} 🪙 за монету',
+                entryCost: 'Стоимость входа: {n} 🪙',
+                nextUnlock: 'Следующее открытие: горка {n} при {c} 🪙',
+                optionTier: 'Горка {n} · {v}x · вход {c}',
+                canvasLabel: 'ГОРКА {n}  ·  {v}x'
+            }
+        };
+
+        function detectLang() {
+            var list = [];
+            if (navigator.languages) list = list.concat(navigator.languages);
+            if (navigator.language) list.push(navigator.language);
+            list.push('en');
+            for (var i = 0; i < list.length; i++) {
+                var l = String(list[i] || '').toLowerCase();
+                if (l.indexOf('ko') === 0) return 'ko';
+                if (l.indexOf('ja') === 0) return 'ja';
+                if (l.indexOf('es') === 0) return 'es';
+                if (l.indexOf('pt') === 0) return 'pt';
+                if (l.indexOf('ru') === 0) return 'ru';
+                if (l.indexOf('en') === 0) return 'en';
+            }
+            return 'en';
+        }
+
+        var lang = detectLang();
+        STRINGS[lang] = STRINGS[lang] || STRINGS.en;
+        document.documentElement.lang = lang;
+
+        function t(key, vars) {
+            var v = STRINGS[lang][key];
+            if (v === undefined) v = STRINGS.en[key];
+            var s = (v === undefined) ? key : v;
+            if (vars) {
+                for (var k in vars) s = s.split('{' + k + '}').join(String(vars[k]));
+            }
+            return s;
+        }
+        window.csT = t;
+        document.title = t('title');
+
+        function applyI18n() {
+            var els = document.querySelectorAll('[data-i18n]');
+            for (var i = 0; i < els.length; i++) {
+                els[i].textContent = t(els[i].getAttribute('data-i18n'));
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyI18n);
+        } else {
+            applyI18n();
+        }
+    })();
+    </script>
     <style>
         * {
             box-sizing: border-box;
@@ -191,16 +412,16 @@
 <body>
 
 <div class="container">
-    <h1>Slide Coin Collector</h1>
+    <h1 data-i18n="h1">Slide Coin Collector</h1>
 
     <div class="dashboard">
-        <div>Bank: <span id="bank-coins" class="coin-val">10</span> 🪙</div>
-        <div>Entry: <span id="cost-val" class="coin-val">2</span> 🪙</div>
-        <div>Collected: <span id="collected-coins" class="coin-val">0</span> 🪙</div>
+        <div><span data-i18n="bank">Bank:</span> <span id="bank-coins" class="coin-val">10</span> 🪙</div>
+        <div><span data-i18n="entry">Entry:</span> <span id="cost-val" class="coin-val">2</span> 🪙</div>
+        <div><span data-i18n="collected">Collected:</span> <span id="collected-coins" class="coin-val">0</span> 🪙</div>
     </div>
 
     <div class="slide-selector">
-        <label for="slideSelect"><strong>Slide Tier:</strong></label>
+        <label for="slideSelect"><strong data-i18n="slideTier">Slide Tier:</strong></label>
         <select id="slideSelect" onchange="changeSlideTier()"></select>
     </div>
     <div class="next-unlock" id="next-unlock">—</div>
@@ -208,29 +429,29 @@
     <canvas id="gameCanvas" width="400" height="500"></canvas>
 
     <div class="controls">
-        <button id="slideBtn" onclick="payAndSlide()">Pay &amp; Slide!</button>
-        <button id="resetBtn" onclick="resetGame()" style="background:#ef4444;">Reset</button>
+        <button id="slideBtn" onclick="payAndSlide()" data-i18n="paySlide">Pay &amp; Slide!</button>
+        <button id="resetBtn" onclick="resetGame()" style="background:#ef4444;" data-i18n="reset">Reset</button>
     </div>
 
     <div class="controls">
-        <button id="tiltBtn" onclick="toggleTilt()">📱 Enable Tilt Steering</button>
+        <button id="tiltBtn" onclick="toggleTilt()" data-i18n="tiltEnable">📱 Enable Tilt Steering</button>
     </div>
-    <div class="tilt-status" id="tilt-status">Tilt steering is best on a phone in portrait.</div>
+    <div class="tilt-status" id="tilt-status" data-i18n="tiltStatus0">Tilt steering is best on a phone in portrait.</div>
 
     <div class="instructions">
-        <p><strong>Steer:</strong> tilt your phone, drag, or use ⬅️ ➡️ / A D.</p>
-        <p>Coins are collected on contact — hold <strong>SPACE</strong> (or your finger on the slide) for a bigger magnet.</p>
+        <p><strong data-i18n="steerWord">Steer:</strong> <span data-i18n="steerLine">tilt your phone, drag, or use ⬅️ ➡️ / A D.</span></p>
+        <p><span data-i18n="magnetA">Coins are collected on contact — hold</span> <strong>SPACE</strong> <span data-i18n="magnetB">(or your finger on the slide) for a bigger magnet.</span></p>
     </div>
 </div>
 
 <!-- Unlock popup -->
 <div class="popup" id="unlockPopup">
     <div class="popup-card">
-        <div class="popup-title">🎉 NEW SLIDE UNLOCKED</div>
+        <div class="popup-title" data-i18n="popupTitle">🎉 NEW SLIDE UNLOCKED</div>
         <div class="popup-slide" id="popupSlideName">Slide 2</div>
         <div class="popup-value" id="popupValue">2 🪙 per coin</div>
         <div class="popup-cost" id="popupCost">Entry cost: 4 🪙</div>
-        <div class="popup-hint">tap to continue</div>
+        <div class="popup-hint" data-i18n="tapContinue">tap to continue</div>
     </div>
 </div>
 
@@ -458,14 +679,14 @@ async function toggleTilt() {
         tiltEnabled = false;
         window.removeEventListener('deviceorientation', onOrientation);
         tiltValue = 0;
-        btn.textContent = '📱 Enable Tilt Steering';
+        btn.textContent = window.csT('tiltEnable');
         btn.classList.remove('active');
-        status.textContent = 'Tilt off — drag or use arrow keys instead.';
+        status.textContent = window.csT('tiltOff');
         return;
     }
 
     if (typeof DeviceOrientationEvent === 'undefined') {
-        status.textContent = 'Tilt is not supported on this device.';
+        status.textContent = window.csT('tiltUnsupported');
         return;
     }
 
@@ -474,11 +695,11 @@ async function toggleTilt() {
         try {
             const res = await DeviceOrientationEvent.requestPermission();
             if (res !== 'granted') {
-                status.textContent = 'Tilt permission denied.';
+                status.textContent = window.csT('tiltDenied');
                 return;
             }
         } catch (err) {
-            status.textContent = 'Could not enable tilt on this device.';
+            status.textContent = window.csT('tiltError');
             return;
         }
     }
@@ -487,9 +708,9 @@ async function toggleTilt() {
     pendingCalibrate = true;
     window.addEventListener('deviceorientation', onOrientation);
 
-    btn.textContent = '📱 Tilt Steering: ON';
+    btn.textContent = window.csT('tiltOn');
     btn.classList.add('active');
-    status.textContent = 'Hold your phone level at the start of a slide to calibrate.';
+    status.textContent = window.csT('tiltCalibrate');
 }
 
 /* =========================================================
@@ -529,11 +750,11 @@ function showNextPopup() {
 
     popupActive = true;
     const idx = popupQueue.shift();
-    const t = getTier(idx);
+    const tier = getTier(idx);
 
-    document.getElementById('popupSlideName').textContent = `Slide ${t.tier}`;
-    document.getElementById('popupValue').textContent = `${formatNumber(t.value)} 🪙 per coin`;
-    document.getElementById('popupCost').textContent = `Entry cost: ${formatNumber(t.cost)} 🪙`;
+    document.getElementById('popupSlideName').textContent = window.csT('slideN', { n: tier.tier });
+    document.getElementById('popupValue').textContent = window.csT('perCoin', { n: formatNumber(tier.value) });
+    document.getElementById('popupCost').textContent = window.csT('entryCost', { n: formatNumber(tier.cost) });
 
     popupEl.classList.add('show');
     popupTimer = setTimeout(dismissPopup, 2400);
@@ -561,10 +782,10 @@ function populateSlideSelect() {
 
     select.innerHTML = '';
     for (let i = 0; i <= highestUnlockedTierIndex; i++) {
-        const t = getTier(i);
+        const tier = getTier(i);
         const opt = document.createElement('option');
         opt.value = i;
-        opt.textContent = `Slide ${t.tier} · ${formatNumber(t.value)}x · entry ${formatNumber(t.cost)}`;
+        opt.textContent = window.csT('optionTier', { n: tier.tier, v: formatNumber(tier.value), c: formatNumber(tier.cost) });
         if (i === currentTierIndex) opt.selected = true;
         select.appendChild(opt);
     }
@@ -629,7 +850,7 @@ function updateUI() {
 
     const nextTier = getTier(highestUnlockedTierIndex + 1);
     document.getElementById('next-unlock').innerText =
-        `Next unlock: Slide ${nextTier.tier} at ${formatNumber(nextTier.unlockCost)} 🪙`;
+        window.csT('nextUnlock', { n: nextTier.tier, c: formatNumber(nextTier.unlockCost) });
 }
 
 function resetGame() {
@@ -745,7 +966,7 @@ function draw() {
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = 'bold 15px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`SLIDE ${tierData.tier}  ·  ${formatNumber(tierData.value)}x`, canvas.width / 2, 26);
+    ctx.fillText(window.csT('canvasLabel', { n: tierData.tier, v: formatNumber(tierData.value) }), canvas.width / 2, 26);
 
     // Coins
     slideCoins.forEach(coin => {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F0F2F5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ChillSpace Lite"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1877F2" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAutoScroll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🤖 Auto: Off"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:backgroundTint="#E4E6EB"
+            android:textColor="#1C1E21"
+            android:textSize="12sp"
+            android:minHeight="40dp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerPosts"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="24dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true" />
+
+</LinearLayout>
